@@ -11,7 +11,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 10px 20px;
+  padding: 5px 10px;
   background-color: #1a1a1a;
   border-bottom: 1px solid #333;
 }
@@ -42,7 +42,7 @@
 .flow-node-io {
   font-size: 12px;
   border-top: 1px solid #333;
-  padding-top: 5px;
+  padding-top: 2.5px;
   color: #ddd;
 }
 
@@ -50,7 +50,7 @@
   background-color: #1e1e2f;
   color: #00f2ff;
   border: 1px solid #00f2ff;
-  padding: 8px 16px;
+  padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import ReactFlow, { 
   Background, 
   Controls, 
-  MiniMap, 
   useNodesState, 
   useEdgesState,
   MarkerType
@@ -65,7 +64,7 @@ const FlowView = () => {
           border: '1px solid #00f2ff',
           boxShadow: '0 0 10px rgba(0, 242, 255, 0.5)',
           borderRadius: '5px',
-          padding: '10px',
+          padding: '5px',
           width: 250,
         },
       };
@@ -91,10 +90,10 @@ const FlowView = () => {
             background: 'transparent',
             border: '1px solid rgba(255, 255, 255, 0.3)',
             borderRadius: '4px',
-            padding: '2px 4px',
+            padding: '1px 2px',
           },
           labelBgStyle: { fill: 'transparent' },
-          labelBgPadding: [4, 2],
+          labelBgPadding: [2, 1],
           markerEnd: {
             type: MarkerType.ArrowClosed,
             width: 20,
@@ -151,7 +150,6 @@ const FlowView = () => {
           className="dark-flow"
         >
           <Controls />
-          <MiniMap />
           <Background variant="dots" gap={12} size={1} color="#444" />
         </ReactFlow>
       </div>
