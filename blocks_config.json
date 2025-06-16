@@ -1,11 +1,11 @@
 [
   {
-    "name": "DataIngestion",
-    "description": "This is the DataIngestion module",
+    "block_id": "Pfj3Fv",
+    "name": "MIP Generator",
+    "description": "**DICOM Loader and MIP Generator Module Specification**\n\n**Purpose:**\nThe purpose of this module is to efficiently load DICOM (Digital Imaging and Communications in Medicine) files and generate two distinct MIP (Maximum Intensity Projection) spans, specifically from sagittal and coronal views. This module aims to assist in medical visualization applications, enhancing the analysis and interpretation of medical imaging data.\n\n**Functional Components:**\n\n1. **DICOM File Loader:**\n   - **Description:** This component is responsible for loading and parsing DICOM files from a designated source. It must handle various DICOM file formats and ensure compliance with the DICOM standard specifications for medical imaging.\n   - **Functionality:**\n     - Validate the integrity and conformity of the input DICOM files.\n     - Extract essential metadata (such as the patient ID, study date, modality, etc.) which might be necessary for processing and categorization.\n     - Manage errors or inconsistencies in the data gracefully, providing logs or warnings without software failure.\n\n2. **MIP Generation Engine:**\n   - **Description:** Utilizes the loaded DICOM images to produce Maximum Intensity Projections, which is a visualization technique that enhances the perception of high-intensity structures within a volumetric image. Two orientations are specifically targeted: sagittal and coronal.\n   - **Functionality:**\n     - **Sagittal MIP Span Generation:**\n       - Perform image processing to reshape and align the DICOM dataset into a sagittal view.\n       - Apply the MIP technique longitudinally to generate a projection that represents the highest intensity values at each pixel position across the medial-lateral extent of the anatomy.\n     - **Coronal MIP Span Generation:**\n       - Transform the DICOM dataset to align with the coronal plane.\n       - Implement the MIP technique frontally to produce a visualization that displays the most intense pixels along the anterior-posterior axis of the body.\n   - **Output:**\n     - Each view will produce a distinct output file or data stream, formatted appropriately for downstream use (e.g., in further diagnostic tools, reporting, or within an integrated PACS system).\n     - Ensure that output data retains associated metadata for traceability and compliance with medical standards.\n\n**Performance Requirements:**\n- Optimize processing for speed and efficiency to handle large datasets typical in medical imaging environments.\n- Ensure that the output is generated with high fidelity, preserving the clarity and details crucial for diagnostic purposes.\n\n**Security and Compliance:**\n- Adhere to HIPAA and other relevant standards concerning the handling of sensitive medical information.\n- Implement secure processing practices to safeguard patient data integrity and confidentiality throughout the process.\n\n**Scalability:**\n- Design the module to be scalable to accommodate varying sizes and numbers of DICOM files, allowing easy integration into systems of different capacities and specifications.\n\n**Logging and Monitoring:**\n- Implement comprehensive logging for tracking processes, errors, and performance metrics.\n- Provide monitoring capabilities to oversee the health and efficiency of the operations, particularly in a high-throughput medical imaging environment.\n\nBy detailing the requirements and functionalities of each component, this enhanced module description ensures clarity and completeness, guiding the development, testing, and deployment stages effectively.",
     "inputs": [
       "Input1",
-      "Input2",
-      "Input3"
+      "Input2"
     ],
     "outputs": [
       "Output1",
@@ -17,19 +17,195 @@
       "output_connections": [
         {
           "to_module": "DataStorage",
-          "input_type": "Input2",
-          "unique_id": "HFMy"
+          "input_type": "Input1",
+          "unique_id": "EaH2"
         }
       ]
     },
     "todo_list": [
       "Todo item 1 for DataIngestion",
-      "Todo item 2 for DataIngestion"
+      "Research and Setup**:",
+      "Research the DICOM standard and familiarize yourself with its file structure, encoding details, and metadata attributes.",
+      "Set up a development environment with necessary libraries and tools for DICOM file handling (e.g., Python with pydicom and numpy libraries).",
+      "DICOM File Loader Development**:",
+      "Task 1**: Implement a function to read DICOM files from a designated source (file system, network storage).",
+      "Task 2**: Validate the integrity of DICOM files using a checksum or the file's built-in validation mechanism.",
+      "Task 3**: Parse DICOM files to extract required metadata like patient ID, study date, and modality.",
+      "Task 4**: Implement error handling to manage corrupted or non-compliant files, logging warnings or errors as appropriate.",
+      "Metadata Extraction and Handling**:",
+      "Task 5**: Create a function to extract and store essential metadata for use during the MIP processing stage.",
+      "Task 6**: Ensure that the extracted metadata is accessible and formatted correctly for further processing or integration.",
+      "MIP Generation Engine Development**:",
+      "Sagittal MIP Span**:",
+      "Task 7**: Develop a function to reorient and align DICOM images into the sagittal plane.",
+      "Task 8**: Implement the maximum intensity projection algorithm longitudinally to generate the sagittal MIP span.",
+      "Coronal MIP Span**:",
+      "Task 9**: Develop a function to reorient and align DICOM images to the coronal plane.",
+      "Task 10**: Implement the maximum intensity projection algorithm frontally to create the coronal MIP span.",
+      "Output Handling**:",
+      "Task 11**: Design and implement a mechanism to format and save the MIP output in a standard format, incorporating metadata for traceability.",
+      "Task 12**: Ensure outputs are compatible with downstream systems (e.g., PACS).",
+      "Task 13**: Optimize image processing algorithms for speed, considering multi-threading or GPU usage.",
+      "Task 14**: Benchmark and profile the system, refining code and algorithms to handle large datasets efficiently.",
+      "Security and Compliance Implementation**:",
+      "Task 15**: Audit and implement security measures for data handling and storage to comply with HIPAA and other relevant standards.",
+      "Task 16**: Encrypt sensitive data in transit and at rest, and implement secure access control.",
+      "Scalability**:",
+      "Task 17**: Design architecture to be modular and scalable, capable of processing varying input sizes and batch operations.",
+      "Logging and Monitoring**:",
+      "Task 18**: Implement comprehensive logging systems to capture all significant events, including errors and system warnings.",
+      "Task 19**: Set up monitoring tools to track real-time performance and system health.",
+      "Testing and Quality Assurance**:",
+      "Task 20**: Develop unit and integration tests for each component of the module.",
+      "Task 21**: Conduct end-to-end testing with different sets of DICOM files to ensure reliability and accuracy under various conditions.",
+      "Documentation and Training**:",
+      "Task 22**: Document the codebase, usage examples, and setup procedure.",
+      "Task 23**: Prepare training materials for end-users or integrators on how to use the module effectively within their systems.",
+      "Deployment**:",
+      "Task 24**: Package the module for deployment, including dependency management.",
+      "Task 25**: Deploy the module in a test environment and validate its operational status before full-scale integration.",
+      "Each of these tasks should be detailed further and assigned in your project management tool to track progress and ensure completion according to the project timelines and objectives.",
+      "run LLM"
     ]
   },
   {
-    "name": "DataProcessing",
-    "description": "This is the DataProcessing module",
+    "block_id": "UBH0j1",
+    "name": "Dicoms Iterator",
+    "description": "### DICOM Compatibility Checker Module\n\n#### Purpose:\nThe DICOM Compatibility Checker Module is a specialized software component designed to systematically process a directory containing DICOM (Digital Imaging and Communications in Medicine) files. Its primary function is to validate each DICOM file against specified compatibility criteria.\n\n#### Functionality Overview:\n1. **Directory Traversal:**\n   - The module initiates its operation by scanning a predefined folder pathway that contains DICOM files. It systematically iterates through each file within the folder, ensuring no file is omitted from the compatibility check.\n\n2. **File Handling and Verification:**\n   - For each DICOM file located during the directory traversal, the module performs a series of operations:\n     - **File Open:** Each DICOM file is opened using a robust file handling mechanism to ensure safe access to the file’s contents without corruption.\n     - **Compatibility Check:** The core functionality of this module involves assessing each DICOM file against established compatibility guidelines. This includes verifying file headers, metadata consistency, and adherence to specific DICOM standards that are critical for downstream processing and integration with other medical imaging systems.\n\n3. **Error Handling and Logging:**\n   - Throughout the process, the module employs comprehensive error handling strategies to manage issues such as file access errors, data corruption, or non-compliance to DICOM standards. Each incident is logged with detailed error messages and the file details, facilitating easier troubleshooting and quality control.\n\n4. **Report Generation:**\n   - Upon completion of the directory traversal and compatibility checks, the module compiles a detailed report outlining the results. This report includes information on the number of files processed, a list of compliant and non-compliant files, and detailed error descriptions for files that failed the compatibility check.\n\n#### Technical Specifications:\n- **Supported DICOM Standards:** DICOM 3.0 and earlier versions.\n- **Compatibility Criteria:** Check includes validation of file header integrity, mandatory tag presence according to specified profiles, encoding checks, and other customizable compatibility rules.\n- **Input:** Configurable path to the directory containing DICOM files.\n- **Output:** Detailed report with compatibility check results, including statistical summaries and individual file reports.\n- **Error Logging:** Errors and exceptions are logged in a structured format to a designated log file.\n\n#### Usage Scenario:\nThis module is particularly valuable in healthcare IT environments where ensuring DICOM file integrity and compatibility is critical, such as in hospitals, diagnostic centers, and research institutions. Additionally, it serves a critical role in preprocessing steps for data migration or system integration projects involving medical images.\n\nBy performing these essential checks efficiently and automatically, the DICOM Compatibility Checker Module ensures that all DICOM files in the system are up to standards, thereby protecting data integrity and facilitating smooth interoperability between diverse medical imaging systems.",
+    "inputs": [
+      "Input1"
+    ],
+    "outputs": [
+      "Output1",
+      "Output2",
+      "Output3"
+    ],
+    "connections": {
+      "input_connections": [
+        {
+          "from_module": "DataIngestion",
+          "output_type": "Output1",
+          "unique_id": "PTn9"
+        }
+      ],
+      "output_connections": [
+        {
+          "to_module": "DataReporting",
+          "input_type": "Input3",
+          "unique_id": "AeUg"
+        }
+      ]
+    },
+    "todo_list": [
+      "Todo item 1 for DataProcessing",
+      "Todo item 2 for DataProcessing",
+      "Todo item 3 for DataProcessing",
+      "Todo item 4 for DataProcessing",
+      "To implement the DICOM Compatibility Checker Module as described, the following actionable tasks can be outlined:",
+      "Set Up Development Environment:**",
+      "Install necessary development tools and libraries, particularly those for handling DICOM files like pydicom.",
+      "Configure version control using Git to manage the codebase.",
+      "Directory Traversal Implementation:**",
+      "Design and implement a function to read input for a directory path where DICOM files are stored.",
+      "Implement a loop mechanism to traverse each file within the specified directory, ensuring no file is skipped.",
+      "DICOM File Handling:**",
+      "Create a utility to safely open and read contents of DICOM files.",
+      "Implement file integrity checks to confirm that each file can be opened without errors.",
+      "Compatibility Check Design:**",
+      "Define a schema or a set of rules for the DICOM compatibility criteria based on DICOM 3.0 and earlier standards.",
+      "Implement a function that checks each DICOM file’s headers, metadata consistency, and other required tags against the predefined compatibility rules.",
+      "Error Handling and Logging:**",
+      "Design and implement comprehensive error handling mechanisms to catch and manage exceptions like file access errors or data corruption.",
+      "Configure a logging system to log detailed error messages and affected file information into a structured log file for easy troubleshooting.",
+      "Report Generation Tools:**",
+      "Implement functionality to compile and summarize results from the compatibility checks into a structured report.",
+      "Include details in the report such as total number of files processed, list of compliant and non-compliant files, and descriptions of any errors or mismatches found.",
+      "Testing:**",
+      "Write unit tests for each functional component (directory traversal, file handling, compatibility checking, and report generation).",
+      "Create integration tests to ensure that the module works as a cohesive whole and interacts correctly with file systems and logging mechanisms.",
+      "Documentation:**",
+      "Document the codebase thoroughly to outline module functionality, usage, and configuration options.",
+      "Create a user guide explaining how to install, configure, and use the DICOM Compatibility Checker module.",
+      "Deployment Setup:**",
+      "Prepare deployment scripts or instructions to facilitate easy release and deployment of the module in different environments.",
+      "Ensure the module is containerizable, potentially facilitating integration into larger systems or workflows in healthcare IT environments.",
+      "Performance Optimization:**",
+      "Analyze and optimize the performance of the module, particularly focusing on the efficiency of file processing and error handling.",
+      "Compliance and Security Checks:**",
+      "Review the implementation for compliance with relevant healthcare IT standards and regulations.",
+      "Ensure that the module handles DICOM data securely, especially when dealing with sensitive medical information.",
+      "These steps provide a structured plan to ensure that the DICOM Compatibility Checker Module is efficiently developed, deployed, and capable of performing its intended functions in real-world applications, particularly in critical environments like hospitals and diagnostic centers."
+    ]
+  },
+  {
+    "block_id": "Bk5LjC",
+    "name": "DataVisualization",
+    "description": "This is the DataVisualization module",
+    "inputs": [
+      "Input1"
+    ],
+    "outputs": [
+      "Output1",
+      "Output2"
+    ],
+    "connections": {
+      "input_connections": [
+        {
+          "from_module": "DataProcessing",
+          "output_type": "Output3",
+          "unique_id": "II4Y"
+        }
+      ],
+      "output_connections": [
+        {
+          "to_module": "DataExport",
+          "input_type": "Input1",
+          "unique_id": "PyXU"
+        }
+      ]
+    },
+    "todo_list": [
+      "Todo item 1 for DataVisualization"
+    ]
+  },
+  {
+    "block_id": "9y3avT",
+    "name": "DataStorage",
+    "description": "This is the DataStorage module",
+    "inputs": [
+      "Input1"
+    ],
+    "outputs": [
+      "Output1",
+      "Output2"
+    ],
+    "connections": {
+      "input_connections": [
+        {
+          "from_module": "DataIngestion",
+          "output_type": "Output1",
+          "unique_id": "o24B"
+        }
+      ],
+      "output_connections": [
+        {
+          "to_module": "DataAnalysis",
+          "input_type": "Input1",
+          "unique_id": "3mJb"
+        }
+      ]
+    },
+    "todo_list": [
+      "Todo item 1 for DataStorage",
+      "Todo item 2 for DataStorage",
+      "Todo item 3 for DataStorage",
+      "Todo item 4 for DataStorage"
+    ]
+  },
+  {
+    "block_id": "2xcDTx",
+    "name": "DataAnalysis",
+    "description": "This is the DataAnalysis module",
     "inputs": [
       "Input1",
       "Input2",
@@ -43,30 +219,29 @@
       "input_connections": [
         {
           "from_module": "DataIngestion",
-          "output_type": "Output1",
-          "unique_id": "3Pll"
+          "output_type": "Output2",
+          "unique_id": "jDoB"
         }
       ],
       "output_connections": [
         {
-          "to_module": "DataValidation",
-          "input_type": "Input3",
-          "unique_id": "Qslq"
+          "to_module": "DataExport",
+          "input_type": "Input1",
+          "unique_id": "esIt"
         }
       ]
     },
     "todo_list": [
-      "Todo item 1 for DataProcessing",
-      "Todo item 2 for DataProcessing"
+      "Todo item 1 for DataAnalysis",
+      "Todo item 2 for DataAnalysis"
     ]
   },
   {
-    "name": "DataVisualization",
-    "description": "This is the DataVisualization module",
+    "block_id": "H2ysG5",
+    "name": "DataExport",
+    "description": "This is the DataExport module",
     "inputs": [
-      "Input1",
-      "Input2",
-      "Input3"
+      "Input1"
     ],
     "outputs": [
       "Output1",
@@ -75,114 +250,16 @@
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataProcessing",
-          "output_type": "Output3",
-          "unique_id": "YPv6"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataTransformation",
-          "input_type": "Input2",
-          "unique_id": "5Fec"
-        }
-      ]
-    },
-    "todo_list": [
-      "Todo item 1 for DataVisualization",
-      "Todo item 2 for DataVisualization",
-      "Todo item 3 for DataVisualization"
-    ]
-  },
-  {
-    "name": "DataStorage",
-    "description": "This is the DataStorage module",
-    "inputs": [
-      "Input1",
-      "Input2"
-    ],
-    "outputs": [
-      "Output1",
-      "Output2",
-      "Output3"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataProcessing",
+          "from_module": "DataAnalysis",
           "output_type": "Output2",
-          "unique_id": "6zUk"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataAnalysis",
-          "input_type": "Input1",
-          "unique_id": "Bh05"
-        }
-      ]
-    },
-    "todo_list": [
-      "Todo item 1 for DataStorage",
-      "Todo item 2 for DataStorage",
-      "Todo item 3 for DataStorage"
-    ]
-  },
-  {
-    "name": "DataAnalysis",
-    "description": "This is the DataAnalysis module",
-    "inputs": [
-      "Input1",
-      "Input2",
-      "Input3"
-    ],
-    "outputs": [
-      "Output1"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataProcessing",
-          "output_type": "Output2",
-          "unique_id": "WmIQ"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataValidation",
-          "input_type": "Input2",
-          "unique_id": "1yti"
-        }
-      ]
-    },
-    "todo_list": [
-      "Todo item 1 for DataAnalysis"
-    ]
-  },
-  {
-    "name": "DataExport",
-    "description": "This is the DataExport module",
-    "inputs": [
-      "Input1",
-      "Input2",
-      "Input3"
-    ],
-    "outputs": [
-      "Output1"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataStorage",
-          "output_type": "Output1",
-          "unique_id": "rIlO"
+          "unique_id": "mZ4o"
         }
       ],
       "output_connections": [
         {
           "to_module": "DataAggregation",
-          "input_type": "Input3",
-          "unique_id": "MXMa"
+          "input_type": "Input1",
+          "unique_id": "znC9"
         }
       ]
     },
@@ -194,42 +271,9 @@
     ]
   },
   {
+    "block_id": "0JzBwK",
     "name": "DataValidation",
     "description": "This is the DataValidation module",
-    "inputs": [
-      "Input1",
-      "Input2"
-    ],
-    "outputs": [
-      "Output1",
-      "Output2",
-      "Output3"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataIngestion",
-          "output_type": "Output3",
-          "unique_id": "y614"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataReporting",
-          "input_type": "Input1",
-          "unique_id": "j29E"
-        }
-      ]
-    },
-    "todo_list": [
-      "Todo item 1 for DataValidation",
-      "Todo item 2 for DataValidation",
-      "Todo item 3 for DataValidation"
-    ]
-  },
-  {
-    "name": "DataTransformation",
-    "description": "This is the DataTransformation module",
     "inputs": [
       "Input1",
       "Input2"
@@ -241,16 +285,51 @@
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataExport",
+          "from_module": "DataIngestion",
           "output_type": "Output3",
-          "unique_id": "CUMs"
+          "unique_id": "Ae81"
         }
       ],
       "output_connections": [
         {
           "to_module": "DataReporting",
-          "input_type": "Input3",
-          "unique_id": "72lQ"
+          "input_type": "Input1",
+          "unique_id": "XRgz"
+        }
+      ]
+    },
+    "todo_list": [
+      "Todo item 1 for DataValidation",
+      "Todo item 2 for DataValidation"
+    ]
+  },
+  {
+    "block_id": "95KMO6",
+    "name": "DataTransformation",
+    "description": "This is the DataTransformation module",
+    "inputs": [
+      "Input1",
+      "Input2",
+      "Input3"
+    ],
+    "outputs": [
+      "Output1",
+      "Output2",
+      "Output3"
+    ],
+    "connections": {
+      "input_connections": [
+        {
+          "from_module": "DataAnalysis",
+          "output_type": "Output3",
+          "unique_id": "KJvc"
+        }
+      ],
+      "output_connections": [
+        {
+          "to_module": "DataAggregation",
+          "input_type": "Input1",
+          "unique_id": "GmjN"
         }
       ]
     },
@@ -262,10 +341,12 @@
     ]
   },
   {
+    "block_id": "rkpZMF",
     "name": "DataAggregation",
     "description": "This is the DataAggregation module",
     "inputs": [
-      "Input1"
+      "Input1",
+      "Input2"
     ],
     "outputs": [
       "Output1"
@@ -273,26 +354,26 @@
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataVisualization",
+          "from_module": "DataAnalysis",
           "output_type": "Output1",
-          "unique_id": "OJzz"
+          "unique_id": "tEeO"
         }
       ],
       "output_connections": [
         {
           "to_module": "DataReporting",
-          "input_type": "Input2",
-          "unique_id": "DVG6"
+          "input_type": "Input1",
+          "unique_id": "6iQf"
         }
       ]
     },
     "todo_list": [
       "Todo item 1 for DataAggregation",
-      "Todo item 2 for DataAggregation",
-      "Todo item 3 for DataAggregation"
+      "Todo item 2 for DataAggregation"
     ]
   },
   {
+    "block_id": "1DHQMi",
     "name": "DataReporting",
     "description": "This is the DataReporting module",
     "inputs": [
@@ -306,14 +387,17 @@
       "input_connections": [
         {
           "from_module": "DataIngestion",
-          "output_type": "Output1",
-          "unique_id": "5r9n"
+          "output_type": "Output3",
+          "unique_id": "ZAsQ"
         }
       ],
       "output_connections": []
     },
     "todo_list": [
-      "Todo item 1 for DataReporting"
+      "Todo item 1 for DataReporting",
+      "Todo item 2 for DataReporting",
+      "Todo item 3 for DataReporting",
+      "Todo item 4 for DataReporting"
     ]
   }
 ]

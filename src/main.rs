@@ -1,11 +1,13 @@
 use actix_web::{web, App, HttpServer, Responder, Error};
 use actix_files as fs;
 use std::sync::Arc;
+use dotenv::dotenv;
 
 // Import models from the models module
 mod models;
 mod block_config;
 mod block_handlers;
+mod llm_handler;
 use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_config};
 use block_handlers::{
     AppState, CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
@@ -19,6 +21,9 @@ async fn index() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Load environment variables from .env file
+    dotenv().ok();
+
     println!("Starting server at http://127.0.0.1:8080");
 
     // Create a BlockConfigManager instance

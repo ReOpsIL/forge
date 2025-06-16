@@ -42,6 +42,7 @@ pub struct Connections {
 // Define the structure for a software module
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Block {
+    pub block_id: String,
     pub name: String,
     pub description: String,
     pub inputs: Vec<String>,
@@ -50,10 +51,35 @@ pub struct Block {
     pub todo_list: Vec<String>,
 }
 
+impl Block {
+    pub fn new(name: String, description: String, inputs: Vec<String>, outputs: Vec<String>) -> Self {
+        // Generate a random 6-character alphanumeric ID
+        let block_id: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(6)
+            .map(char::from)
+            .collect();
+
+        Self {
+            block_id,
+            name,
+            description,
+            inputs,
+            outputs,
+            connections: Connections {
+                input_connections: Vec::new(),
+                output_connections: Vec::new(),
+            },
+            todo_list: Vec::new(),
+        }
+    }
+}
+
 // Function to get a list of blocks (in a real application, this would likely fetch from a database)
 pub fn get_blocks() -> Vec<Block> {
     vec![
         Block {
+            block_id: "abc123".to_string(), // Sample block_id
             name: "DataIngestion".to_string(),
             description: "Handles the ingestion of raw data from various sources".to_string(),
             inputs: vec!["RawData".to_string()],
@@ -74,6 +100,7 @@ pub fn get_blocks() -> Vec<Block> {
             ],
         },
         Block {
+            block_id: "def456".to_string(), // Sample block_id
             name: "DataProcessing".to_string(),
             description: "Processes and transforms the parsed data".to_string(),
             inputs: vec!["ParsedData".to_string()],
@@ -99,6 +126,7 @@ pub fn get_blocks() -> Vec<Block> {
             ],
         },
         Block {
+            block_id: "ghi789".to_string(), // Sample block_id
             name: "DataVisualization".to_string(),
             description: "Visualizes the processed data".to_string(),
             inputs: vec!["ProcessedData".to_string()],

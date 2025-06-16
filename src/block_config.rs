@@ -25,7 +25,7 @@ impl BlockConfigManager {
     // Load blocks from a JSON file
     pub fn load_blocks_from_file(&self) -> Result<Vec<Block>, String> {
         let path = Path::new(&self.config_file);
-        
+
         // Check if the file exists
         if !path.exists() {
             return Err(format!("Config file {} does not exist", self.config_file));
@@ -89,7 +89,7 @@ impl BlockConfigManager {
     }
 
     // Add a new block
-    pub fn add_block(&self, block: Block) -> Result<(), String> {
+    pub fn add_block(&self, mut block: Block) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
@@ -98,6 +98,17 @@ impl BlockConfigManager {
         // Check if a block with the same name already exists
         if blocks_lock.iter().any(|b| b.name == block.name) {
             return Err(format!("Block with name {} already exists", block.name));
+        }
+
+        // Generate a block_id if not provided
+        if block.block_id.is_empty() {
+            // Generate a random 6-character alphanumeric ID
+            let block_id: String = rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(6)
+                .map(char::from)
+                .collect();
+            block.block_id = block_id;
         }
 
         blocks_lock.push(block);
@@ -111,62 +122,62 @@ impl BlockConfigManager {
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
         };
 
-        // Find the block to update
-        let index = blocks_lock.iter().position(|b| b.name == block.name);
+        // Find the block to update by block_id
+        let index = blocks_lock.iter().position(|b| b.block_id == block.block_id);
         match index {
             Some(i) => {
                 blocks_lock[i] = block;
                 Ok(())
             },
-            None => Err(format!("Block with name {} not found", block.name)),
+            None => Err(format!("Block with ID {} not found", block.block_id)),
         }
     }
 
     // Delete a block
-    pub fn delete_block(&self, block_name: &str) -> Result<(), String> {
+    pub fn delete_block(&self, block_id: &str) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
         };
 
         // Find the block to delete
-        let index = blocks_lock.iter().position(|b| b.name == block_name);
+        let index = blocks_lock.iter().position(|b| b.block_id == block_id);
         match index {
             Some(i) => {
                 blocks_lock.remove(i);
                 Ok(())
             },
-            None => Err(format!("Block with name {} not found", block_name)),
+            None => Err(format!("Block with ID {} not found", block_id)),
         }
     }
 
     // Add a todo item to a block
-    pub fn add_todo_item(&self, block_name: &str, todo_item: &str) -> Result<(), String> {
+    pub fn add_todo_item(&self, block_id: &str, todo_item: &str) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
         };
 
         // Find the block to update
-        let index = blocks_lock.iter().position(|b| b.name == block_name);
+        let index = blocks_lock.iter().position(|b| b.block_id == block_id);
         match index {
             Some(i) => {
                 blocks_lock[i].todo_list.push(todo_item.to_string());
                 Ok(())
             },
-            None => Err(format!("Block with name {} not found", block_name)),
+            None => Err(format!("Block with ID {} not found", block_id)),
         }
     }
 
     // Remove a todo item from a block
-    pub fn remove_todo_item(&self, block_name: &str, todo_index: usize) -> Result<(), String> {
+    pub fn remove_todo_item(&self, block_id: &str, todo_index: usize) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
         };
 
         // Find the block to update
-        let block_index = blocks_lock.iter().position(|b| b.name == block_name);
+        let block_index = blocks_lock.iter().position(|b| b.block_id == block_id);
         match block_index {
             Some(i) => {
                 if todo_index < blocks_lock[i].todo_list.len() {
@@ -176,7 +187,7 @@ impl BlockConfigManager {
                     Err(format!("Todo item index {} out of bounds", todo_index))
                 }
             },
-            None => Err(format!("Block with name {} not found", block_name)),
+            None => Err(format!("Block with ID {} not found", block_id)),
         }
     }
 }
@@ -194,23 +205,23 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
     for i in 0..10 {
         let name = block_names[i].to_string();
         let description = format!("This is the {} module", name);
-        
+
         // Generate random inputs and outputs
         let num_inputs = rand::thread_rng().gen_range(1..=3);
         let num_outputs = rand::thread_rng().gen_range(1..=3);
-        
+
         let inputs = (0..num_inputs)
             .map(|j| format!("Input{}", j + 1))
             .collect::<Vec<String>>();
-        
+
         let outputs = (0..num_outputs)
             .map(|j| format!("Output{}", j + 1))
             .collect::<Vec<String>>();
-        
+
         // Generate random connections
         let mut input_connections = Vec::new();
         let mut output_connections = Vec::new();
-        
+
         // Only create connections if not the first block
         if i > 0 {
             // Add an input connection from a previous block
@@ -221,35 +232,43 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
                 format!("Output{}", rand::thread_rng().gen_range(1..=3)),
             ));
         }
-        
+
         // Only create output connections if not the last block
         if i < 9 {
             // Add an output connection to a next block
             let to_block_index = rand::thread_rng().gen_range(i+1..10);
             let to_block = block_names[to_block_index].to_string();
-            
+
             // Generate a random 4-character alphanumeric ID
             let unique_id: String = rand::thread_rng()
                 .sample_iter(&Alphanumeric)
                 .take(4)
                 .map(char::from)
                 .collect();
-            
+
             output_connections.push(OutputConnection {
                 to_module: to_block,
                 input_type: format!("Input{}", rand::thread_rng().gen_range(1..=3)),
                 unique_id,
             });
         }
-        
+
         // Generate random todo items
         let num_todos = rand::thread_rng().gen_range(1..=4);
         let todo_list = (0..num_todos)
             .map(|j| format!("Todo item {} for {}", j + 1, name))
             .collect::<Vec<String>>();
-        
+
+        // Generate a random 6-character alphanumeric ID for the block
+        let block_id: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(6)
+            .map(char::from)
+            .collect();
+
         // Create the block
         let block = Block {
+            block_id,
             name,
             description,
             inputs,
@@ -260,24 +279,24 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
             },
             todo_list,
         };
-        
+
         blocks.push(block);
     }
-    
+
     // Serialize the blocks to JSON
     let json = serde_json::to_string_pretty(&blocks)?;
-    
+
     // Write to the file
     let mut file = fs::File::create(filename)?;
     file.write_all(json.as_bytes())?;
-    
+
     Ok(())
 }
 
 // Function to load blocks from a file (replacement for the hard-coded get_blocks function)
 pub fn load_blocks_from_file(filename: &str) -> Vec<Block> {
     let path = Path::new(filename);
-    
+
     // Check if the file exists
     if !path.exists() {
         // If the file doesn't exist, generate a sample config
@@ -289,7 +308,7 @@ pub fn load_blocks_from_file(filename: &str) -> Vec<Block> {
             }
         }
     }
-    
+
     // Read the file
     let file_content = match fs::read_to_string(path) {
         Ok(content) => content,
@@ -298,7 +317,7 @@ pub fn load_blocks_from_file(filename: &str) -> Vec<Block> {
             return Vec::new();
         }
     };
-    
+
     // Parse the JSON
     match serde_json::from_str(&file_content) {
         Ok(blocks) => blocks,
