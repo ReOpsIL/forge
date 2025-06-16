@@ -129,6 +129,109 @@ const BlocksView = () => {
         }
     };
 
+    const enhanceDescription = async (blockName) => {
+        // Find the block to update
+        const blockToEnhance = blocks.find(block => block.name === blockName);
+        if (!blockToEnhance) return;
+
+        try {
+            // Send the updated block to the server
+            const response = await fetch(`/api/blocks/${blockToEnhance.name}/enhance`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(blockToEnhance),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update block description');
+            }
+
+            // Update the blocks state
+            setBlocks(blocks.map(block => {
+                if (block.name === blockName) {
+                    return blockToEnhance;
+                }
+                return block;
+            }));
+
+            // Clear the editing state
+            setEditingDescription({
+                ...editingDescription,
+                [blockName]: undefined
+            });
+
+            // Show a success message
+            toastRef.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Block description enhanced successfully',
+                life: 3000
+            });
+        } catch (error) {
+            console.error('Error enhancing block description:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to enhance block description',
+                life: 3000
+            });
+        }
+    };
+
+    const generateTasks = async (blockName) => {
+        // Find the block to update
+        const blockToEnhance = blocks.find(block => block.name === blockName);
+        if (!blockToEnhance) return;
+
+        try {
+            // Send the updated block to the server
+            const response = await fetch(`/api/blocks/${blockToEnhance.name}/generate-tasks`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(blockToEnhance),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update block description');
+            }
+
+            // Update the blocks state
+            setBlocks(blocks.map(block => {
+                if (block.name === blockName) {
+                    return blockToEnhance;
+                }
+                return block;
+            }));
+
+            // Clear the editing state
+            setEditingDescription({
+                ...editingDescription,
+                [blockName]: undefined
+            });
+
+            // Show a success message
+            toastRef.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Block description enhanced successfully',
+                life: 3000
+            });
+        } catch (error) {
+            console.error('Error enhancing block description:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to enhance block description',
+                life: 3000
+            });
+        }
+    };
+
+
     // Function to start editing a block name
     const startEditingName = (block) => {
         setEditingBlockName({
@@ -822,7 +925,7 @@ const BlocksView = () => {
                                             <div className="flex justify-content-end mt-2">
                                                 <Button
                                                     icon="pi pi-check"
-                                                    className="p-button-sm p-button-success"
+                                                    className="p-button-sm p-button-success ml-2"
                                                     onClick={() => saveBlockName(block.name)}
                                                     tooltip="Save name"
                                                 />
@@ -846,13 +949,13 @@ const BlocksView = () => {
                                             <div className="flex">
                                                 <Button
                                                     icon="pi pi-pencil"
-                                                    className="p-button-sm p-button-text"
+                                                    className="p-button-sm p-button-text ml-2"
                                                     onClick={() => startEditingName(block)}
                                                     tooltip="Edit name"
                                                 />
                                                 <Button
                                                     icon="pi pi-trash"
-                                                    className="p-button-sm p-button-text p-button-danger"
+                                                    className="p-button-sm p-button-text p-button-danger ml-2"
                                                     onClick={() => confirmDeleteBlock(block.name)}
                                                     tooltip="Delete block"
                                                 />
@@ -873,8 +976,20 @@ const BlocksView = () => {
                                             />
                                             <div className="flex justify-content-end mt-2">
                                                 <Button
+                                                    icon="pi pi-check-square"
+                                                    className="p-button-sm p-button-success ml-2"
+                                                    onClick={() => generateTasks(block.name)}
+                                                    tooltip="Generate tasks"
+                                                />
+                                                <Button
+                                                    icon="pi pi-microchip-ai"
+                                                    className="p-button-sm p-button-success ml-2"
+                                                    onClick={() => enhanceDescription(block.name)}
+                                                    tooltip="Enhance description"
+                                                />
+                                                <Button
                                                     icon="pi pi-check"
-                                                    className="p-button-sm p-button-success"
+                                                    className="p-button-sm p-button-success ml-2"
                                                     onClick={() => saveDescription(block.name)}
                                                     tooltip="Save description"
                                                 />
@@ -896,7 +1011,7 @@ const BlocksView = () => {
                                             </div>
                                             <Button
                                                 icon="pi pi-pencil"
-                                                className="p-button-sm p-button-text"
+                                                className="p-button-sm p-button-text ml-2"
                                                 onClick={() => startEditing(block)}
                                                 tooltip="Edit description"
                                             />
@@ -967,11 +1082,9 @@ const BlocksView = () => {
                                 <div className="task-list-container">
                                     {/* Task List Controls */}
                                     <div className="task-list-controls mb-2 flex justify-content-start">
-                                        <div className="flex gap-2">
                                             <Button
-                                                label="New Task"
                                                 icon="pi pi-plus"
-                                                className="p-button-sm"
+                                                className="p-button-sm ml-2"
                                                 onClick={() => {
                                                     setNewTaskText({
                                                         ...newTaskText,
@@ -980,23 +1093,40 @@ const BlocksView = () => {
                                                 }}
                                             />
                                             <Button
-                                                label="Go"
                                                 icon="pi pi-play"
-                                                className="p-button-sm p-button-success"
+                                                className="p-button-sm p-button-success ml-2"
                                                 onClick={() => executeSelectedTasks(block.name)}
                                                 disabled={areTasksRunning(block.name)}
                                             />
                                             <Button
-                                                label="Stop"
                                                 icon="pi pi-stop"
-                                                className="p-button-sm p-button-warning"
+                                                className="p-button-sm p-button-warning ml-2"
                                                 onClick={() => stopAllTasks(block.name)}
                                                 disabled={!areTasksRunning(block.name)}
                                             />
                                             <Button
-                                                label="Delete"
+                                                icon="pi pi-list"
+                                                className="p-button-sm p-button-danger ml-2"
+                                                onClick={() => {
+                                                    setSelectedTasks({
+                                                        ...selectedTasks,
+                                                        [block.name]: Array.from({length: block.todo_list.length}, (_, i) => i)
+                                                    })
+                                                }}
+                                            />
+                                            <Button
+                                                icon="pi pi-times-circle"
+                                                className="p-button-sm p-button-danger ml-2"
+                                                onClick={() => {
+                                                    setSelectedTasks({
+                                                        ...selectedTasks,
+                                                        [block.name]: []
+                                                    });
+                                                }}
+                                            />
+                                            <Button
                                                 icon="pi pi-trash"
-                                                className="p-button-sm p-button-danger"
+                                                className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
                                                     const tasksToDelete = selectedTasks[block.name] || [];
                                                     if (tasksToDelete.length > 0) {
@@ -1005,7 +1135,7 @@ const BlocksView = () => {
                                                 }}
                                                 disabled={!selectedTasks[block.name]?.length}
                                             />
-                                        </div>
+
                                     </div>
 
                                     {/* New Task Input */}
@@ -1022,13 +1152,13 @@ const BlocksView = () => {
                                             />
                                             <Button
                                                 icon="pi pi-check"
-                                                className="p-button-sm p-button-success"
+                                                className="p-button-sm p-button-success ml-2"
                                                 onClick={() => addNewTask(block.name)}
                                                 disabled={!newTaskText[block.name]?.trim()}
                                             />
                                             <Button
                                                 icon="pi pi-times"
-                                                className="p-button-sm p-button-danger"
+                                                className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => setNewTaskText({
                                                     ...newTaskText,
                                                     [block.name]: undefined
@@ -1070,13 +1200,13 @@ const BlocksView = () => {
                                                                 <div className="flex justify-content-end mt-2 gap-2">
                                                                     <Button
                                                                         icon="pi pi-check"
-                                                                        className="p-button-sm p-button-success"
+                                                                        className="p-button-sm p-button-success ml-2"
                                                                         onClick={() => saveEditedTask(block.name, index)}
                                                                         disabled={!editingTaskText[`${block.name}-${index}`]?.trim()}
                                                                     />
                                                                     <Button
                                                                         icon="pi pi-times"
-                                                                        className="p-button-sm p-button-danger"
+                                                                        className="p-button-sm p-button-danger ml-2"
                                                                         onClick={cancelEditingTask}
                                                                     />
                                                                 </div>

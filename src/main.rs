@@ -13,13 +13,14 @@ mod project_handlers;
 use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
-    delete_block_handler, add_todo_handler, remove_todo_handler, generate_sample_config_handler
+    delete_block_handler, add_todo_handler, remove_todo_handler, generate_sample_config_handler, enhance_block_handler
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
     ProjectAppState, get_project_config_handler, update_project_config_handler, test_git_connection_handler,
     check_project_config_handler
 };
+use crate::block_handlers::generate_tasks_block_handler;
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
@@ -88,7 +89,7 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    // Create the app states    
+    // Create the app states
     let app_state = web::Data::new(AppState {
         block_manager: block_manager.clone(),
         project_manager: project_manager.clone(),
@@ -112,6 +113,8 @@ async fn main() -> std::io::Result<()> {
                     .route("/blocks/{name}", web::delete().to(delete_block_handler))
                     .route("/blocks/{name}/todo", web::post().to(add_todo_handler))
                     .route("/blocks/{name}/todo/{index}", web::delete().to(remove_todo_handler))
+                    .route("/blocks/{name}/enhance", web::put().to(enhance_block_handler))
+                    .route("/blocks/{name}/generate-tasks", web::put().to(generate_tasks_block_handler))
                     .route("/generate-sample", web::post().to(generate_sample_config_handler))
                     // Project routes
                     .route("/project", web::get().to(get_project_config_handler))

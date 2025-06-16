@@ -8,6 +8,7 @@
     "preview": "cd frontend && npm run preview",
     "install-frontend": "cd frontend && npm install"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "primeicons": "^7.0.0"
+  }
 }

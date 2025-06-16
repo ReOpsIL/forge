@@ -41,12 +41,17 @@ pub async fn add_block_handler(block: web::Json<Block>, data: web::Data<AppState
 async fn enhance_block_with_llm(mut block: Block) -> Result<Block, String> {
     // Enhance the description using LLM
     let enhanced_description = enhance_description(&block.description).await?;
-
-    // Generate tasks based on the enhanced description
-    let generated_tasks = generate_tasks(&enhanced_description).await?;
-
+    
     // Update the block with the enhanced description
     block.description = enhanced_description;
+    
+    Ok(block)
+}
+
+async fn generate_tasks_with_llm(mut block: Block) -> Result<Block, String> {
+
+    // Generate tasks based on the enhanced description
+    let generated_tasks = generate_tasks(&block.description).await?;
 
     // Add the generated tasks to the block's todo list
     for task in generated_tasks {
@@ -56,34 +61,65 @@ async fn enhance_block_with_llm(mut block: Block) -> Result<Block, String> {
     Ok(block)
 }
 
-// API endpoint to update an existing block
-pub async fn update_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
+
+pub async fn enhance_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
     let mut block = block.into_inner();
-
-    // Get the original block to check if description has changed
-    let original_blocks = match data.block_manager.get_blocks() {
-        Ok(blocks) => blocks,
-        Err(e) => return HttpResponse::InternalServerError().body(e),
-    };
-
-    let original_block = original_blocks.iter().find(|b| b.block_id == block.block_id);
-
-    // If the description has changed, enhance it with LLM
-    if let Some(original_block) = original_block {
-        if original_block.description != block.description {
-            // Enhance the block with LLM
-            match enhance_block_with_llm(block.clone()).await {
-                Ok(enhanced_block) => {
-                    block = enhanced_block;
-                },
-                Err(e) => {
-                    println!("Failed to enhance block with LLM: {}", e);
-                    // Continue with the original update even if LLM enhancement fails
-                }
-            }
+    
+    match enhance_block_with_llm(block.clone()).await {
+        Ok(enhanced_block) => {
+            block = enhanced_block;
+        },
+        Err(e) => {
+            println!("Failed to enhance block with LLM: {}", e);
+            // Continue with the original update even if LLM enhancement fails
         }
     }
 
+
+    // Update the block in the database
+    match data.block_manager.update_block(block) {
+        Ok(_) => {
+            // Save the updated blocks to the file
+            if let Err(e) = data.block_manager.save_blocks_to_file() {
+                return HttpResponse::InternalServerError().body(e);
+            }
+            HttpResponse::Ok().body("Block updated successfully")
+        },
+        Err(e) => HttpResponse::BadRequest().body(e),
+    }
+}
+
+pub async fn generate_tasks_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
+    let mut block = block.into_inner();
+    
+    match generate_tasks_with_llm(block.clone()).await {
+        Ok(block_with_tasks) => {
+            block = block_with_tasks;
+        },
+        Err(e) => {
+            println!("Failed to enhance block with LLM: {}", e);
+            // Continue with the original update even if LLM enhancement fails
+        }
+    }
+
+    // Update the block in the database
+    match data.block_manager.update_block(block) {
+        Ok(_) => {
+            // Save the updated blocks to the file
+            if let Err(e) = data.block_manager.save_blocks_to_file() {
+                return HttpResponse::InternalServerError().body(e);
+            }
+            HttpResponse::Ok().body("Block updated successfully")
+        },
+        Err(e) => HttpResponse::BadRequest().body(e),
+    }
+}
+
+
+// API endpoint to update an existing block
+pub async fn update_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
+    let block = block.into_inner();
+    
     // Update the block in the database
     match data.block_manager.update_block(block) {
         Ok(_) => {
