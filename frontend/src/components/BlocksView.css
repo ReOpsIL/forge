@@ -126,11 +126,62 @@
 /* Task edit textarea styles */
 .task-edit-textarea {
   min-height: 60px !important;
-  width: 100% !important;
   min-width: 100% !important;
   flex: 1 1 auto !important;
   resize: both !important;
   overflow: hidden !important;
   transition: height 0.2s !important;
   box-sizing: border-box !important;
+}
+
+/* Block description styles */
+.block-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 4.5em;
+  line-height: 1.5em;
+}
+
+/* Override markdown styles to ensure they respect our block-description limits */
+.block-description > div {
+  overflow: hidden;
+  max-height: inherit;
+}
+
+/* Ensure markdown content has proper color in dark theme */
+.block-description p,
+.block-description h1,
+.block-description h2,
+.block-description h3,
+.block-description h4,
+.block-description h5,
+.block-description h6,
+.block-description ul,
+.block-description ol,
+.block-description li {
+  color: inherit;
+  margin: 0;
+}
+
+/* Monaco editor container styles */
+.monaco-editor-container {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Ensure the editor has proper contrast in dark theme */
+.monaco-editor {
+  border: 1px solid #333;
+}
+
+/* Custom styles for monaco editor */
+.monaco-editor .margin {
+  background-color: #1e1e2f;
+}
+
+.monaco-editor .monaco-editor-background {
+  background-color: #1e1e2f;
 }

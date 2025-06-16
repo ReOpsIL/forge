@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Menubar } from 'primereact/menubar'
 import BlocksView from './components/BlocksView'
 import FlowView from './components/FlowView'
+import ProjectView from './components/ProjectView'
 import './App.css'
 
 function App() {
@@ -21,6 +22,13 @@ function App() {
       command: () => {
         setActiveView('flow')
         console.log('Flow clicked')
+      }
+    },
+    {
+      label: 'Project',
+      icon: 'pi pi-fw pi-cog',
+      command: () => {
+        setActiveView('project')
       }
     },
     {
@@ -46,6 +54,8 @@ function App() {
         return <BlocksView />
       case 'flow':
         return <FlowView />
+      case 'project':
+        return <ProjectView />
       case 'help':
         return (
           <div className="content">

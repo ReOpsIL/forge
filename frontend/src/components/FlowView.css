@@ -33,12 +33,6 @@
   color: #00f2ff;
 }
 
-.flow-node-description {
-  font-size: 12px;
-  margin-bottom: 10px;
-  color: #ccc;
-}
-
 .flow-node-io {
   font-size: 12px;
   border-top: 1px solid #333;

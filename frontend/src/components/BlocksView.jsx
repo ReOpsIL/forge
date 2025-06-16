@@ -10,6 +10,8 @@ import { Checkbox } from 'primereact/checkbox';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
+import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
 import './BlocksView.css';
 
 const BlocksView = () => {
@@ -23,7 +25,10 @@ const BlocksView = () => {
   const [editingTask, setEditingTask] = useState({});
   const [editingTaskText, setEditingTaskText] = useState({});
   const [showNewBlockDialog, setShowNewBlockDialog] = useState(false);
+  const [showMarkdownEditorDialog, setShowMarkdownEditorDialog] = useState(false);
+  const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
   const [newBlock, setNewBlock] = useState({
+    block_id: '',
     name: '',
     description: '',
     inputs: [],
@@ -203,10 +208,13 @@ const BlocksView = () => {
   };
 
   const startEditing = (block) => {
+    // Set the current editing block and show the markdown editor dialog
+    setCurrentEditingBlock(block);
     setEditingDescription({
       ...editingDescription,
       [block.name]: block.description
     });
+    setShowMarkdownEditorDialog(true);
   };
 
   // Task selection handling
@@ -540,6 +548,7 @@ const BlocksView = () => {
 
       // Reset the new block form
       setNewBlock({
+        block_id: '',
         name: '',
         description: '',
         inputs: [],
@@ -627,6 +636,60 @@ const BlocksView = () => {
     <div className="blocks-container">
       <Toast ref={toastRef} />
       <ConfirmDialog />
+
+      {/* Markdown Editor Dialog */}
+      <Dialog
+        header="Edit Block Description"
+        visible={showMarkdownEditorDialog}
+        style={{ width: '60vw' }}
+        onHide={() => setShowMarkdownEditorDialog(false)}
+        footer={
+          <div>
+            <Button
+              label="Cancel"
+              icon="pi pi-times"
+              className="p-button-text"
+              onClick={() => {
+                setShowMarkdownEditorDialog(false);
+                setCurrentEditingBlock(null);
+              }}
+            />
+            <Button
+              label="Save"
+              icon="pi pi-check"
+              className="p-button-success"
+              onClick={() => {
+                if (currentEditingBlock) {
+                  saveDescription(currentEditingBlock.name);
+                  setShowMarkdownEditorDialog(false);
+                  setCurrentEditingBlock(null);
+                }
+              }}
+            />
+          </div>
+        }
+      >
+        <div className="monaco-editor-container">
+          <Editor
+            height="400px"
+            defaultLanguage="markdown"
+            theme="vs-dark"
+            value={currentEditingBlock ? editingDescription[currentEditingBlock.name] : ''}
+            onChange={(value) => {
+              if (currentEditingBlock) {
+                handleDescriptionChange(currentEditingBlock.name, value || '');
+              }
+            }}
+            options={{
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              lineNumbers: 'on',
+              automaticLayout: true
+            }}
+          />
+        </div>
+      </Dialog>
       <div className="flex justify-content-between align-items-center mb-3">
         <h2>Blocks</h2>
         <Button 
@@ -822,7 +885,9 @@ const BlocksView = () => {
                     </div>
                   ) : (
                     <>
-                      <span className="mr-2">{block.description}</span>
+                      <div className="block-description mr-2">
+                        <ReactMarkdown>{block.description}</ReactMarkdown>
+                      </div>
                       <Button 
                         icon="pi pi-pencil" 
                         className="p-button-sm p-button-text" 
@@ -983,9 +1048,8 @@ const BlocksView = () => {
                                 <InputTextarea
                                   value={editingTaskText[`${block.name}-${index}`]}
                                   onChange={(e) => handleTaskTextChange(block.name, index, e.target.value)}
-                                  className="w-full task-edit-textarea"
+                                  className="task-edit-textarea"
                                   autoFocus
-                                  autoResize
                                   rows={3}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter' && e.ctrlKey) {

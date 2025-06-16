@@ -49,7 +49,6 @@ const FlowView = () => {
           label: (
             <div>
               <div className="flow-node-title">{block.name}</div>
-              <div className="flow-node-description">{block.description}</div>
               <div className="flow-node-io">
                 <div>Inputs: {block.inputs.join(', ')}</div>
                 <div>Outputs: {block.outputs.join(', ')}</div>
