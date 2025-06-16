@@ -4,13 +4,15 @@ use std::sync::Arc;
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::Block;
 use crate::llm_handler::{enhance_description, generate_tasks};
+use crate::project_config::ProjectConfigManager;
 
 // Define the config file path
-pub const CONFIG_FILE: &str = "blocks_config.json";
+pub const BLOCK_CONFIG_FILE: &str = "blocks_config.json";
 
-// Create a data structure to hold the BlockConfigManager
+// Create a data structure to hold the BlockConfigManager and ProjectConfigManager
 pub struct AppState {
     pub block_manager: Arc<BlockConfigManager>,
+    pub project_manager: Arc<ProjectConfigManager>,
 }
 
 // API endpoint to get blocks
@@ -142,7 +144,7 @@ pub async fn remove_todo_handler(path: web::Path<(String, usize)>, data: web::Da
 
 // API endpoint to generate a new sample config
 pub async fn generate_sample_config_handler() -> impl Responder {
-    match generate_sample_config(CONFIG_FILE) {
+    match generate_sample_config(BLOCK_CONFIG_FILE) {
         Ok(_) => HttpResponse::Ok().body("Sample config generated successfully"),
         Err(e) => HttpResponse::InternalServerError().body(format!("Failed to generate sample config: {}", e)),
     }

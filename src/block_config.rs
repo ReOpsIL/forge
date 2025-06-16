@@ -286,6 +286,11 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
     // Serialize the blocks to JSON
     let json = serde_json::to_string_pretty(&blocks)?;
 
+    // Create the directory if it doesn't exist
+    if let Some(parent) = Path::new(filename).parent() {
+        fs::create_dir_all(parent)?;
+    }
+
     // Write to the file
     let mut file = fs::File::create(filename)?;
     file.write_all(json.as_bytes())?;

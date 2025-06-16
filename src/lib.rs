@@ -4,3 +4,4 @@ pub mod models;
 pub mod block_config;
 pub mod block_handlers;
 pub mod llm_handler;
+pub mod project_config;

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
+use std::{env, fs};
 use std::io::{self, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -37,14 +37,18 @@ impl ProjectConfigManager {
     }
 
     pub fn load_config(&self) -> io::Result<ProjectConfig> {
-        let path = Path::new(&self.config_file);
+        let config_path = Path::new(&self.config_file);
         
+        //Print the current working directory:
+        //let cwd_path = env::current_dir()?;
+        //println!("The current directory is {}", cwd_path.display());
+
         // If the file doesn't exist, return the default config
-        if !path.exists() {
+        if !config_path.exists() {
             return Ok(ProjectConfig::default());
         }
         
-        let config_str = fs::read_to_string(path)?;
+        let config_str = fs::read_to_string(config_path)?;
         let config: ProjectConfig = serde_json::from_str(&config_str)?;
         
         // Update the internal config

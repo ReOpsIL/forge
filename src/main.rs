@@ -12,12 +12,13 @@ mod project_config;
 mod project_handlers;
 use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_config};
 use block_handlers::{
-    AppState, CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
+    AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
     delete_block_handler, add_todo_handler, remove_todo_handler, generate_sample_config_handler
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
-    ProjectAppState, get_project_config_handler, update_project_config_handler, test_git_connection_handler
+    ProjectAppState, get_project_config_handler, update_project_config_handler, test_git_connection_handler,
+    check_project_config_handler
 };
 
 // Index handler to serve the frontend
@@ -32,16 +33,48 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting server at http://127.0.0.1:8080");
 
+    // Create a ProjectConfigManager instance
+    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+
+    // Load project configuration
+    let project_config = match project_manager.load_config() {
+        Ok(config) => {
+            println!("Project configuration loaded successfully from {}", PROJECT_CONFIG_FILE);
+            config
+        },
+        Err(e) => {
+            println!("Failed to load project configuration from {}: {}", PROJECT_CONFIG_FILE, e);
+            println!("A default configuration will be created when saved for the first time.");
+            project_config::ProjectConfig::default()
+        }
+    };
+
+    // Determine the blocks config file path based on project home directory
+    let blocks_config_path = if !project_config.project_home_directory.is_empty() {
+        let project_dir = std::path::Path::new(&project_config.project_home_directory);
+        if project_dir.exists() {
+            let blocks_config_path = project_dir.join(BLOCK_CONFIG_FILE);
+            println!("Using blocks config path: {}", blocks_config_path.display());
+            blocks_config_path.to_string_lossy().to_string()
+        } else {
+            println!("Project home directory does not exist, using default blocks config path");
+            BLOCK_CONFIG_FILE.to_string()
+        }
+    } else {
+        println!("Project home directory not set, using default blocks config path");
+        BLOCK_CONFIG_FILE.to_string()
+    };
+
     // Create a BlockConfigManager instance
-    let block_manager = Arc::new(BlockConfigManager::new(CONFIG_FILE));
+    let block_manager = Arc::new(BlockConfigManager::new(&blocks_config_path));
 
     // Load blocks from the config file
     match block_manager.load_blocks_from_file() {
-        Ok(_) => println!("Blocks loaded successfully from {}", CONFIG_FILE),
+        Ok(_) => println!("Blocks loaded successfully from {}", blocks_config_path),
         Err(e) => {
-            println!("Failed to load blocks from {}: {}", CONFIG_FILE, e);
+            println!("Failed to load blocks from {}: {}", blocks_config_path, e);
             println!("Generating a sample config file...");
-            if let Err(e) = generate_sample_config(CONFIG_FILE) {
+            if let Err(e) = generate_sample_config(&blocks_config_path) {
                 println!("Failed to generate sample config: {}", e);
             } else {
                 println!("Sample config generated successfully");
@@ -55,21 +88,10 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    // Create a ProjectConfigManager instance
-    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
-
-    // Load project configuration
-    match project_manager.load_config() {
-        Ok(_) => println!("Project configuration loaded successfully from {}", PROJECT_CONFIG_FILE),
-        Err(e) => {
-            println!("Failed to load project configuration from {}: {}", PROJECT_CONFIG_FILE, e);
-            println!("A default configuration will be created when saved for the first time.");
-        }
-    }
-
-    // Create the app states
-    let block_app_state = web::Data::new(AppState {
+    // Create the app states    
+    let app_state = web::Data::new(AppState {
         block_manager: block_manager.clone(),
+        project_manager: project_manager.clone(),
     });
 
     let project_app_state = web::Data::new(ProjectAppState {
@@ -78,7 +100,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(block_app_state.clone())
+            .app_data(app_state.clone())
             .app_data(project_app_state.clone())
             // API routes
             .service(
@@ -95,6 +117,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/project", web::get().to(get_project_config_handler))
                     .route("/project", web::put().to(update_project_config_handler))
                     .route("/project/test-git-connection", web::post().to(test_git_connection_handler))
+                    .route("/project/check-config", web::get().to(check_project_config_handler))
             )
 
             // Serve static files from the frontend/dist directory

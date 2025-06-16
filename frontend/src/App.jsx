@@ -1,4 +1,7 @@
-import {useState} from 'react'
+import {useState, useEffect, useRef} from 'react'
+import {Toast} from 'primereact/toast'
+import {Dialog} from 'primereact/dialog'
+import {Button} from 'primereact/button'
 import {Menubar} from 'primereact/menubar'
 import BlocksView from './components/BlocksView'
 import FlowView from './components/FlowView'
@@ -7,6 +10,36 @@ import './App.css'
 
 function App() {
     const [activeView, setActiveView] = useState('home')
+    const [projectConfigured, setProjectConfigured] = useState(true)
+    const [showConfigDialog, setShowConfigDialog] = useState(false)
+    const [configMessage, setConfigMessage] = useState('')
+    const toastRef = useRef(null)
+
+    useEffect(() => {
+        checkProjectConfig()
+    }, [])
+
+    const checkProjectConfig = async () => {
+        try {
+            const response = await fetch('/api/project/check-config')
+            if (!response.ok) {
+                throw new Error('Failed to check project configuration')
+            }
+
+            const data = await response.json()
+            setProjectConfigured(data.configured)
+            setConfigMessage(data.message)
+
+            if (!data.configured) {
+                setShowConfigDialog(true)
+            }
+        } catch (error) {
+            console.error('Error checking project configuration:', error)
+            setProjectConfigured(false)
+            setConfigMessage('Error checking project configuration')
+            setShowConfigDialog(true)
+        }
+    }
 
     const items = [
         {
@@ -19,16 +52,25 @@ function App() {
         {
             label: 'Blocks',
             icon: 'pi pi-fw pi-th-large',
+            disabled: !projectConfigured,
             command: () => {
-                setActiveView('blocks')
+                if (projectConfigured) {
+                    setActiveView('blocks')
+                } else {
+                    setShowConfigDialog(true)
+                }
             }
         },
         {
             label: 'Flow',
             icon: 'pi pi-fw pi-sitemap',
+            disabled: !projectConfigured,
             command: () => {
-                setActiveView('flow')
-                console.log('Flow clicked')
+                if (projectConfigured) {
+                    setActiveView('flow')
+                } else {
+                    setShowConfigDialog(true)
+                }
             }
         }
     ]
@@ -60,6 +102,34 @@ function App() {
 
     return (
         <div className="app-container">
+            <Toast ref={toastRef} />
+            <Dialog
+                header="Project Configuration Required"
+                visible={showConfigDialog}
+                style={{ width: '50vw' }}
+                onHide={() => setShowConfigDialog(false)}
+                footer={
+                    <div>
+                        <Button
+                            label="Configure Project"
+                            icon="pi pi-cog"
+                            onClick={() => {
+                                setActiveView('project')
+                                setShowConfigDialog(false)
+                            }}
+                        />
+                        <Button
+                            label="Close"
+                            icon="pi pi-times"
+                            className="p-button-text"
+                            onClick={() => setShowConfigDialog(false)}
+                        />
+                    </div>
+                }
+            >
+                <p>{configMessage}</p>
+                <p>Please configure your project settings before accessing Blocks and Flow views.</p>
+            </Dialog>
             <Menubar model={items}/>
             {renderContent()}
         </div>
