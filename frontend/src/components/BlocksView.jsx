@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {Card} from 'primereact/card';
 import {InputTextarea} from 'primereact/inputtextarea';
 import {Button} from 'primereact/button';
@@ -26,7 +26,12 @@ const BlocksView = () => {
     const [editingTaskText, setEditingTaskText] = useState({});
     const [showNewBlockDialog, setShowNewBlockDialog] = useState(false);
     const [showMarkdownEditorDialog, setShowMarkdownEditorDialog] = useState(false);
+    const [showLoadingDialog, setShowLoadingDialog] = useState(false);
+    const [showAutoCompleteDialog, setShowAutoCompleteDialog] = useState(false);
+    const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
+    const [isAutoCompleteLoading, setIsAutoCompleteLoading] = useState(false);
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
+    const typingTimeoutRef = useRef(null);
     const [newBlock, setNewBlock] = useState({
         block_id: '',
         name: '',
@@ -49,6 +54,85 @@ const BlocksView = () => {
     // Create a ref for the toast
     const toastRef = useRef(null);
 
+    // Function to fetch auto-complete suggestions
+    const fetchAutoCompleteSuggestion = useCallback(async (description) => {
+        if (!description || description.trim() === '') return;
+
+        setIsAutoCompleteLoading(true);
+        try {
+            const response = await fetch('/api/blocks/auto-complete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(description),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch auto-complete suggestion');
+            }
+
+            const data = await response.json();
+            setAutoCompleteSuggestion(data.suggestion);
+            setShowAutoCompleteDialog(true);
+        } catch (error) {
+            console.error('Error fetching auto-complete suggestion:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to fetch auto-complete suggestion',
+                life: 3000
+            });
+        } finally {
+            setIsAutoCompleteLoading(false);
+        }
+    }, []);
+
+    // Function to accept the auto-complete suggestion
+    const acceptAutoCompleteSuggestion = useCallback(() => {
+        if (currentEditingBlock && autoCompleteSuggestion) {
+            setEditingDescription({
+                ...editingDescription,
+                [currentEditingBlock.name]: autoCompleteSuggestion
+            });
+            setShowAutoCompleteDialog(false);
+            setAutoCompleteSuggestion('');
+
+            // Show success message
+            toastRef.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Auto-complete suggestion applied',
+                life: 3000
+            });
+        }
+    }, [currentEditingBlock, autoCompleteSuggestion, editingDescription]);
+
+    // Function to reject the auto-complete suggestion
+    const rejectAutoCompleteSuggestion = useCallback(() => {
+        setShowAutoCompleteDialog(false);
+        setAutoCompleteSuggestion('');
+    }, []);
+
+    // Debounced function to handle description changes
+    const debouncedHandleDescriptionChange = useCallback((blockName, newDescription) => {
+        // Update the description immediately
+        setEditingDescription({
+            ...editingDescription,
+            [blockName]: newDescription
+        });
+
+        // Clear any existing timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Set a new timeout to fetch auto-complete suggestions after 2 seconds of inactivity
+        typingTimeoutRef.current = setTimeout(() => {
+            fetchAutoCompleteSuggestion(newDescription);
+        }, 2000);
+    }, [editingDescription, fetchAutoCompleteSuggestion]);
+
     const fetchBlocks = async () => {
         try {
             setLoading(true);
@@ -65,12 +149,8 @@ const BlocksView = () => {
         }
     };
 
-    const handleDescriptionChange = (blockName, newDescription) => {
-        setEditingDescription({
-            ...editingDescription,
-            [blockName]: newDescription
-        });
-    };
+    // This function is now replaced by debouncedHandleDescriptionChange
+    const handleDescriptionChange = debouncedHandleDescriptionChange;
 
     const saveDescription = async (blockName) => {
         // Find the block to update
@@ -82,6 +162,9 @@ const BlocksView = () => {
             ...blockToUpdate,
             description: editingDescription[blockName]
         };
+
+        // Show loading dialog
+        setShowLoadingDialog(true);
 
         try {
             // Send the updated block to the server
@@ -97,13 +180,8 @@ const BlocksView = () => {
                 throw new Error('Failed to update block description');
             }
 
-            // Update the blocks state
-            setBlocks(blocks.map(block => {
-                if (block.name === blockName) {
-                    return updatedBlock;
-                }
-                return block;
-            }));
+            // Reload blocks configuration
+            await fetchBlocks();
 
             // Clear the editing state
             setEditingDescription({
@@ -126,6 +204,9 @@ const BlocksView = () => {
                 detail: 'Failed to update block description',
                 life: 3000
             });
+        } finally {
+            // Hide loading dialog
+            setShowLoadingDialog(false);
         }
     };
 
@@ -133,6 +214,9 @@ const BlocksView = () => {
         // Find the block to update
         const blockToEnhance = blocks.find(block => block.name === blockName);
         if (!blockToEnhance) return;
+
+        // Show loading dialog
+        setShowLoadingDialog(true);
 
         try {
             // Send the updated block to the server
@@ -148,13 +232,8 @@ const BlocksView = () => {
                 throw new Error('Failed to update block description');
             }
 
-            // Update the blocks state
-            setBlocks(blocks.map(block => {
-                if (block.name === blockName) {
-                    return blockToEnhance;
-                }
-                return block;
-            }));
+            // Reload blocks configuration
+            await fetchBlocks();
 
             // Clear the editing state
             setEditingDescription({
@@ -177,6 +256,9 @@ const BlocksView = () => {
                 detail: 'Failed to enhance block description',
                 life: 3000
             });
+        } finally {
+            // Hide loading dialog
+            setShowLoadingDialog(false);
         }
     };
 
@@ -184,6 +266,8 @@ const BlocksView = () => {
         // Find the block to update
         const blockToEnhance = blocks.find(block => block.name === blockName);
         if (!blockToEnhance) return;
+        // Show loading dialog
+        setShowLoadingDialog(true);
 
         try {
             // Send the updated block to the server
@@ -199,13 +283,8 @@ const BlocksView = () => {
                 throw new Error('Failed to update block description');
             }
 
-            // Update the blocks state
-            setBlocks(blocks.map(block => {
-                if (block.name === blockName) {
-                    return blockToEnhance;
-                }
-                return block;
-            }));
+            // Reload blocks configuration
+            await fetchBlocks();
 
             // Clear the editing state
             setEditingDescription({
@@ -228,6 +307,9 @@ const BlocksView = () => {
                 detail: 'Failed to enhance block description',
                 life: 3000
             });
+        } finally {
+            // Hide loading dialog
+            setShowLoadingDialog(false);
         }
     };
 
@@ -739,6 +821,59 @@ const BlocksView = () => {
         <div className="blocks-container">
             <Toast ref={toastRef}/>
             <ConfirmDialog/>
+
+            {/* Loading Dialog */}
+            <Dialog
+                header="Processing"
+                visible={showLoadingDialog}
+                style={{
+                    width: '300px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '150px'
+                }}
+                closable={false}
+                modal={true}
+                showHeader={false}
+            >
+                <div className="flex align-items-center justify-content-center h-full">
+                    <i className="pi pi-spin pi-spinner" style={{fontSize: '2rem', marginRight: '0.5rem'}}></i>
+                    <span>Please wait...</span>
+                </div>
+            </Dialog>
+
+            {/* Auto-Complete Dialog */}
+            <Dialog
+                header="Auto-Complete Suggestion"
+                visible={showAutoCompleteDialog}
+                style={{width: '60vw'}}
+                onHide={rejectAutoCompleteSuggestion}
+                footer={
+                    <div>
+                        <Button
+                            label="Reject"
+                            icon="pi pi-times"
+                            className="p-button-text"
+                            onClick={rejectAutoCompleteSuggestion}
+                        />
+                        <Button
+                            label="Accept"
+                            icon="pi pi-check"
+                            className="p-button-success"
+                            onClick={acceptAutoCompleteSuggestion}
+                        />
+                    </div>
+                }
+            >
+                <div className="p-fluid">
+                    <div className="field">
+                        <label>The AI suggests the following enhanced description:</label>
+                        <div className="p-2 border-1 surface-border border-round mt-2" style={{backgroundColor: '#FFFFFF19'}}>
+                            <ReactMarkdown>{autoCompleteSuggestion}</ReactMarkdown>
+                        </div>
+                    </div>
+                </div>
+            </Dialog>
 
             {/* Markdown Editor Dialog */}
             <Dialog

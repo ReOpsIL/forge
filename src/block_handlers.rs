@@ -1,10 +1,17 @@
 use actix_web::{web, Responder, HttpResponse};
 use std::sync::Arc;
+use serde::Serialize;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::Block;
-use crate::llm_handler::{enhance_description, generate_tasks};
+use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks};
 use crate::project_config::ProjectConfigManager;
+
+// Define a response type for auto-complete suggestions
+#[derive(Serialize)]
+pub struct AutoCompleteResponse {
+    pub suggestion: String,
+}
 
 // Define the config file path
 pub const BLOCK_CONFIG_FILE: &str = "blocks_config.json";
@@ -41,10 +48,10 @@ pub async fn add_block_handler(block: web::Json<Block>, data: web::Data<AppState
 async fn enhance_block_with_llm(mut block: Block) -> Result<Block, String> {
     // Enhance the description using LLM
     let enhanced_description = enhance_description(&block.description).await?;
-    
+
     // Update the block with the enhanced description
     block.description = enhanced_description;
-    
+
     Ok(block)
 }
 
@@ -64,7 +71,7 @@ async fn generate_tasks_with_llm(mut block: Block) -> Result<Block, String> {
 
 pub async fn enhance_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
     let mut block = block.into_inner();
-    
+
     match enhance_block_with_llm(block.clone()).await {
         Ok(enhanced_block) => {
             block = enhanced_block;
@@ -91,7 +98,7 @@ pub async fn enhance_block_handler(block: web::Json<Block>, data: web::Data<AppS
 
 pub async fn generate_tasks_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
     let mut block = block.into_inner();
-    
+
     match generate_tasks_with_llm(block.clone()).await {
         Ok(block_with_tasks) => {
             block = block_with_tasks;
@@ -119,7 +126,7 @@ pub async fn generate_tasks_block_handler(block: web::Json<Block>, data: web::Da
 // API endpoint to update an existing block
 pub async fn update_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
     let block = block.into_inner();
-    
+
     // Update the block in the database
     match data.block_manager.update_block(block) {
         Ok(_) => {
@@ -183,5 +190,23 @@ pub async fn generate_sample_config_handler() -> impl Responder {
     match generate_sample_config(BLOCK_CONFIG_FILE) {
         Ok(_) => HttpResponse::Ok().body("Sample config generated successfully"),
         Err(e) => HttpResponse::InternalServerError().body(format!("Failed to generate sample config: {}", e)),
+    }
+}
+
+// API endpoint for auto-complete suggestions
+pub async fn auto_complete_handler(description: web::Json<String>) -> impl Responder {
+    let description = description.into_inner();
+
+    match auto_complete_description(&description).await {
+        Ok(enhanced_description) => {
+            let response = AutoCompleteResponse {
+                suggestion: enhanced_description,
+            };
+            HttpResponse::Ok().json(response)
+        },
+        Err(e) => {
+            println!("Failed to generate auto-complete suggestion: {}", e);
+            HttpResponse::InternalServerError().body(format!("Failed to generate auto-complete suggestion: {}", e))
+        }
     }
 }
