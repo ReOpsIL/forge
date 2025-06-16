@@ -1,68 +1,68 @@
 .app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .content {
-  flex: 1;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background-color: #3c3f41; /* Slightly lighter grey for content area */
-  color: #a9b7c6; /* Light grey text */
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #3c3f41; /* Slightly lighter grey for content area */
+    color: #a9b7c6; /* Light grey text */
 }
 
 /* PrimeReact Menubar customization - RustRover Dark Theme style */
 .p-menubar {
-  border-radius: 0;
-  background-color: #2b2d30; /* Dark grey like RustRover */
-  border: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    border-radius: 0;
+    background-color: #2b2d30; /* Dark grey like RustRover */
+    border: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-menuitem-text,
 .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link .p-menuitem-icon {
-  color: #a9b7c6; /* Light grey text like RustRover */
+    color: #a9b7c6; /* Light grey text like RustRover */
 }
 
 .p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-link:not(.p-disabled):hover {
-  background-color: #383a3d; /* Slightly lighter grey for hover */
+    background-color: #383a3d; /* Slightly lighter grey for hover */
 }
 
 /* Active menu item */
 .p-menubar .p-menubar-root-list > .p-menuitem.p-highlight > .p-menuitem-link {
-  background-color: #383a3d;
+    background-color: #383a3d;
 }
 
 /* Additional RustRover Dark Theme styling */
 h1, h2, h3, h4, h5, h6 {
-  color: #d0d0d0; /* Slightly brighter than regular text */
-  font-weight: 500;
+    color: #d0d0d0; /* Slightly brighter than regular text */
+    font-weight: 500;
 }
 
 /* Button styling to match RustRover */
 .p-button {
-  background-color: #4e5254;
-  border: 1px solid #5e6060;
-  color: #d0d0d0;
+    background-color: #4e5254;
+    border: 1px solid #5e6060;
+    color: #d0d0d0;
 }
 
 .p-button:hover {
-  background-color: #5e6060;
-  border-color: #6e7070;
+    background-color: #5e6060;
+    border-color: #6e7070;
 }
 
 /* Input styling */
 .p-inputtext {
-  background-color: #3c3f41;
-  color: #a9b7c6;
-  border: 1px solid #5e6060;
+    background-color: #3c3f41;
+    color: #a9b7c6;
+    border: 1px solid #5e6060;
 }
 
 .p-inputtext:focus {
-  border-color: #6e7070;
-  box-shadow: 0 0 0 1px #6e7070;
+    border-color: #6e7070;
+    box-shadow: 0 0 0 1px #6e7070;
 }

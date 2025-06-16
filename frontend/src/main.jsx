@@ -10,7 +10,7 @@ import 'primeicons/primeicons.css'                                // icons
 import 'primeflex/primeflex.css'                                  // primeflex
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+    <React.StrictMode>
+        <App/>
+    </React.StrictMode>,
 )
