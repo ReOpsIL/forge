@@ -20,6 +20,8 @@ const BlocksView = () => {
   const [runningTasks, setRunningTasks] = useState({});
   const [newTaskText, setNewTaskText] = useState({});
   const [editingBlockName, setEditingBlockName] = useState({});
+  const [editingTask, setEditingTask] = useState({});
+  const [editingTaskText, setEditingTaskText] = useState({});
   const [showNewBlockDialog, setShowNewBlockDialog] = useState(false);
   const [newBlock, setNewBlock] = useState({
     name: '',
@@ -318,6 +320,92 @@ const BlocksView = () => {
       ...selectedTasks,
       [blockName]: []
     });
+  };
+
+  // Start editing a task
+  const startEditingTask = (blockName, taskIndex, taskText) => {
+    setEditingTask({
+      blockName,
+      taskIndex
+    });
+    setEditingTaskText({
+      ...editingTaskText,
+      [`${blockName}-${taskIndex}`]: taskText
+    });
+  };
+
+  // Handle task text change
+  const handleTaskTextChange = (blockName, taskIndex, newText) => {
+    setEditingTaskText({
+      ...editingTaskText,
+      [`${blockName}-${taskIndex}`]: newText
+    });
+  };
+
+  // Save edited task
+  const saveEditedTask = async (blockName, taskIndex) => {
+    const newText = editingTaskText[`${blockName}-${taskIndex}`];
+    if (!newText || newText.trim() === '') return;
+
+    // Find the block to update
+    const blockToUpdate = blocks.find(block => block.name === blockName);
+    if (!blockToUpdate) return;
+
+    try {
+      // Assuming there's a PUT endpoint for updating a task
+      const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/todo/${taskIndex}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newText),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task');
+      }
+
+      // Update the blocks state with the updated task
+      setBlocks(blocks.map(block => {
+        if (block.name === blockName) {
+          const updatedTodoList = [...block.todo_list];
+          updatedTodoList[taskIndex] = newText;
+          return {
+            ...block,
+            todo_list: updatedTodoList
+          };
+        }
+        return block;
+      }));
+
+      // Clear the editing state
+      setEditingTask({});
+      setEditingTaskText({
+        ...editingTaskText,
+        [`${blockName}-${taskIndex}`]: undefined
+      });
+
+      // Show success message
+      toastRef.current.show({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Task updated successfully',
+        life: 3000
+      });
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toastRef.current.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to update task',
+        life: 3000
+      });
+    }
+  };
+
+  // Cancel task editing
+  const cancelEditingTask = () => {
+    setEditingTask({});
   };
 
   // Confirm deletion of multiple tasks
@@ -807,7 +895,7 @@ const BlocksView = () => {
               <Panel header="Task List" toggleable>
                 <div className="task-list-container">
                   {/* Task List Controls */}
-                  <div className="task-list-controls mb-3 flex justify-content-between">
+                  <div className="task-list-controls mb-2 flex justify-content-start">
                     <div className="flex gap-2">
                       <Button 
                         label="New Task" 
@@ -840,10 +928,8 @@ const BlocksView = () => {
                         className="p-button-sm p-button-danger" 
                         onClick={() => {
                           const tasksToDelete = selectedTasks[block.name] || [];
-                          if (tasksToDelete.length > 1) {
+                          if (tasksToDelete.length > 0) {
                             confirmDeleteTasks(block.name);
-                          } else if (tasksToDelete.length === 1) {
-                            deleteSelectedTasks(block.name);
                           }
                         }}
                         disabled={!selectedTasks[block.name]?.length}
@@ -892,31 +978,49 @@ const BlocksView = () => {
                               className="mr-2"
                               disabled={isTaskRunning(block.name, index)}
                             />
-                            <span className={isTaskRunning(block.name, index) ? 'task-running' : ''}>
-                              {isTaskRunning(block.name, index) && (
-                                <i className="pi pi-spin pi-spinner mr-2 text-blue-500"></i>
-                              )}
-                              {todo}
-                            </span>
-                          </div>
-                          <div className="task-item-actions">
-                            <Button 
-                              icon="pi pi-play" 
-                              className="p-button-sm p-button-text p-button-success mr-1" 
-                              onClick={() => executeTask(block.name, index)}
-                              disabled={isTaskRunning(block.name, index)}
-                              tooltip="Execute task"
-                            />
-                            <Button 
-                              icon="pi pi-trash" 
-                              className="p-button-sm p-button-text p-button-danger" 
-                              onClick={() => {
-                                handleTaskSelection(block.name, index, true);
-                                deleteSelectedTasks(block.name);
-                              }}
-                              disabled={isTaskRunning(block.name, index)}
-                              tooltip="Delete task"
-                            />
+                            {editingTask.blockName === block.name && editingTask.taskIndex === index ? (
+                              <div className="flex flex-column w-full">
+                                <InputTextarea
+                                  value={editingTaskText[`${block.name}-${index}`]}
+                                  onChange={(e) => handleTaskTextChange(block.name, index, e.target.value)}
+                                  className="w-full task-edit-textarea"
+                                  autoFocus
+                                  autoResize
+                                  rows={3}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && e.ctrlKey) {
+                                      saveEditedTask(block.name, index);
+                                      e.preventDefault();
+                                    } else if (e.key === 'Escape') {
+                                      cancelEditingTask();
+                                    }
+                                  }}
+                                />
+                                <div className="flex justify-content-end mt-2 gap-2">
+                                  <Button
+                                    icon="pi pi-check"
+                                    className="p-button-sm p-button-success"
+                                    onClick={() => saveEditedTask(block.name, index)}
+                                    disabled={!editingTaskText[`${block.name}-${index}`]?.trim()}
+                                  />
+                                  <Button
+                                    icon="pi pi-times"
+                                    className="p-button-sm p-button-danger"
+                                    onClick={cancelEditingTask}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <span
+                                className={isTaskRunning(block.name, index) ? 'task-running' : 'task-text'}
+                                onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo)}
+                              >
+                                {isTaskRunning(block.name, index) && (
+                                  <i className="pi pi-spin pi-spinner mr-2 text-blue-500"></i>
+                                )}
+                                {todo}
+                              </span>
+                            )}
                           </div>
                         </li>
                       ))}
@@ -925,7 +1029,6 @@ const BlocksView = () => {
                     <p>No tasks</p>
                   )}
                 </div>
-                <ConfirmDialog />
               </Panel>
             </Card>
           </div>

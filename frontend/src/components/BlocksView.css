@@ -72,14 +72,6 @@
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-.task-item-actions {
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.task-item:hover .task-item-actions {
-  opacity: 1;
-}
 
 .task-running {
   color: var(--blue-400);
@@ -99,4 +91,46 @@
 /* Add some spacing between task list items */
 .task-item + .task-item {
   margin-top: 0.25rem;
+}
+
+/* Style for editable task text */
+.task-text {
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.task-text:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Make all buttons in Block cards half size */
+.block-card .p-button {
+  font-size: 0.5rem;
+  padding: 0.25rem 0.25rem;
+  height: auto;
+  min-height: 1.5rem;
+}
+
+.block-card .p-button .p-button-icon {
+  font-size: 0.75rem;
+}
+
+.block-card .p-button-sm {
+  font-size: 0.5rem;
+  padding: 0.25rem 0.25rem;
+  min-height: 1.25rem;
+}
+
+/* Task edit textarea styles */
+.task-edit-textarea {
+  min-height: 60px !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  flex: 1 1 auto !important;
+  resize: both !important;
+  overflow: hidden !important;
+  transition: height 0.2s !important;
+  box-sizing: border-box !important;
 }
