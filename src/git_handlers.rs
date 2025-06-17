@@ -476,8 +476,8 @@ pub async fn execute_git_task_handler(
     let block_manager = data.block_manager.clone();
     let block_name = request.block_name.clone();
     let task_index = request.task_index;
-    let task_id = format!("task_{}", task_index); // Use task index as task_id for branch name
-
+    let task_id = format!("task_{}", task_index); 
+    
     // Spawn a background task to execute the Git task flow
     task::spawn(async move {
         // Step 1: Pull latest main branch
@@ -506,7 +506,7 @@ pub async fn execute_git_task_handler(
         }
 
         // Step 2: Create a task-specific branch
-        println!("Step 2: Creating task-specific branch: {}", task_id);
+        println!("Step 2: Creating task-specific branch using task ID: {}", task_id);
         let branch_output = Command::new("git")
             .arg("checkout")
             .arg("-b")

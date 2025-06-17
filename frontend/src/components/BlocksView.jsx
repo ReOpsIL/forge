@@ -639,7 +639,7 @@ const BlocksView = () => {
             if (!task) {
                 throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
             }
-
+            
             const response = await fetch('/api/git/execute-task', {
                 method: 'POST',
                 headers: {
@@ -647,7 +647,7 @@ const BlocksView = () => {
                 },
                 body: JSON.stringify({
                     block_name: blockName,
-                    task_index: taskIndex,
+                    task_index: task.task_id,
                     task_description: task.description
                 }),
             });
