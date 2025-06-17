@@ -639,15 +639,7 @@ const BlocksView = () => {
             if (!task) {
                 throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
             }
-            // Call the Git API to execute the task with Git integration
-            // This will:
-            // 1. Pull main branch
-            // 2. Create new branch from main with task ID as name
-            // 3. Execute task using Claude
-            // 4. Commit all changes to task branch with task description as commit message
-            // 5. Merge task branch into main branch
-            // 6. Pull main branch again
-            // 7. Notify user through task status update
+
             const response = await fetch('/api/git/execute-task', {
                 method: 'POST',
                 headers: {
@@ -989,6 +981,56 @@ const BlocksView = () => {
             event.target.value = '';
             setCurrentImportBlock(null);
         }
+    };
+
+    // Function to convert tasks to markdown format
+    const convertTasksToMarkdown = (block) => {
+        let markdown = `# ${block.name} Tasks (ID: ${block.block_id})\n\n`;
+
+        if (block.todo_list.length === 0) {
+            markdown += "No tasks available.\n";
+        } else {
+            block.todo_list.forEach((task, index) => {
+                markdown += `- [ ] ${task.description}\n`;
+            });
+        }
+
+        return markdown;
+    };
+
+    // Function to export tasks as markdown file
+    const exportTasksAsMarkdown = (block) => {
+        const markdown = convertTasksToMarkdown(block);
+        const filename = `${block.name}_${block.block_id}.md`;
+
+        // Create a blob with the markdown content
+        const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+
+        // Create a URL for the blob
+        const url = URL.createObjectURL(blob);
+
+        // Create a temporary anchor element to trigger the download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+
+        // Append the anchor to the body, click it, and remove it
+        document.body.appendChild(a);
+        a.click();
+
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 0);
+
+        // Show success message
+        toastRef.current.show({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Tasks exported successfully',
+            life: 3000
+        });
     };
 
     // Function to handle adding a new input to the new block
@@ -1677,6 +1719,13 @@ const BlocksView = () => {
                                                 tooltip="Import tasks from markdown file"
                                                 tooltipOptions={{position: 'top'}}
                                             />
+                                            <Button
+                                                icon="pi pi-file-export"
+                                                className="p-button-sm p-button-help ml-2"
+                                                onClick={() => exportTasksAsMarkdown(block)}
+                                                tooltip="Export tasks to markdown file"
+                                                tooltipOptions={{position: 'top'}}
+                                            />
 
                                     </div>
 
@@ -1711,63 +1760,66 @@ const BlocksView = () => {
 
                                     {/* Task List */}
                                     {block.todo_list.length > 0 ? (
-                                        <ul className="m-0 p-0 list-none">
-                                            {block.todo_list.map((todo, index) => (
-                                                <li key={index}
-                                                    className="mb-2 flex align-items-center justify-content-between task-item">
-                                                    <div className="flex align-items-center">
-                                                        <Checkbox
-                                                            checked={isTaskSelected(block.name, index)}
-                                                            onChange={(e) => handleTaskSelection(block.name, index, e.checked)}
-                                                            className="mr-2"
-                                                            disabled={isTaskRunning(block.name, index)}
-                                                        />
-                                                        {editingTask.blockName === block.name && editingTask.taskIndex === index ? (
-                                                            <div className="flex flex-column w-full">
-                                                                <InputTextarea
-                                                                    value={editingTaskText[`${block.name}-${index}`]}
-                                                                    onChange={(e) => handleTaskTextChange(block.name, index, e.target.value)}
-                                                                    className="task-edit-textarea"
-                                                                    autoFocus
-                                                                    rows={3}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter' && e.ctrlKey) {
-                                                                            saveEditedTask(block.name, index);
-                                                                            e.preventDefault();
-                                                                        } else if (e.key === 'Escape') {
-                                                                            cancelEditingTask();
-                                                                        }
-                                                                    }}
-                                                                />
-                                                                <div className="flex justify-content-end mt-2 gap-2">
-                                                                    <Button
-                                                                        icon="pi pi-check"
-                                                                        className="p-button-sm p-button-success ml-2"
-                                                                        onClick={() => saveEditedTask(block.name, index)}
-                                                                        disabled={!editingTaskText[`${block.name}-${index}`]?.trim()}
+                                        <div className="task-list-scrollable">
+                                            <ul className="m-0 p-0 list-none">
+                                                {block.todo_list.map((todo, index) => (
+                                                    <li key={index}
+                                                        className="mb-2 flex align-items-center justify-content-between task-item">
+                                                        <div className="flex align-items-center">
+                                                            <Checkbox
+                                                                checked={isTaskSelected(block.name, index)}
+                                                                onChange={(e) => handleTaskSelection(block.name, index, e.checked)}
+                                                                className="mr-2"
+                                                                disabled={isTaskRunning(block.name, index)}
+                                                            />
+                                                            {editingTask.blockName === block.name && editingTask.taskIndex === index ? (
+                                                                <div className="flex flex-column w-full">
+                                                                    <InputTextarea
+                                                                        value={editingTaskText[`${block.name}-${index}`]}
+                                                                        onChange={(e) => handleTaskTextChange(block.name, index, e.target.value)}
+                                                                        className="task-edit-textarea"
+                                                                        autoFocus
+                                                                        rows={3}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter' && e.ctrlKey) {
+                                                                                saveEditedTask(block.name, index);
+                                                                                e.preventDefault();
+                                                                            } else if (e.key === 'Escape') {
+                                                                                cancelEditingTask();
+                                                                            }
+                                                                        }}
                                                                     />
-                                                                    <Button
-                                                                        icon="pi pi-times"
-                                                                        className="p-button-sm p-button-danger ml-2"
-                                                                        onClick={cancelEditingTask}
-                                                                    />
+                                                                    <div className="flex justify-content-end mt-2 gap-2">
+                                                                        <Button
+                                                                            icon="pi pi-check"
+                                                                            className="p-button-sm p-button-success ml-2"
+                                                                            onClick={() => saveEditedTask(block.name, index)}
+                                                                            disabled={!editingTaskText[`${block.name}-${index}`]?.trim()}
+                                                                        />
+                                                                        <Button
+                                                                            icon="pi pi-times"
+                                                                            className="p-button-sm p-button-danger ml-2"
+                                                                            onClick={cancelEditingTask}
+                                                                        />
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        ) : (
-                                                            <span
-                                                                className={isTaskRunning(block.name, index) ? 'task-running' : 'task-text'}
-                                                                onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo.description)}
-                                                            >
-                                {isTaskRunning(block.name, index) && (
-                                    <span className="sandclock"></span>
-                                )}
-                                                                {todo.description}
-                              </span>
-                                                        )}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
+                                                            ) : (
+                                                                <span
+                                                                    className={isTaskRunning(block.name, index) ? 'task-running' : 'task-text'}
+                                                                    onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo.description)}
+                                                                    title={`Task ID: ${todo.task_id}`}
+                                                                >
+                                    {isTaskRunning(block.name, index) && (
+                                        <span className="sandclock"></span>
+                                    )}
+                                                                    <span className="task-id">[{todo.task_id || index}]</span> {todo.description}
+                                  </span>
+                                                            )}
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
                                     ) : (
                                         <p>No tasks</p>
                                     )}

@@ -249,7 +249,7 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
             output_connections.push(OutputConnection {
                 to_module: to_block,
                 input_type: format!("Input{}", rand::thread_rng().gen_range(1..=3)),
-                unique_id,
+                output_id: unique_id,
             });
         }
 

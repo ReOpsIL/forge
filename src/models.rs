@@ -6,13 +6,22 @@ use rand::{Rng, distributions::Alphanumeric};
 pub struct Task {
     pub description: String,
     pub log: Option<String>,
+    pub task_id: String,
+    pub commit_id: Option<String>,
 }
 
 impl Task {
     pub fn new(description: String) -> Self {
+        let unique_id: String = rand::thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(6)
+            .map(char::from)
+            .collect();
         Self {
             description,
             log: None,
+            task_id: unique_id,
+            commit_id: None,
         }
     }
 }
@@ -22,7 +31,7 @@ impl Task {
 pub struct InputConnection {
     pub from_module: String,
     pub output_type: String,
-    pub unique_id: String,
+    pub input_id: String,
 }
 
 impl InputConnection {
@@ -30,14 +39,14 @@ impl InputConnection {
         // Generate a random 4-character alphanumeric ID
         let unique_id: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
-            .take(4)
+            .take(6)
             .map(char::from)
             .collect();
 
         Self {
             from_module,
             output_type,
-            unique_id,
+            input_id: unique_id,
         }
     }
 }
@@ -46,7 +55,7 @@ impl InputConnection {
 pub struct OutputConnection {
     pub to_module: String,
     pub input_type: String,
-    pub unique_id: String,
+    pub output_id: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -106,7 +115,7 @@ pub fn get_blocks() -> Vec<Block> {
                     OutputConnection {
                         to_module: "DataProcessing".to_string(),
                         input_type: "ParsedData".to_string(),
-                        unique_id: "conn-1".to_string(),
+                        output_id: "conn-1".to_string(),
                     }
                 ],
             },
@@ -132,7 +141,7 @@ pub fn get_blocks() -> Vec<Block> {
                     OutputConnection {
                         to_module: "DataVisualization".to_string(),
                         input_type: "ProcessedData".to_string(),
-                        unique_id: "conn-2".to_string(),
+                        output_id: "conn-2".to_string(),
                     }
                 ],
             },
@@ -174,10 +183,10 @@ mod tests {
         let conn = InputConnection::new("TestModule".to_string(), "TestOutput".to_string());
 
         // Check that the unique_id is 4 characters long
-        assert_eq!(conn.unique_id.len(), 4);
+        assert_eq!(conn.input_id.len(), 4);
 
         // Check that multiple calls generate different IDs
         let conn2 = InputConnection::new("TestModule".to_string(), "TestOutput".to_string());
-        assert_ne!(conn.unique_id, conn2.unique_id);
+        assert_ne!(conn.input_id, conn2.input_id);
     }
 }

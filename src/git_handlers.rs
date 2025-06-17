@@ -600,6 +600,28 @@ pub async fn execute_git_task_handler(
             return;
         }
 
+        // Get the commit ID
+        let commit_id_output = Command::new("git")
+            .arg("rev-parse")
+            .arg("HEAD")
+            .current_dir(&project_dir)
+            .output();
+
+        let commit_id = match commit_id_output {
+            Ok(output) => {
+                if output.status.success() {
+                    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+                } else {
+                    println!("Failed to get commit ID: {}", String::from_utf8_lossy(&output.stderr));
+                    None
+                }
+            }
+            Err(e) => {
+                println!("Failed to execute git rev-parse command: {}", e);
+                None
+            }
+        };
+
         // Step 5: Merge back to main
         println!("Step 5: Merging back to main");
         let checkout_output = Command::new("git")
@@ -610,7 +632,7 @@ pub async fn execute_git_task_handler(
 
         if let Err(e) = checkout_output {
             println!("Failed to checkout main branch: {}", e);
-            update_task_status_with_log(&block_manager, &block_name, task_index, "[FAILED] Git checkout main failed", &log_output);
+            update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_index, "[FAILED] Git checkout main failed", &log_output, commit_id);
             return;
         }
 
@@ -623,7 +645,7 @@ pub async fn execute_git_task_handler(
 
         if let Err(e) = merge_output {
             println!("Failed to merge task branch: {}", e);
-            update_task_status_with_log(&block_manager, &block_name, task_index, "[FAILED] Git merge failed", &log_output);
+            update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_index, "[FAILED] Git merge failed", &log_output, commit_id);
             return;
         }
 
@@ -641,8 +663,8 @@ pub async fn execute_git_task_handler(
             // This is not a critical error, so we continue
         }
 
-        // Update the task status and log in the block config
-        update_task_status_with_log(&block_manager, &block_name, task_index, "[COMPLETED]", &log_output);
+        // Update the task status, log, and commit ID in the block config
+        update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_index, "[COMPLETED]", &log_output, commit_id);
     });
 
     // Return a response indicating the task has been started
@@ -661,6 +683,18 @@ fn update_task_status(block_manager: &Arc<BlockConfigManager>, block_name: &str,
 
 // Helper function to update task status and log
 fn update_task_status_with_log(block_manager: &Arc<BlockConfigManager>, block_name: &str, task_index: usize, status: &str, log: &str) {
+    update_task_status_with_log_and_commit_id(block_manager, block_name, task_index, status, log, None);
+}
+
+// Helper function to update task status, log, and commit ID
+fn update_task_status_with_log_and_commit_id(
+    block_manager: &Arc<BlockConfigManager>,
+    block_name: &str,
+    task_index: usize,
+    status: &str,
+    log: &str,
+    commit_id: Option<String>,
+) {
     if let Ok(mut blocks) = block_manager.get_blocks() {
         if let Some(block) = blocks.iter_mut().find(|b| b.name == block_name) {
             if let Some(task) = block.todo_list.get_mut(task_index) {
@@ -672,6 +706,11 @@ fn update_task_status_with_log(block_manager: &Arc<BlockConfigManager>, block_na
                 // Store the output in the task's log field
                 if !log.is_empty() {
                     task.log = Some(log.to_string());
+                }
+
+                // Store the commit ID in the task's commit_id field
+                if let Some(id) = commit_id {
+                    task.commit_id = Some(id);
                 }
 
                 // Update the block in the database
@@ -784,4 +823,3 @@ echo "Build completed successfully!"
         }
     }
 }
- 
