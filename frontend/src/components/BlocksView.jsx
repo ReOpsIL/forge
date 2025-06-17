@@ -1616,13 +1616,13 @@ const BlocksView = () => {
                                                 tooltipOptions={{position: 'top'}}
                                             />
                                             <Button
-                                                icon="pi pi-stop"
+                                                icon="pi pi-exclamation-triangle"
                                                 className="p-button-sm p-button-warning ml-2"
                                                 onClick={() => stopAllTasks(block.name)}
                                                 disabled={!areTasksRunning(block.name)}
                                             />
                                             <Button
-                                                icon="pi pi-list"
+                                                icon="pi pi-check-square"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
                                                     setSelectedTasks({
@@ -1632,7 +1632,7 @@ const BlocksView = () => {
                                                 }}
                                             />
                                             <Button
-                                                icon="pi pi-times-circle"
+                                                icon="pi pi-stop"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
                                                     setSelectedTasks({
@@ -1653,8 +1653,7 @@ const BlocksView = () => {
                                                 disabled={!selectedTasks[block.name]?.length}
                                             />
                                             <Button
-                                                icon="pi pi-list"
-                                                label="Log"
+                                                icon="pi pi-book"
                                                 className="p-button-sm p-button-info ml-2"
                                                 onClick={() => {
                                                     const selectedTaskIndices = selectedTasks[block.name] || [];
@@ -1673,7 +1672,6 @@ const BlocksView = () => {
                                             />
                                             <Button
                                                 icon="pi pi-file-import"
-                                                label="Import"
                                                 className="p-button-sm p-button-help ml-2"
                                                 onClick={() => handleFileSelect(block.name)}
                                                 tooltip="Import tasks from markdown file"
