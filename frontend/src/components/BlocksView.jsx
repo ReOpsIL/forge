@@ -33,6 +33,8 @@ const BlocksView = () => {
     const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
     const [isAutoCompleteLoading, setIsAutoCompleteLoading] = useState(false);
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
+    const [currentImportBlock, setCurrentImportBlock] = useState(null);
+    const fileInputRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const [newBlock, setNewBlock] = useState({
         block_id: '',
@@ -910,6 +912,85 @@ const BlocksView = () => {
         setShowLogDialog(true);
     };
 
+    // Function to handle file selection for importing tasks
+    const handleFileSelect = (blockName) => {
+        setCurrentImportBlock(blockName);
+        fileInputRef.current.click();
+    };
+
+    // Function to handle file upload and process markdown
+    const handleFileUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file || !currentImportBlock) return;
+
+        // Only accept markdown files
+        if (!file.name.endsWith('.md')) {
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Please select a markdown (.md) file',
+                life: 3000
+            });
+            return;
+        }
+
+        // Show loading dialog
+        setShowLoadingDialog(true);
+
+        try {
+            // Read the file content
+            const reader = new FileReader();
+            const fileContent = await new Promise((resolve, reject) => {
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsText(file);
+            });
+
+            // Send the file content to the server for processing
+            const response = await fetch('/api/blocks/process-markdown', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    block_name: currentImportBlock,
+                    markdown_content: fileContent
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to process markdown file');
+            }
+
+            const data = await response.json();
+
+            // Reload blocks to show the updated tasks
+            await fetchBlocks();
+
+            // Show success message
+            toastRef.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: data.message,
+                life: 3000
+            });
+        } catch (error) {
+            console.error('Error processing markdown file:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to process markdown file',
+                life: 3000
+            });
+        } finally {
+            // Hide loading dialog
+            setShowLoadingDialog(false);
+            // Reset file input
+            event.target.value = '';
+            setCurrentImportBlock(null);
+        }
+    };
+
     // Function to handle adding a new input to the new block
     const handleAddInput = () => {
         if (!newInput.trim()) return;
@@ -1064,6 +1145,15 @@ const BlocksView = () => {
         <div className="blocks-container">
             <Toast ref={toastRef}/>
             <ConfirmDialog/>
+
+            {/* Hidden file input for markdown import */}
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept=".md" 
+                onChange={handleFileUpload}
+            />
 
             {/* Loading Dialog */}
             <Dialog
@@ -1580,6 +1670,14 @@ const BlocksView = () => {
                                                     }
                                                 }}
                                                 disabled={!selectedTasks[block.name]?.length || selectedTasks[block.name]?.length !== 1}
+                                            />
+                                            <Button
+                                                icon="pi pi-file-import"
+                                                label="Import"
+                                                className="p-button-sm p-button-help ml-2"
+                                                onClick={() => handleFileSelect(block.name)}
+                                                tooltip="Import tasks from markdown file"
+                                                tooltipOptions={{position: 'top'}}
                                             />
 
                                     </div>

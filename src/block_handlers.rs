@@ -8,7 +8,7 @@ use tokio::task;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::Block;
-use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks};
+use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_file};
 use crate::project_config::ProjectConfigManager;
 
 // Define a response type for auto-complete suggestions
@@ -29,6 +29,20 @@ pub struct ExecuteTaskRequest {
 pub struct ExecuteTaskResponse {
     pub status: String,
     pub message: String,
+}
+
+// Define request and response types for markdown file processing
+#[derive(Deserialize)]
+pub struct ProcessMarkdownRequest {
+    pub block_name: String,
+    pub markdown_content: String,
+}
+
+#[derive(Serialize)]
+pub struct ProcessMarkdownResponse {
+    pub status: String,
+    pub message: String,
+    pub tasks: Vec<String>,
 }
 
 // Define the config file path
@@ -226,6 +240,56 @@ pub async fn auto_complete_handler(description: web::Json<String>) -> impl Respo
         Err(e) => {
             println!("Failed to generate auto-complete suggestion: {}", e);
             HttpResponse::InternalServerError().body(format!("Failed to generate auto-complete suggestion: {}", e))
+        }
+    }
+}
+
+// API endpoint to process a markdown file and generate tasks
+pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>, data: web::Data<AppState>) -> impl Responder {
+    let request = request.into_inner();
+
+    // Find the block to update
+    let mut blocks = match data.block_manager.get_blocks() {
+        Ok(blocks) => blocks,
+        Err(e) => return HttpResponse::InternalServerError().body(e),
+    };
+
+    let block_index = blocks.iter().position(|b| b.name == request.block_name);
+    if block_index.is_none() {
+        return HttpResponse::BadRequest().body(format!("Block '{}' not found", request.block_name));
+    }
+
+    // Process the markdown file and generate tasks
+    match process_markdown_file(&request.markdown_content).await {
+        Ok(tasks) => {
+            // Add the generated tasks to the block's todo list
+            let block = &mut blocks[block_index.unwrap()];
+            for task_description in &tasks {
+                let task = crate::models::Task::new(task_description.clone());
+                block.todo_list.push(task);
+            }
+
+            // Update the block in the database
+            match data.block_manager.update_block(block.clone()) {
+                Ok(_) => {
+                    // Save the updated blocks to the file
+                    if let Err(e) = data.block_manager.save_blocks_to_file() {
+                        return HttpResponse::InternalServerError().body(e);
+                    }
+
+                    // Return the response with the generated tasks
+                    let response = ProcessMarkdownResponse {
+                        status: "success".to_string(),
+                        message: format!("Successfully processed markdown file and added {} tasks to block '{}'", tasks.len(), request.block_name),
+                        tasks,
+                    };
+                    HttpResponse::Ok().json(response)
+                },
+                Err(e) => HttpResponse::BadRequest().body(e),
+            }
+        },
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Failed to process markdown file: {}", e))
         }
     }
 }
