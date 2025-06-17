@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use serde_json;
 use rand::{Rng, distributions::Alphanumeric};
 
-use crate::models::{Block, Connections, InputConnection, OutputConnection};
+use crate::models::{Block, Connections, InputConnection, OutputConnection, Task};
 
 // Struct to manage block configurations
 pub struct BlockConfigManager {
@@ -162,7 +162,7 @@ impl BlockConfigManager {
         let index = blocks_lock.iter().position(|b| b.block_id == block_id);
         match index {
             Some(i) => {
-                blocks_lock[i].todo_list.push(todo_item.to_string());
+                blocks_lock[i].todo_list.push( Task::new(todo_item.to_string()));
                 Ok(())
             },
             None => Err(format!("Block with ID {} not found", block_id)),
@@ -196,8 +196,8 @@ impl BlockConfigManager {
 pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
     let mut blocks = Vec::new();
     let block_names = vec![
-        "DataIngestion", "DataProcessing", "DataVisualization", 
-        "DataStorage", "DataAnalysis", "DataExport", 
+        "DataIngestion", "DataProcessing", "DataVisualization",
+        "DataStorage", "DataAnalysis", "DataExport",
         "DataValidation", "DataTransformation", "DataAggregation", "DataReporting"
     ];
 
@@ -256,8 +256,9 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
         // Generate random todo items
         let num_todos = rand::thread_rng().gen_range(1..=4);
         let todo_list = (0..num_todos)
-            .map(|j| format!("Todo item {} for {}", j + 1, name))
-            .collect::<Vec<String>>();
+            .map(|j| format!("Todo item {} for {}", j + 1, name));
+
+        let tasks : Vec<Task> = todo_list.map(|t| Task::new(t)).collect();
 
         // Generate a random 6-character alphanumeric ID for the block
         let block_id: String = rand::thread_rng()
@@ -277,7 +278,7 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
                 input_connections,
                 output_connections,
             },
-            todo_list,
+            todo_list: tasks,
         };
 
         blocks.push(block);

@@ -79,7 +79,8 @@ async fn generate_tasks_with_llm(mut block: Block) -> Result<Block, String> {
     let generated_tasks = generate_tasks(&block.description).await?;
 
     // Add the generated tasks to the block's todo list
-    for task in generated_tasks {
+    for task_description in generated_tasks {
+        let task = crate::models::Task::new(task_description);
         block.todo_list.push(task);
     }
 
@@ -309,18 +310,21 @@ pub async fn execute_task_handler(
                     println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
                 }
 
-                // Update the task status in the block config
-                // This is a placeholder - you might want to update the task status differently
+                // Update the task status and log in the block config
                 if let Ok(mut blocks) = block_manager.get_blocks() {
                     if let Some(block) = blocks.iter_mut().find(|b| b.name == block_name) {
                         if let Some(task) = block.todo_list.get_mut(task_index) {
-                            // Append a completion marker to the task based on success/failure
+                            // Append a completion marker to the task description based on success/failure
                             let status_marker = if output.status.success() {
                                 "[COMPLETED]"
                             } else {
                                 "[FAILED]"
                             };
-                            *task = format!("{} {}", task, status_marker);
+                            task.description = format!("{} {}", task.description, status_marker);
+
+                            // Store the stdout output in the task's log field
+                            let log_output = String::from_utf8_lossy(&output.stdout).to_string();
+                            task.log = Some(log_output);
 
                             // Update the block in the database
                             if let Err(e) = block_manager.update_block(block.clone()) {

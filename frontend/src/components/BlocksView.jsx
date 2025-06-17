@@ -28,6 +28,8 @@ const BlocksView = () => {
     const [showMarkdownEditorDialog, setShowMarkdownEditorDialog] = useState(false);
     const [showLoadingDialog, setShowLoadingDialog] = useState(false);
     const [showAutoCompleteDialog, setShowAutoCompleteDialog] = useState(false);
+    const [showLogDialog, setShowLogDialog] = useState(false);
+    const [currentTaskLog, setCurrentTaskLog] = useState('');
     const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
     const [isAutoCompleteLoading, setIsAutoCompleteLoading] = useState(false);
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
@@ -451,7 +453,7 @@ const BlocksView = () => {
                 if (block.name === blockName) {
                     return {
                         ...block,
-                        todo_list: [...block.todo_list, newTaskText[blockName]]
+                        todo_list: [...block.todo_list, { description: newTaskText[blockName], log: null }]
                     };
                 }
                 return block;
@@ -550,7 +552,11 @@ const BlocksView = () => {
                 ...blockToUpdate,
                 todo_list: [...blockToUpdate.todo_list]
             };
-            updatedBlock.todo_list[taskIndex] = newText;
+            // Preserve the log while updating the description
+            updatedBlock.todo_list[taskIndex] = {
+                ...updatedBlock.todo_list[taskIndex],
+                description: newText
+            };
 
             // Use the update_block_handler endpoint to update the entire block
             const response = await fetch('/api/blocks', {
@@ -627,8 +633,8 @@ const BlocksView = () => {
                 throw new Error(`Block ${blockName} not found`);
             }
 
-            const taskDescription = block.todo_list[taskIndex];
-            if (!taskDescription) {
+            const task = block.todo_list[taskIndex];
+            if (!task) {
                 throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
             }
 
@@ -641,7 +647,7 @@ const BlocksView = () => {
                 body: JSON.stringify({
                     block_name: blockName,
                     task_index: taskIndex,
-                    task_description: taskDescription
+                    task_description: task.description
                 }),
             });
 
@@ -670,7 +676,7 @@ const BlocksView = () => {
                         const updatedTask = updatedBlock.todo_list[taskIndex];
 
                         // Check if the task has been marked as completed
-                        if (updatedTask && updatedTask.includes('[COMPLETED]')) {
+                        if (updatedTask && updatedTask.description && updatedTask.description.includes('[COMPLETED]')) {
                             // Update the blocks state
                             setBlocks(updatedBlocks);
 
@@ -758,6 +764,18 @@ const BlocksView = () => {
     const areTasksRunning = (blockName) => {
         const blockTasks = blocks.find(b => b.name === blockName)?.todo_list || [];
         return blockTasks.some((_, index) => isTaskRunning(blockName, index));
+    };
+
+    // Show task log
+    const showTaskLog = (blockName, taskIndex) => {
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) return;
+
+        const task = block.todo_list[taskIndex];
+        if (!task) return;
+
+        setCurrentTaskLog(task.log || '');
+        setShowLogDialog(true);
     };
 
     // Function to handle adding a new input to the new block
@@ -964,6 +982,45 @@ const BlocksView = () => {
                         <div className="p-2 border-1 surface-border border-round mt-2" style={{backgroundColor: '#FFFFFF19'}}>
                             <ReactMarkdown>{autoCompleteSuggestion}</ReactMarkdown>
                         </div>
+                    </div>
+                </div>
+            </Dialog>
+
+            {/* Task Log Dialog */}
+            <Dialog
+                header="Task Execution Log"
+                visible={showLogDialog}
+                style={{width: '60vw'}}
+                onHide={() => setShowLogDialog(false)}
+                footer={
+                    <div>
+                        <Button
+                            label="Close"
+                            icon="pi pi-times"
+                            className="p-button-text"
+                            onClick={() => setShowLogDialog(false)}
+                        />
+                    </div>
+                }
+            >
+                <div className="p-fluid">
+                    <div className="field">
+                        {currentTaskLog ? (
+                            <div className="p-2 border-1 surface-border border-round mt-2" 
+                                 style={{
+                                     backgroundColor: '#FFFFFF19', 
+                                     maxHeight: '400px', 
+                                     overflow: 'auto',
+                                     whiteSpace: 'pre-wrap',
+                                     fontFamily: 'monospace'
+                                 }}>
+                                {currentTaskLog}
+                            </div>
+                        ) : (
+                            <div className="p-2 border-1 surface-border border-round mt-2 text-center">
+                                No log available for this task.
+                            </div>
+                        )}
                     </div>
                 </div>
             </Dialog>
@@ -1363,6 +1420,25 @@ const BlocksView = () => {
                                                 }}
                                                 disabled={!selectedTasks[block.name]?.length}
                                             />
+                                            <Button
+                                                icon="pi pi-list"
+                                                label="Log"
+                                                className="p-button-sm p-button-info ml-2"
+                                                onClick={() => {
+                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
+                                                    if (selectedTaskIndices.length === 1) {
+                                                        showTaskLog(block.name, selectedTaskIndices[0]);
+                                                    } else {
+                                                        toastRef.current.show({
+                                                            severity: 'warn',
+                                                            summary: 'Warning',
+                                                            detail: 'Please select exactly one task to view its log',
+                                                            life: 3000
+                                                        });
+                                                    }
+                                                }}
+                                                disabled={!selectedTasks[block.name]?.length || selectedTasks[block.name]?.length !== 1}
+                                            />
 
                                     </div>
 
@@ -1442,12 +1518,12 @@ const BlocksView = () => {
                                                         ) : (
                                                             <span
                                                                 className={isTaskRunning(block.name, index) ? 'task-running' : 'task-text'}
-                                                                onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo)}
+                                                                onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo.description)}
                                                             >
                                 {isTaskRunning(block.name, index) && (
                                     <span className="sandclock"></span>
                                 )}
-                                                                {todo}
+                                                                {todo.description}
                               </span>
                                                         )}
                                                     </div>

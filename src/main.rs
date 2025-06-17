@@ -10,6 +10,7 @@ mod block_handlers;
 mod llm_handler;
 mod project_config;
 mod project_handlers;
+mod git_handlers;
 use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
@@ -21,7 +22,11 @@ use project_handlers::{
     ProjectAppState, get_project_config_handler, update_project_config_handler, test_git_connection_handler,
     check_project_config_handler
 };
+use git_handlers::{
+    GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler
+};
 use crate::block_handlers::generate_tasks_block_handler;
+use crate::git_handlers::pull_handler;
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
@@ -100,10 +105,15 @@ async fn main() -> std::io::Result<()> {
         project_manager: project_manager.clone(),
     });
 
+    let git_app_state = web::Data::new(GitAppState {
+        project_manager: project_manager.clone(),
+    });
+
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
             .app_data(project_app_state.clone())
+            .app_data(git_app_state.clone())
             // API routes
             .service(
                 web::scope("/api")
@@ -124,6 +134,13 @@ async fn main() -> std::io::Result<()> {
                     .route("/project", web::put().to(update_project_config_handler))
                     .route("/project/test-git-connection", web::post().to(test_git_connection_handler))
                     .route("/project/check-config", web::get().to(check_project_config_handler))
+                    // Git routes
+                    .route("/git/branch", web::post().to(create_branch_handler))
+                    .route("/git/commit", web::post().to(commit_handler))
+                    .route("/git/merge", web::post().to(merge_branch_handler))
+                    .route("/git/push", web::post().to(push_handler))
+                    .route("/git/pull", web::post().to(pull_handler))
+                    .route("/git/build", web::post().to(build_handler))
             )
 
             // Serve static files from the frontend/dist directory

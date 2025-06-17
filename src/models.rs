@@ -1,6 +1,22 @@
 use serde::{Serialize, Deserialize};
 use rand::{Rng, distributions::Alphanumeric};
 
+// Define the structure for a task
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Task {
+    pub description: String,
+    pub log: Option<String>,
+}
+
+impl Task {
+    pub fn new(description: String) -> Self {
+        Self {
+            description,
+            log: None,
+        }
+    }
+}
+
 // Define the structure for module connections
 #[derive(Serialize, Deserialize, Clone)]
 pub struct InputConnection {
@@ -48,7 +64,7 @@ pub struct Block {
     pub inputs: Vec<String>,
     pub outputs: Vec<String>,
     pub connections: Connections,
-    pub todo_list: Vec<String>,
+    pub todo_list: Vec<Task>,
 }
 
 impl Block {
@@ -95,8 +111,8 @@ pub fn get_blocks() -> Vec<Block> {
                 ],
             },
             todo_list: vec![
-                "Add support for CSV files".to_string(),
-                "Improve error handling".to_string(),
+                Task::new("Add support for CSV files".to_string()),
+                Task::new("Improve error handling".to_string()),
             ],
         },
         Block {
@@ -121,8 +137,8 @@ pub fn get_blocks() -> Vec<Block> {
                 ],
             },
             todo_list: vec![
-                "Implement data normalization".to_string(),
-                "Add support for filtering".to_string(),
+                Task::new("Implement data normalization".to_string()),
+                Task::new("Add support for filtering".to_string()),
             ],
         },
         Block {
@@ -141,8 +157,8 @@ pub fn get_blocks() -> Vec<Block> {
                 output_connections: vec![],
             },
             todo_list: vec![
-                "Add more chart types".to_string(),
-                "Implement interactive visualizations".to_string(),
+                Task::new("Add more chart types".to_string()),
+                Task::new("Implement interactive visualizations".to_string()),
             ],
         },
     ]
