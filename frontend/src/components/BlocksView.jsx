@@ -637,9 +637,16 @@ const BlocksView = () => {
             if (!task) {
                 throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
             }
-
-            // Call the API to execute the task
-            const response = await fetch('/api/blocks/execute-task', {
+            // Call the Git API to execute the task with Git integration
+            // This will:
+            // 1. Pull main branch
+            // 2. Create new branch from main with task ID as name
+            // 3. Execute task using Claude
+            // 4. Commit all changes to task branch with task description as commit message
+            // 5. Merge task branch into main branch
+            // 6. Pull main branch again
+            // 7. Notify user through task status update
+            const response = await fetch('/api/git/execute-task', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
