@@ -1,6 +1,10 @@
 use actix_web::{web, Responder, HttpResponse};
 use std::sync::Arc;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
+use std::process::{Command, Stdio};
+use std::io::Write;
+use std::path::Path;
+use tokio::task;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::Block;
@@ -11,6 +15,20 @@ use crate::project_config::ProjectConfigManager;
 #[derive(Serialize)]
 pub struct AutoCompleteResponse {
     pub suggestion: String,
+}
+
+// Define request and response types for task execution
+#[derive(Deserialize)]
+pub struct ExecuteTaskRequest {
+    pub block_name: String,
+    pub task_index: usize,
+    pub task_description: String,
+}
+
+#[derive(Serialize)]
+pub struct ExecuteTaskResponse {
+    pub status: String,
+    pub message: String,
 }
 
 // Define the config file path
@@ -209,4 +227,125 @@ pub async fn auto_complete_handler(description: web::Json<String>) -> impl Respo
             HttpResponse::InternalServerError().body(format!("Failed to generate auto-complete suggestion: {}", e))
         }
     }
+}
+
+// API endpoint to execute a task using Claude CLI
+pub async fn execute_task_handler(
+    request: web::Json<ExecuteTaskRequest>,
+    data: web::Data<AppState>
+) -> impl Responder {
+    let request = request.into_inner();
+
+    // Get the project home directory from the project config
+    let project_config = match data.project_manager.get_config() {
+        Ok(config) => config,
+        Err(e) => {
+            return HttpResponse::InternalServerError().body(
+                format!("Failed to get project configuration: {}", e)
+            );
+        }
+    };
+
+    let project_dir = project_config.project_home_directory.clone();
+    if project_dir.is_empty() {
+        return HttpResponse::BadRequest().body(
+            "Project home directory is not set. Please configure it in the project settings."
+        );
+    }
+
+    // Check if the project directory exists
+    if !Path::new(&project_dir).exists() {
+        return HttpResponse::BadRequest().body(
+            format!("Project home directory does not exist: {}", project_dir)
+        );
+    }
+
+    // Get the task description
+    let task_description = request.task_description.clone();
+    if task_description.is_empty() {
+        return HttpResponse::BadRequest().body("Task description cannot be empty");
+    }
+
+    // Clone the data for use in the background task
+    let block_manager = data.block_manager.clone();
+    let block_name = request.block_name.clone();
+    let task_index = request.task_index;
+
+    // Spawn a background task to execute the Claude CLI command
+    task::spawn(async move {
+        // Execute the Claude CLI command with --allowedTools option
+        let result = Command::new("claude")
+            .arg("--dangerously-skip-permissions")
+            .current_dir(&project_dir)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn();
+
+        let mut child = match result {
+            Ok(child) => child,
+            Err(e) => {
+                println!("Failed to execute Claude CLI: {}", e);
+                return;
+            }
+        };
+
+        // Write the task description to the command's stdin
+        if let Some(mut stdin) = child.stdin.take() {
+            if let Err(e) = stdin.write_all(task_description.as_bytes()) {
+                println!("Failed to write to Claude CLI stdin: {}", e);
+                return;
+            }
+        }
+
+        // Wait for the command to complete
+        match child.wait_with_output() {
+            Ok(output) => {
+                if output.status.success() {
+                    println!("Claude CLI command completed successfully");
+                    println!("Claude output:\n-----------------\n{}", String::from_utf8_lossy(&output.stdout));
+                } else {
+                    println!("Claude CLI command failed with exit code: {:?}", output.status.code());
+                    println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
+                }
+
+                // Update the task status in the block config
+                // This is a placeholder - you might want to update the task status differently
+                if let Ok(mut blocks) = block_manager.get_blocks() {
+                    if let Some(block) = blocks.iter_mut().find(|b| b.name == block_name) {
+                        if let Some(task) = block.todo_list.get_mut(task_index) {
+                            // Append a completion marker to the task based on success/failure
+                            let status_marker = if output.status.success() {
+                                "[COMPLETED]"
+                            } else {
+                                "[FAILED]"
+                            };
+                            *task = format!("{} {}", task, status_marker);
+
+                            // Update the block in the database
+                            if let Err(e) = block_manager.update_block(block.clone()) {
+                                println!("Failed to update block: {}", e);
+                            } else {
+                                // Save the updated blocks to the file
+                                if let Err(e) = block_manager.save_blocks_to_file() {
+                                    println!("Failed to save blocks to file: {}", e);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Err(e) => {
+                println!("Failed to wait for Claude CLI command: {}", e);
+            }
+        }
+    });
+
+    // Return a response indicating the task has been started
+    let response = ExecuteTaskResponse {
+        status: "started".to_string(),
+        message: "Task execution has been started in the background with tools enabled".to_string(),
+    };
+
+    HttpResponse::Ok().json(response)
 }

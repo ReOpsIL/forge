@@ -14,7 +14,7 @@ use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_co
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
     delete_block_handler, add_todo_handler, remove_todo_handler, generate_sample_config_handler, enhance_block_handler,
-    auto_complete_handler
+    auto_complete_handler, execute_task_handler
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
@@ -117,6 +117,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/blocks/{name}/enhance", web::put().to(enhance_block_handler))
                     .route("/blocks/{name}/generate-tasks", web::put().to(generate_tasks_block_handler))
                     .route("/blocks/auto-complete", web::post().to(auto_complete_handler))
+                    .route("/blocks/execute-task", web::post().to(execute_task_handler))
                     .route("/generate-sample", web::post().to(generate_sample_config_handler))
                     // Project routes
                     .route("/project", web::get().to(get_project_config_handler))

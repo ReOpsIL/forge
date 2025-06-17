@@ -545,31 +545,28 @@ const BlocksView = () => {
         if (!blockToUpdate) return;
 
         try {
-            // Assuming there's a PUT endpoint for updating a task
-            const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/todo/${taskIndex}`, {
+            // Create a copy of the block with the updated task
+            const updatedBlock = {
+                ...blockToUpdate,
+                todo_list: [...blockToUpdate.todo_list]
+            };
+            updatedBlock.todo_list[taskIndex] = newText;
+
+            // Use the update_block_handler endpoint to update the entire block
+            const response = await fetch('/api/blocks', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newText),
+                body: JSON.stringify(updatedBlock),
             });
 
             if (!response.ok) {
                 throw new Error('Failed to update task');
             }
 
-            // Update the blocks state with the updated task
-            setBlocks(blocks.map(block => {
-                if (block.name === blockName) {
-                    const updatedTodoList = [...block.todo_list];
-                    updatedTodoList[taskIndex] = newText;
-                    return {
-                        ...block,
-                        todo_list: updatedTodoList
-                    };
-                }
-                return block;
-            }));
+            // Reload blocks to ensure we have the latest data
+            await fetchBlocks();
 
             // Clear the editing state
             setEditingTask({});
@@ -616,21 +613,117 @@ const BlocksView = () => {
     };
 
     // Execute a single task
-    const executeTask = (blockName, taskIndex) => {
-        // Simulate task execution
+    const executeTask = async (blockName, taskIndex) => {
+        // Set the task as running
         setRunningTasks(prev => ({
             ...prev,
             [`${blockName}-${taskIndex}`]: true
         }));
 
-        // Simulate task completion after a random time (1-3 seconds)
-        const executionTime = Math.random() * 2000 + 1000;
-        setTimeout(() => {
+        try {
+            // Find the block and task
+            const block = blocks.find(b => b.name === blockName);
+            if (!block) {
+                throw new Error(`Block ${blockName} not found`);
+            }
+
+            const taskDescription = block.todo_list[taskIndex];
+            if (!taskDescription) {
+                throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
+            }
+
+            // Call the API to execute the task
+            const response = await fetch('/api/blocks/execute-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    block_name: blockName,
+                    task_index: taskIndex,
+                    task_description: taskDescription
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to execute task: ${errorText}`);
+            }
+
+            // The task is now running in the background
+            // We'll keep the running state until we refresh the blocks
+            // and see that the task has been marked as completed
+
+            // Set up a polling mechanism to check if the task has completed
+            const checkTaskStatus = async () => {
+                try {
+                    // Fetch the latest blocks
+                    const blocksResponse = await fetch('/api/blocks');
+                    if (!blocksResponse.ok) {
+                        throw new Error('Failed to fetch blocks');
+                    }
+
+                    const updatedBlocks = await blocksResponse.json();
+                    const updatedBlock = updatedBlocks.find(b => b.name === blockName);
+
+                    if (updatedBlock) {
+                        const updatedTask = updatedBlock.todo_list[taskIndex];
+
+                        // Check if the task has been marked as completed
+                        if (updatedTask && updatedTask.includes('[COMPLETED]')) {
+                            // Update the blocks state
+                            setBlocks(updatedBlocks);
+
+                            // Set the task as not running
+                            setRunningTasks(prev => ({
+                                ...prev,
+                                [`${blockName}-${taskIndex}`]: false
+                            }));
+
+                            // Show success message
+                            toastRef.current.show({
+                                severity: 'success',
+                                summary: 'Success',
+                                detail: 'Task executed successfully',
+                                life: 3000
+                            });
+
+                            return;
+                        }
+                    }
+
+                    // If the task is still running, check again after 2 seconds
+                    setTimeout(checkTaskStatus, 2000);
+                } catch (error) {
+                    console.error('Error checking task status:', error);
+
+                    // If there's an error, stop polling and set the task as not running
+                    setRunningTasks(prev => ({
+                        ...prev,
+                        [`${blockName}-${taskIndex}`]: false
+                    }));
+                }
+            };
+
+            // Start polling after 2 seconds
+            setTimeout(checkTaskStatus, 2000);
+        } catch (error) {
+            console.error('Error executing task:', error);
+
+            // Show error message
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Failed to execute task: ${error.message}`,
+                life: 3000
+            });
+
+            // Set the task as not running
             setRunningTasks(prev => ({
                 ...prev,
                 [`${blockName}-${taskIndex}`]: false
             }));
-        }, executionTime);
+        }
     };
 
     // Execute selected tasks or all tasks if none selected
@@ -1352,7 +1445,7 @@ const BlocksView = () => {
                                                                 onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo)}
                                                             >
                                 {isTaskRunning(block.name, index) && (
-                                    <i className="pi pi-spin pi-spinner mr-2 text-blue-500"></i>
+                                    <span className="sandclock"></span>
                                 )}
                                                                 {todo}
                               </span>
