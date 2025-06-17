@@ -23,7 +23,8 @@ use project_handlers::{
     check_project_config_handler
 };
 use git_handlers::{
-    GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler
+    GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler,
+    execute_git_task_handler
 };
 use crate::block_handlers::generate_tasks_block_handler;
 use crate::git_handlers::pull_handler;
@@ -107,6 +108,7 @@ async fn main() -> std::io::Result<()> {
 
     let git_app_state = web::Data::new(GitAppState {
         project_manager: project_manager.clone(),
+        block_manager: block_manager.clone(),
     });
 
     HttpServer::new(move || {
@@ -141,6 +143,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/git/push", web::post().to(push_handler))
                     .route("/git/pull", web::post().to(pull_handler))
                     .route("/git/build", web::post().to(build_handler))
+                    .route("/git/execute-task", web::post().to(execute_git_task_handler))
             )
 
             // Serve static files from the frontend/dist directory

@@ -732,6 +732,120 @@ const BlocksView = () => {
         }
     };
 
+    // Execute a single task with Git integration
+    const executeGitTask = async (blockName, taskIndex) => {
+        // Set the task as running
+        setRunningTasks(prev => ({
+            ...prev,
+            [`${blockName}-${taskIndex}`]: true
+        }));
+
+        try {
+            // Find the block and task
+            const block = blocks.find(b => b.name === blockName);
+            if (!block) {
+                throw new Error(`Block ${blockName} not found`);
+            }
+
+            const task = block.todo_list[taskIndex];
+            if (!task) {
+                throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
+            }
+
+            // Call the API to execute the task with Git integration
+            const response = await fetch('/api/git/execute-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    block_name: blockName,
+                    task_index: taskIndex,
+                    task_description: task.description
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to execute task with Git: ${errorText}`);
+            }
+
+            // The task is now running in the background
+            // We'll keep the running state until we refresh the blocks
+            // and see that the task has been marked as completed
+
+            // Set up a polling mechanism to check if the task has completed
+            const checkTaskStatus = async () => {
+                try {
+                    // Fetch the latest blocks
+                    const blocksResponse = await fetch('/api/blocks');
+                    if (!blocksResponse.ok) {
+                        throw new Error('Failed to fetch blocks');
+                    }
+
+                    const updatedBlocks = await blocksResponse.json();
+                    const updatedBlock = updatedBlocks.find(b => b.name === blockName);
+
+                    if (updatedBlock) {
+                        const updatedTask = updatedBlock.todo_list[taskIndex];
+
+                        // Check if the task has been marked as completed
+                        if (updatedTask && updatedTask.description && updatedTask.description.includes('[COMPLETED]')) {
+                            // Update the blocks state
+                            setBlocks(updatedBlocks);
+
+                            // Set the task as not running
+                            setRunningTasks(prev => ({
+                                ...prev,
+                                [`${blockName}-${taskIndex}`]: false
+                            }));
+
+                            // Show success message
+                            toastRef.current.show({
+                                severity: 'success',
+                                summary: 'Success',
+                                detail: 'Task executed successfully with Git integration',
+                                life: 3000
+                            });
+
+                            return;
+                        }
+                    }
+
+                    // If the task is still running, check again after 2 seconds
+                    setTimeout(checkTaskStatus, 2000);
+                } catch (error) {
+                    console.error('Error checking task status:', error);
+
+                    // If there's an error, stop polling and set the task as not running
+                    setRunningTasks(prev => ({
+                        ...prev,
+                        [`${blockName}-${taskIndex}`]: false
+                    }));
+                }
+            };
+
+            // Start polling after 2 seconds
+            setTimeout(checkTaskStatus, 2000);
+        } catch (error) {
+            console.error('Error executing task with Git:', error);
+
+            // Show error message
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Failed to execute task with Git: ${error.message}`,
+                life: 3000
+            });
+
+            // Set the task as not running
+            setRunningTasks(prev => ({
+                ...prev,
+                [`${blockName}-${taskIndex}`]: false
+            }));
+        }
+    };
+
     // Execute selected tasks or all tasks if none selected
     const executeSelectedTasks = (blockName) => {
         const tasksToExecute = selectedTasks[blockName]?.length > 0
@@ -740,6 +854,17 @@ const BlocksView = () => {
 
         tasksToExecute.forEach(taskIndex => {
             executeTask(blockName, taskIndex);
+        });
+    };
+
+    // Execute selected tasks with Git integration
+    const executeSelectedGitTasks = (blockName) => {
+        const tasksToExecute = selectedTasks[blockName]?.length > 0
+            ? selectedTasks[blockName]
+            : Array.from({length: blocks.find(b => b.name === blockName)?.todo_list.length || 0}, (_, i) => i);
+
+        tasksToExecute.forEach(taskIndex => {
+            executeGitTask(blockName, taskIndex);
         });
     };
 
@@ -1382,6 +1507,16 @@ const BlocksView = () => {
                                                 className="p-button-sm p-button-success ml-2"
                                                 onClick={() => executeSelectedTasks(block.name)}
                                                 disabled={areTasksRunning(block.name)}
+                                                tooltip="Run Tasks"
+                                                tooltipOptions={{position: 'top'}}
+                                            />
+                                            <Button
+                                                icon="pi pi-github"
+                                                className="p-button-sm p-button-info ml-2"
+                                                onClick={() => executeSelectedGitTasks(block.name)}
+                                                disabled={areTasksRunning(block.name)}
+                                                tooltip="Run Tasks with Git Integration"
+                                                tooltipOptions={{position: 'top'}}
                                             />
                                             <Button
                                                 icon="pi pi-stop"
