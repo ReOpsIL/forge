@@ -29,7 +29,11 @@ const BlocksView = () => {
     const [showLoadingDialog, setShowLoadingDialog] = useState(false);
     const [showAutoCompleteDialog, setShowAutoCompleteDialog] = useState(false);
     const [showLogDialog, setShowLogDialog] = useState(false);
+    const [showDiffDialog, setShowDiffDialog] = useState(false);
     const [currentTaskLog, setCurrentTaskLog] = useState('');
+    const [currentDiff, setCurrentDiff] = useState('');
+    const [currentCommitId, setCurrentCommitId] = useState('');
+    const [isDiffLoading, setIsDiffLoading] = useState(false);
     const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
     const [isAutoCompleteLoading, setIsAutoCompleteLoading] = useState(false);
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
@@ -639,7 +643,7 @@ const BlocksView = () => {
             if (!task) {
                 throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
             }
-            
+
             const response = await fetch('/api/git/execute-task', {
                 method: 'POST',
                 headers: {
@@ -902,6 +906,70 @@ const BlocksView = () => {
 
         setCurrentTaskLog(task.log || '');
         setShowLogDialog(true);
+    };
+
+    // Show task diff
+    const showTaskDiff = async (blockName, taskIndex) => {
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) return;
+
+        const task = block.todo_list[taskIndex];
+        if (!task) return;
+
+        // If the task doesn't have a commit ID, show an error message
+        if (!task.commit_id) {
+            toastRef.current.show({
+                severity: 'warn',
+                summary: 'No Commit ID',
+                detail: 'This task has no associated Git commit.',
+                life: 3000
+            });
+            return;
+        }
+
+        setIsDiffLoading(true);
+        setShowDiffDialog(true);
+
+        try {
+            const response = await fetch('/api/git/task-diff', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    block_name: blockName,
+                    task_index: taskIndex
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setCurrentDiff(data.diff || '');
+                setCurrentCommitId(data.commit_id || '');
+            } else {
+                toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: data.message || 'Failed to fetch diff',
+                    life: 3000
+                });
+                setCurrentDiff('');
+                setCurrentCommitId('');
+            }
+        } catch (error) {
+            console.error('Error fetching diff:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to fetch diff',
+                life: 3000
+            });
+            setCurrentDiff('');
+            setCurrentCommitId('');
+        } finally {
+            setIsDiffLoading(false);
+        }
     };
 
     // Function to handle file selection for importing tasks
@@ -1289,6 +1357,55 @@ const BlocksView = () => {
                 </div>
             </Dialog>
 
+            {/* Task Diff Dialog */}
+            <Dialog
+                header={`Git Diff for Commit ${currentCommitId}`}
+                visible={showDiffDialog}
+                style={{width: '80vw'}}
+                onHide={() => setShowDiffDialog(false)}
+                footer={
+                    <div>
+                        <Button
+                            label="Close"
+                            icon="pi pi-times"
+                            className="p-button-text"
+                            onClick={() => setShowDiffDialog(false)}
+                        />
+                    </div>
+                }
+            >
+                <div className="p-fluid">
+                    <div className="field">
+                        {isDiffLoading ? (
+                            <div className="p-2 border-1 surface-border border-round mt-2 text-center">
+                                Loading diff...
+                            </div>
+                        ) : currentDiff ? (
+                            <div className="monaco-editor-container">
+                                <Editor
+                                    height="500px"
+                                    defaultLanguage="diff"
+                                    theme="vs-dark"
+                                    value={currentDiff}
+                                    options={{
+                                        readOnly: true,
+                                        minimap: {enabled: true},
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: 'on',
+                                        lineNumbers: 'on',
+                                        automaticLayout: true
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div className="p-2 border-1 surface-border border-round mt-2 text-center">
+                                No diff available for this commit.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </Dialog>
+
             {/* Markdown Editor Dialog */}
             <Dialog
                 header="Edit Block Description"
@@ -1659,12 +1776,14 @@ const BlocksView = () => {
                                             />
                                             <Button
                                                 icon="pi pi-exclamation-triangle"
+                                                tooltip="Stop tasks execution"
                                                 className="p-button-sm p-button-warning ml-2"
                                                 onClick={() => stopAllTasks(block.name)}
                                                 disabled={!areTasksRunning(block.name)}
                                             />
                                             <Button
                                                 icon="pi pi-check-square"
+                                                tooltip="Select all tasks"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
                                                     setSelectedTasks({
@@ -1675,6 +1794,7 @@ const BlocksView = () => {
                                             />
                                             <Button
                                                 icon="pi pi-stop"
+                                                tooltip="Unselect all tasks"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
                                                     setSelectedTasks({
@@ -1685,6 +1805,7 @@ const BlocksView = () => {
                                             />
                                             <Button
                                                 icon="pi pi-trash"
+                                                tooltip="Delete task"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
                                                     const tasksToDelete = selectedTasks[block.name] || [];
@@ -1696,6 +1817,7 @@ const BlocksView = () => {
                                             />
                                             <Button
                                                 icon="pi pi-book"
+                                                tooltip="Show task logs"
                                                 className="p-button-sm p-button-info ml-2"
                                                 onClick={() => {
                                                     const selectedTaskIndices = selectedTasks[block.name] || [];
@@ -1706,6 +1828,25 @@ const BlocksView = () => {
                                                             severity: 'warn',
                                                             summary: 'Warning',
                                                             detail: 'Please select exactly one task to view its log',
+                                                            life: 3000
+                                                        });
+                                                    }
+                                                }}
+                                                disabled={!selectedTasks[block.name]?.length || selectedTasks[block.name]?.length !== 1}
+                                            />
+                                            <Button
+                                                icon="pi pi-book"
+                                                tooltip="Show task diff"
+                                                className="p-button-sm p-button-code ml-2"
+                                                onClick={() => {
+                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
+                                                    if (selectedTaskIndices.length === 1) {
+                                                        showTaskDiff(block.name, selectedTaskIndices[0]);
+                                                    } else {
+                                                        toastRef.current.show({
+                                                            severity: 'warn',
+                                                            summary: 'Warning',
+                                                            detail: 'Please select exactly one task to view changes',
                                                             life: 3000
                                                         });
                                                     }

@@ -66,6 +66,22 @@ pub struct BuildResponse {
     pub output: String,
 }
 
+// Request body for getting a task's diff
+#[derive(Debug, Deserialize)]
+pub struct GetTaskDiffRequest {
+    pub block_name: String,
+    pub task_index: usize,
+}
+
+// Response for getting a task's diff
+#[derive(Debug, Serialize)]
+pub struct GetTaskDiffResponse {
+    pub success: bool,
+    pub message: String,
+    pub diff: Option<String>,
+    pub commit_id: Option<String>,
+}
+
 // Handler to create a new Git branch
 pub async fn create_branch_handler(
     data: web::Data<GitAppState>,
@@ -477,7 +493,7 @@ pub async fn execute_git_task_handler(
     let block_name = request.block_name.clone();
     let task_index = request.task_index;
     let task_id = format!("task_{}", task_index); 
-    
+
     // Spawn a background task to execute the Git task flow
     task::spawn(async move {
         // Step 1: Pull latest main branch
@@ -726,6 +742,131 @@ fn update_task_status_with_log_and_commit_id(
         }
     }
 }
+// Handler to get a task's diff
+pub async fn get_task_diff_handler(
+    data: web::Data<GitAppState>,
+    request: web::Json<GetTaskDiffRequest>,
+) -> impl Responder {
+    // Get the project home directory from the project config
+    let project_config = match data.project_manager.get_config() {
+        Ok(config) => config,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(GetTaskDiffResponse {
+                success: false,
+                message: format!("Failed to get project configuration: {}", e),
+                diff: None,
+                commit_id: None,
+            });
+        }
+    };
+
+    let project_dir = project_config.project_home_directory.clone();
+    if project_dir.is_empty() {
+        return HttpResponse::BadRequest().json(GetTaskDiffResponse {
+            success: false,
+            message: "Project home directory is not set. Please configure it in the project settings.".to_string(),
+            diff: None,
+            commit_id: None,
+        });
+    }
+
+    // Check if the project directory exists
+    if !Path::new(&project_dir).exists() {
+        return HttpResponse::BadRequest().json(GetTaskDiffResponse {
+            success: false,
+            message: format!("Project home directory does not exist: {}", project_dir),
+            diff: None,
+            commit_id: None,
+        });
+    }
+
+    // Get the task's commit ID from the block manager
+    let blocks = match data.block_manager.get_blocks() {
+        Ok(blocks) => blocks,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(GetTaskDiffResponse {
+                success: false,
+                message: format!("Failed to get blocks: {}", e),
+                diff: None,
+                commit_id: None,
+            });
+        }
+    };
+
+    // Find the block and task
+    let block = blocks.iter().find(|b| b.name == request.block_name);
+    if block.is_none() {
+        return HttpResponse::BadRequest().json(GetTaskDiffResponse {
+            success: false,
+            message: format!("Block '{}' not found", request.block_name),
+            diff: None,
+            commit_id: None,
+        });
+    }
+
+    let block = block.unwrap();
+    if request.task_index >= block.todo_list.len() {
+        return HttpResponse::BadRequest().json(GetTaskDiffResponse {
+            success: false,
+            message: format!("Task index {} is out of bounds for block '{}'", request.task_index, request.block_name),
+            diff: None,
+            commit_id: None,
+        });
+    }
+
+    let task = &block.todo_list[request.task_index];
+    let commit_id = task.commit_id.clone();
+
+    // If there's no commit ID, return an error
+    if commit_id.is_none() {
+        return HttpResponse::BadRequest().json(GetTaskDiffResponse {
+            success: false,
+            message: "No commit ID associated with this task".to_string(),
+            diff: None,
+            commit_id: None,
+        });
+    }
+
+    let commit_id = commit_id.unwrap();
+
+    // Get the diff for the commit
+    let diff_output = Command::new("git")
+        .arg("diff")
+        .arg(format!("{}^..{}", commit_id, commit_id)) // Show changes in this commit
+        .current_dir(&project_dir)
+        .output();
+
+    match diff_output {
+        Ok(output) => {
+            if output.status.success() {
+                let diff = String::from_utf8_lossy(&output.stdout).to_string();
+                HttpResponse::Ok().json(GetTaskDiffResponse {
+                    success: true,
+                    message: "Diff retrieved successfully".to_string(),
+                    diff: Some(diff),
+                    commit_id: Some(commit_id),
+                })
+            } else {
+                let error_message = String::from_utf8_lossy(&output.stderr).to_string();
+                HttpResponse::BadRequest().json(GetTaskDiffResponse {
+                    success: false,
+                    message: format!("Failed to get diff: {}", error_message),
+                    diff: None,
+                    commit_id: Some(commit_id),
+                })
+            }
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(GetTaskDiffResponse {
+                success: false,
+                message: format!("Failed to execute git diff command: {}", e),
+                diff: None,
+                commit_id: Some(commit_id),
+            })
+        }
+    }
+}
+
 // Handler to build the project
 pub async fn build_handler(data: web::Data<GitAppState>) -> impl Responder {
     // Get the project home directory
