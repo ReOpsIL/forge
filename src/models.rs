@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use rand::{Rng, distributions::Alphanumeric};
 use crate::llm_handler::BlockConnection;
@@ -74,7 +75,7 @@ pub struct Block {
     pub inputs: Vec<BlockConnection>,
     pub outputs: Vec<BlockConnection>,
     pub connections: Connections,
-    pub todo_list: Vec<Task>,
+    pub todo_list: HashMap<String,Task>,
 }
 
 impl Block {
@@ -96,7 +97,7 @@ impl Block {
                 input_connections: Vec::new(),
                 output_connections: Vec::new(),
             },
-            todo_list: Vec::new(),
+            todo_list: HashMap::new(),
         }
     }
 }
@@ -120,10 +121,14 @@ pub fn get_blocks() -> Vec<Block> {
                     }
                 ],
             },
-            todo_list: vec![
-                Task::new("Add support for CSV files".to_string()),
-                Task::new("Improve error handling".to_string()),
-            ],
+            todo_list: {
+                let mut map = HashMap::new();
+                let task1 = Task::new("Add support for CSV files".to_string());
+                let task2 = Task::new("Improve error handling".to_string());
+                map.insert(task1.task_id.clone(), task1);
+                map.insert(task2.task_id.clone(), task2);
+                map
+            },
         },
         Block {
             block_id: "def456".to_string(), // Sample block_id
@@ -146,10 +151,14 @@ pub fn get_blocks() -> Vec<Block> {
                     }
                 ],
             },
-            todo_list: vec![
-                Task::new("Implement data normalization".to_string()),
-                Task::new("Add support for filtering".to_string()),
-            ],
+            todo_list: {
+                let mut map = HashMap::new();
+                let task1 = Task::new("Implement data normalization".to_string());
+                let task2 = Task::new("Add support for filtering".to_string());
+                map.insert(task1.task_id.clone(), task1);
+                map.insert(task2.task_id.clone(), task2);
+                map
+            },
         },
         Block {
             block_id: "ghi789".to_string(), // Sample block_id
@@ -166,10 +175,14 @@ pub fn get_blocks() -> Vec<Block> {
                 ],
                 output_connections: vec![],
             },
-            todo_list: vec![
-                Task::new("Add more chart types".to_string()),
-                Task::new("Implement interactive visualizations".to_string()),
-            ],
+            todo_list: {
+                let mut map = HashMap::new();
+                let task1 = Task::new("Add more chart types".to_string());
+                let task2 = Task::new("Implement interactive visualizations".to_string());
+                map.insert(task1.task_id.clone(), task1);
+                map.insert(task2.task_id.clone(), task2);
+                map
+            },
         },
     ]
 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -162,7 +163,9 @@ impl BlockConfigManager {
         let index = blocks_lock.iter().position(|b| b.block_id == block_id);
         match index {
             Some(i) => {
-                blocks_lock[i].todo_list.push( Task::new(todo_item.to_string()));
+                let task = Task::new(todo_item.to_string());
+                let task_id = task.task_id.clone();
+                blocks_lock[i].todo_list.insert(task_id, task);
                 Ok(())
             },
             None => Err(format!("Block with ID {} not found", block_id)),
@@ -170,7 +173,7 @@ impl BlockConfigManager {
     }
 
     // Remove a todo item from a block
-    pub fn remove_todo_item(&self, block_id: &str, todo_index: usize) -> Result<(), String> {
+    pub fn remove_todo_item(&self, block_id: &str, task_id: String) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
@@ -180,11 +183,11 @@ impl BlockConfigManager {
         let block_index = blocks_lock.iter().position(|b| b.block_id == block_id);
         match block_index {
             Some(i) => {
-                if todo_index < blocks_lock[i].todo_list.len() {
-                    blocks_lock[i].todo_list.remove(todo_index);
+                if blocks_lock[i].todo_list.contains_key(&task_id) {
+                    blocks_lock[i].todo_list.remove(&task_id);
                     Ok(())
                 } else {
-                    Err(format!("Todo item index {} out of bounds", todo_index))
+                    Err(format!("Todo item index {} out of bounds", task_id))
                 }
             },
             None => Err(format!("Block with ID {} not found", block_id)),
@@ -250,8 +253,16 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
         let todo_list = (0..num_todos)
             .map(|j| format!("Todo item {} for {}", j + 1, name));
 
-        let tasks : Vec<Task> = todo_list.map(|t| Task::new(t)).collect();
-
+        let tasks = {
+            let mut map = HashMap::new();
+            todo_list.for_each(|t| {
+                let task = Task::new(t);
+                let task_id = task.task_id.clone();
+                map.insert(task_id, task);
+            });
+            map
+        };
+        
         // Generate a random 6-character alphanumeric ID for the block
         let block_id: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)

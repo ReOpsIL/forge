@@ -22,7 +22,7 @@ pub struct AutoCompleteResponse {
 #[derive(Deserialize)]
 pub struct ExecuteTaskRequest {
     pub block_name: String,
-    pub task_index: usize,
+    pub task_id: String,
     pub task_description: String,
 }
 
@@ -122,7 +122,8 @@ async fn generate_tasks_with_llm(mut block: Block, data: &web::Data<AppState>) -
     // Add the generated tasks to the block's todo list
     for task_description in generated_tasks {
         let task = crate::models::Task::new(task_description);
-        block.todo_list.push(task);
+        let task_id = task.task_id.clone();
+        block.todo_list.insert(task_id, task);
     }
 
     Ok(block)
@@ -231,9 +232,9 @@ pub async fn add_todo_handler(path: web::Path<String>, todo: web::Json<String>, 
 }
 
 // API endpoint to remove a todo item from a block
-pub async fn remove_todo_handler(path: web::Path<(String, usize)>, data: web::Data<AppState>) -> impl Responder {
-    let (block_id, todo_index) = path.into_inner();
-    match data.block_manager.remove_todo_item(&block_id, todo_index) {
+pub async fn remove_todo_handler(path: web::Path<(String, String)>, data: web::Data<AppState>) -> impl Responder {
+    let (block_id, todo_id) = path.into_inner();
+    match data.block_manager.remove_todo_item(&block_id, todo_id) {
         Ok(_) => {
             // Save the updated blocks to the file
             if let Err(e) = data.block_manager.save_blocks_to_file() {
@@ -320,7 +321,8 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
             let block = &mut blocks[block_index.unwrap()];
             for task_description in &tasks {
                 let task = crate::models::Task::new(task_description.clone());
-                block.todo_list.push(task);
+                let task_id = task.task_id.clone();
+                block.todo_list.insert(task_id,task);
             }
 
             // Update the block in the database
@@ -457,7 +459,7 @@ pub async fn execute_task_handler(
     // Clone the data for use in the background task
     let block_manager = data.block_manager.clone();
     let block_name = request.block_name.clone();
-    let task_index = request.task_index;
+    let task_id = request.task_id;
 
     // Spawn a background task to execute the Claude CLI command
     task::spawn(async move {
@@ -500,7 +502,7 @@ pub async fn execute_task_handler(
                 // Update the task status and log in the block config
                 if let Ok(mut blocks) = block_manager.get_blocks() {
                     if let Some(block) = blocks.iter_mut().find(|b| b.name == block_name) {
-                        if let Some(task) = block.todo_list.get_mut(task_index) {
+                        if let Some(task) = block.todo_list.get_mut(&task_id) {
                             // Append a completion marker to the task description based on success/failure
                             let status_marker = if output.status.success() {
                                 "[COMPLETED]"
