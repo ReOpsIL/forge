@@ -8,7 +8,7 @@ use tokio::task;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::Block;
-use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_file};
+use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_file, process_markdown_spec, GeneratedBlock};
 use crate::project_config::ProjectConfigManager;
 
 // Define a response type for auto-complete suggestions
@@ -43,6 +43,19 @@ pub struct ProcessMarkdownResponse {
     pub status: String,
     pub message: String,
     pub tasks: Vec<String>,
+}
+
+// Define request and response types for markdown specification processing
+#[derive(Deserialize)]
+pub struct ProcessSpecRequest {
+    pub markdown_content: String,
+}
+
+#[derive(Serialize)]
+pub struct ProcessSpecResponse {
+    pub status: String,
+    pub message: String,
+    pub blocks: Vec<Block>,
 }
 
 // Define the config file path
@@ -293,6 +306,59 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
         }
     }
 }
+
+// API endpoint to process a markdown specification and generate blocks
+pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: web::Data<AppState>) -> impl Responder {
+    let request = request.into_inner();
+
+    // Process the markdown specification and generate blocks
+    match process_markdown_spec(&request.markdown_content).await {
+        Ok(generated_blocks) => {
+            let mut created_blocks = Vec::new();
+
+            // Create blocks from the generated blocks
+            for generated_block in generated_blocks {
+                // Store the name for error reporting
+                let block_name = generated_block.name.clone();
+
+                // Create a new Block from the GeneratedBlock
+                let block = Block::new(
+                    block_name.clone(),
+                    generated_block.description,
+                    generated_block.inputs,
+                    generated_block.outputs
+                );
+
+                // Add the block to the database
+                match data.block_manager.add_block(block.clone()) {
+                    Ok(_) => {
+                        created_blocks.push(block);
+                    },
+                    Err(e) => {
+                        return HttpResponse::BadRequest().body(format!("Failed to add block '{}': {}", block_name, e));
+                    }
+                }
+            }
+
+            // Save the updated blocks to the file
+            if let Err(e) = data.block_manager.save_blocks_to_file() {
+                return HttpResponse::InternalServerError().body(e);
+            }
+
+            // Return the response with the created blocks
+            let response = ProcessSpecResponse {
+                status: "success".to_string(),
+                message: format!("Successfully processed markdown specification and created {} blocks", created_blocks.len()),
+                blocks: created_blocks,
+            };
+            HttpResponse::Ok().json(response)
+        },
+        Err(e) => {
+            HttpResponse::InternalServerError().body(format!("Failed to process markdown specification: {}", e))
+        }
+    }
+}
+
 
 // API endpoint to execute a task using Claude CLI
 pub async fn execute_task_handler(

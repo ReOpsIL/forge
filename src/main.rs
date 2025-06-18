@@ -26,7 +26,7 @@ use git_handlers::{
     GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler,
     execute_git_task_handler, get_task_diff_handler
 };
-use crate::block_handlers::generate_tasks_block_handler;
+use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
 use crate::git_handlers::pull_handler;
 
 // Index handler to serve the frontend
@@ -131,6 +131,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/blocks/auto-complete", web::post().to(auto_complete_handler))
                     .route("/blocks/execute-task", web::post().to(execute_task_handler))
                     .route("/blocks/process-markdown", web::post().to(process_markdown_handler))
+                    .route("/blocks/process-spec", web::post().to(process_spec_handler))
                     .route("/generate-sample", web::post().to(generate_sample_config_handler))
                     // Project routes
                     .route("/project", web::get().to(get_project_config_handler))

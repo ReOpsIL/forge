@@ -279,3 +279,74 @@ pub async fn process_markdown_file(markdown_content: &str) -> Result<Vec<String>
         Err("No response from OpenRouter".to_string())
     }
 }
+
+// Define the structure for a block generated from a markdown specification
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GeneratedBlock {
+    pub name: String,
+    pub description: String,
+    pub inputs: Vec<String>,
+    pub outputs: Vec<String>,
+}
+
+// Function to process a markdown specification and generate blocks
+pub async fn process_markdown_spec(markdown_content: &str) -> Result<Vec<GeneratedBlock>, String> {
+    let api_key = env::var("OPENROUTER_API_KEY")
+        .map_err(|_| "OPENROUTER_API_KEY environment variable not set".to_string())?;
+
+    let client = Client::new();
+
+    // Create the prompt for processing the markdown specification
+    let prompt = format!(
+        "Process the following markdown file containing a technical specification and generate a structured list of implementation blocks. For each block, provide a clear block description, defined inputs, and defined outputs. Format your response as a JSON array of objects, where each object has the following structure: {{\"name\": \"BlockName\", \"description\": \"Block description\", \"inputs\": [\"input1\", \"input2\"], \"outputs\": [\"output1\", \"output2\"]}}. Ensure the JSON is valid and properly formatted:\n\n{}",
+        markdown_content
+    );
+
+    // Create the request payload
+    let payload = json!({
+        "model": MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an expert software architect that helps analyze technical specifications and generate implementation blocks with clear descriptions, inputs, and outputs."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    });
+
+    // Send the request to OpenRouter
+    let response = client.post(OPENROUTER_API_URL)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to send request to OpenRouter: {}", e))?;
+
+    // Parse the response
+    let response_body = response.json::<LLMResponse>()
+        .await
+        .map_err(|e| format!("Failed to parse OpenRouter response: {}", e))?;
+
+    // Extract and process the generated blocks
+    if let Some(choice) = response_body.choices.first() {
+        // Parse the content into a list of blocks
+        let content = &choice.message.content;
+
+        // Extract the JSON part from the response
+        let json_start = content.find('[').unwrap_or(0);
+        let json_end = content.rfind(']').map(|i| i + 1).unwrap_or(content.len());
+        let json_str = &content[json_start..json_end];
+
+        // Parse the JSON into a list of GeneratedBlock objects
+        let blocks: Vec<GeneratedBlock> = serde_json::from_str(json_str)
+            .map_err(|e| format!("Failed to parse generated blocks: {}", e))?;
+
+        Ok(blocks)
+    } else {
+        Err("No response from OpenRouter".to_string())
+    }
+}

@@ -79,6 +79,7 @@ function App() {
             }
         },
         git.getBuildMenuItem(),
+        git.getImportSpecMenuItem(),
         git.getGitMenuItems()
     ]
 
