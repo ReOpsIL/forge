@@ -38,18 +38,24 @@ const ProjectView = () => {
 
     // OpenRouter model options
     const openrouterModelOptions = [
-        { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash-preview-05-20' },
-        { label: 'Gemini 1.5 Pro', value: 'google/gemini-1.5-pro-latest' },
-        { label: 'Claude 3 Opus', value: 'anthropic/claude-3-opus:beta' },
-        { label: 'Claude 3 Sonnet', value: 'anthropic/claude-3-sonnet:beta' },
-        { label: 'GPT-4o', value: 'openai/gpt-4o' }
+        { label: 'Gemini 2.5 Pro',        value: 'google/gemini-2.5-pro' },
+        { label: 'Gemini 2.5 Flash',      value: 'google/gemini-2.5-flash' },
+        { label: 'Gemini 2.5 Flash‑Lite (preview)', value: 'google/gemini-2.5-flash-lite-preview' },
+        { label: 'Claude 4 Opus',        value: 'anthropic/claude-opus-4-20250514' },
+        { label: 'Claude 4 Sonnet',      value: 'anthropic/claude-sonnet-4-20250514' },
+        { label: 'GPT‑4o',               value: 'openai/gpt-4o' },
+        { label: 'GPT‑4 Turbo',          value: 'openai/gpt-4-turbo' },
+        { label: 'Mistral Large',        value: 'mistralai/mistral-large-latest' }
     ];
+
+
 
     // Gemini model options
     const geminiModelOptions = [
-        { label: 'Gemini 2.5 Flash', value: 'gemini-2.5-flash-preview-05-20' },
-        { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro-latest' },
-        { label: 'Gemini Pro', value: 'gemini-pro' }
+        { label: 'Gemini 2.5 Pro',                  value: 'gemini-2.5-pro' },
+        { label: 'Gemini 2.5 Flash',                value: 'gemini-2.5-flash' },
+        { label: 'Gemini 2.5 Flash‑Lite (preview)', value: 'gemini-2.5-flash-lite-preview' },
+        { label: 'Gemini Ultra',                    value: 'gemini-ultra' }
     ];
 
     // Create a ref for the toast
