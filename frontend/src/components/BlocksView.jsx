@@ -52,7 +52,7 @@ const BlocksView = () => {
             input_connections: [],
             output_connections: []
         },
-        todo_list: []
+        todo_list: {}
     });
     const [newInput, setNewInput] = useState('');
     const [newOutput, setNewOutput] = useState('');
@@ -413,26 +413,26 @@ const BlocksView = () => {
     };
 
     // Task selection handling
-    const handleTaskSelection = (blockName, taskIndex, isSelected) => {
+    const handleTaskSelection = (blockName, taskId, isSelected) => {
         setSelectedTasks(prev => {
             const blockTasks = prev[blockName] || [];
             if (isSelected) {
                 return {
                     ...prev,
-                    [blockName]: [...blockTasks, taskIndex]
+                    [blockName]: [...blockTasks, taskId]
                 };
             } else {
                 return {
                     ...prev,
-                    [blockName]: blockTasks.filter(idx => idx !== taskIndex)
+                    [blockName]: blockTasks.filter(id => id !== taskId)
                 };
             }
         });
     };
 
     // Check if a task is selected
-    const isTaskSelected = (blockName, taskIndex) => {
-        return selectedTasks[blockName]?.includes(taskIndex) || false;
+    const isTaskSelected = (blockName, taskId) => {
+        return selectedTasks[blockName]?.includes(taskId) || false;
     };
 
     // Add a new task
@@ -456,12 +456,22 @@ const BlocksView = () => {
                 throw new Error('Failed to add task');
             }
 
+            const data = await response.json();
+            const newTaskId = data.task_id || Date.now().toString(); // Use server-provided ID or fallback to timestamp
+
             // Update the blocks state with the new task
             setBlocks(blocks.map(block => {
                 if (block.name === blockName) {
                     return {
                         ...block,
-                        todo_list: [...block.todo_list, { description: newTaskText[blockName], log: null }]
+                        todo_list: {
+                            ...block.todo_list,
+                            [newTaskId]: { 
+                                task_id: newTaskId,
+                                description: newTaskText[blockName], 
+                                log: null 
+                            }
+                        }
                     };
                 }
                 return block;
@@ -479,24 +489,21 @@ const BlocksView = () => {
 
     // Delete selected tasks
     const deleteSelectedTasks = async (blockName) => {
-        const tasksToDelete = selectedTasks[blockName] || [];
-        if (tasksToDelete.length === 0) return;
+        const taskIdsToDelete = selectedTasks[blockName] || [];
+        if (taskIdsToDelete.length === 0) return;
 
         // Find the block to update
         const blockToUpdate = blocks.find(block => block.name === blockName);
         if (!blockToUpdate) return;
 
-        // Sort in descending order to avoid index shifting issues when deleting
-        const sortedIndices = [...tasksToDelete].sort((a, b) => b - a);
-
-        for (const index of sortedIndices) {
+        for (const taskId of taskIdsToDelete) {
             try {
-                const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/todo/${index}`, {
+                const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/todo/${taskId}`, {
                     method: 'DELETE',
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Failed to delete task at index ${index}`);
+                    throw new Error(`Failed to delete task with ID ${taskId}`);
                 }
             } catch (error) {
                 console.error('Error deleting task:', error);
@@ -506,9 +513,10 @@ const BlocksView = () => {
         // Update the blocks state by removing the deleted tasks
         setBlocks(blocks.map(block => {
             if (block.name === blockName) {
-                const updatedTodoList = [...block.todo_list];
-                sortedIndices.forEach(index => {
-                    updatedTodoList.splice(index, 1);
+                // Create a new todo_list without the deleted tasks
+                const updatedTodoList = { ...block.todo_list };
+                taskIdsToDelete.forEach(taskId => {
+                    delete updatedTodoList[taskId];
                 });
                 return {
                     ...block,
@@ -526,28 +534,28 @@ const BlocksView = () => {
     };
 
     // Start editing a task
-    const startEditingTask = (blockName, taskIndex, taskText) => {
+    const startEditingTask = (blockName, taskId, taskText) => {
         setEditingTask({
             blockName,
-            taskIndex
+            taskId
         });
         setEditingTaskText({
             ...editingTaskText,
-            [`${blockName}-${taskIndex}`]: taskText
+            [`${blockName}-${taskId}`]: taskText
         });
     };
 
     // Handle task text change
-    const handleTaskTextChange = (blockName, taskIndex, newText) => {
+    const handleTaskTextChange = (blockName, taskId, newText) => {
         setEditingTaskText({
             ...editingTaskText,
-            [`${blockName}-${taskIndex}`]: newText
+            [`${blockName}-${taskId}`]: newText
         });
     };
 
     // Save edited task
-    const saveEditedTask = async (blockName, taskIndex) => {
-        const newText = editingTaskText[`${blockName}-${taskIndex}`];
+    const saveEditedTask = async (blockName, taskId) => {
+        const newText = editingTaskText[`${blockName}-${taskId}`];
         if (!newText || newText.trim() === '') return;
 
         // Find the block to update
@@ -558,11 +566,11 @@ const BlocksView = () => {
             // Create a copy of the block with the updated task
             const updatedBlock = {
                 ...blockToUpdate,
-                todo_list: [...blockToUpdate.todo_list]
+                todo_list: {...blockToUpdate.todo_list}
             };
             // Preserve the log while updating the description
-            updatedBlock.todo_list[taskIndex] = {
-                ...updatedBlock.todo_list[taskIndex],
+            updatedBlock.todo_list[taskId] = {
+                ...updatedBlock.todo_list[taskId],
                 description: newText
             };
 
@@ -586,7 +594,7 @@ const BlocksView = () => {
             setEditingTask({});
             setEditingTaskText({
                 ...editingTaskText,
-                [`${blockName}-${taskIndex}`]: undefined
+                [`${blockName}-${taskId}`]: undefined
             });
 
             // Show success message
@@ -627,25 +635,25 @@ const BlocksView = () => {
     };
 
     // Execute a single task
-    const executeTask = async (blockName, taskIndex) => {
+    const executeTask = async (blockName, taskId) => {
+        // Find the block and task
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) {
+            throw new Error(`Block ${blockName} not found`);
+        }
+
+        const task = block.todo_list[taskId];
+        if (!task) {
+            throw new Error(`Task ${taskId} not found in block ${blockName}`);
+        }
+
         // Set the task as running
         setRunningTasks(prev => ({
             ...prev,
-            [`${blockName}-${taskIndex}`]: true
+            [`${blockName}-${task.task_id}`]: true
         }));
 
         try {
-            // Find the block and task
-            const block = blocks.find(b => b.name === blockName);
-            if (!block) {
-                throw new Error(`Block ${blockName} not found`);
-            }
-
-            const task = block.todo_list[taskIndex];
-            if (!task) {
-                throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
-            }
-
             const response = await fetch('/api/git/execute-task', {
                 method: 'POST',
                 headers: {
@@ -653,7 +661,7 @@ const BlocksView = () => {
                 },
                 body: JSON.stringify({
                     block_name: blockName,
-                    task_index: task.task_id,
+                    task_id: task.task_id,
                     task_description: task.description
                 }),
             });
@@ -680,7 +688,8 @@ const BlocksView = () => {
                     const updatedBlock = updatedBlocks.find(b => b.name === blockName);
 
                     if (updatedBlock) {
-                        const updatedTask = updatedBlock.todo_list[taskIndex];
+                        // Find the task by task_id
+                        const updatedTask = Object.values(updatedBlock.todo_list).find(t => t.task_id === task.task_id);
 
                         // Check if the task has been marked as completed
                         if (updatedTask && updatedTask.description && updatedTask.description.includes('[COMPLETED]')) {
@@ -690,7 +699,7 @@ const BlocksView = () => {
                             // Set the task as not running
                             setRunningTasks(prev => ({
                                 ...prev,
-                                [`${blockName}-${taskIndex}`]: false
+                                [`${blockName}-${task.task_id}`]: false
                             }));
 
                             // Show success message
@@ -713,7 +722,7 @@ const BlocksView = () => {
                     // If there's an error, stop polling and set the task as not running
                     setRunningTasks(prev => ({
                         ...prev,
-                        [`${blockName}-${taskIndex}`]: false
+                        [`${blockName}-${task.task_id}`]: false
                     }));
                 }
             };
@@ -740,24 +749,25 @@ const BlocksView = () => {
     };
 
     // Execute a single task with Git integration
-    const executeGitTask = async (blockName, taskIndex) => {
+    const executeGitTask = async (blockName, taskId) => {
+        // Find the block and task
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) {
+            throw new Error(`Block ${blockName} not found`);
+        }
+
+        const task = block.todo_list[taskId];
+        if (!task) {
+            throw new Error(`Task ${taskId} not found in block ${blockName}`);
+        }
+
         // Set the task as running
         setRunningTasks(prev => ({
             ...prev,
-            [`${blockName}-${taskIndex}`]: true
+            [`${blockName}-${task.task_id}`]: true
         }));
 
         try {
-            // Find the block and task
-            const block = blocks.find(b => b.name === blockName);
-            if (!block) {
-                throw new Error(`Block ${blockName} not found`);
-            }
-
-            const task = block.todo_list[taskIndex];
-            if (!task) {
-                throw new Error(`Task ${taskIndex} not found in block ${blockName}`);
-            }
 
             // Call the API to execute the task with Git integration
             const response = await fetch('/api/git/execute-task', {
@@ -767,7 +777,7 @@ const BlocksView = () => {
                 },
                 body: JSON.stringify({
                     block_name: blockName,
-                    task_index: taskIndex,
+                    task_id: task.task_id,
                     task_description: task.description
                 }),
             });
@@ -794,7 +804,8 @@ const BlocksView = () => {
                     const updatedBlock = updatedBlocks.find(b => b.name === blockName);
 
                     if (updatedBlock) {
-                        const updatedTask = updatedBlock.todo_list[taskIndex];
+                        // Find the task by task_id
+                        const updatedTask = Object.values(updatedBlock.todo_list).find(t => t.task_id === task.task_id);
 
                         // Check if the task has been marked as completed
                         if (updatedTask && updatedTask.description && updatedTask.description.includes('[COMPLETED]')) {
@@ -804,7 +815,7 @@ const BlocksView = () => {
                             // Set the task as not running
                             setRunningTasks(prev => ({
                                 ...prev,
-                                [`${blockName}-${taskIndex}`]: false
+                                [`${blockName}-${task.task_id}`]: false
                             }));
 
                             // Show success message
@@ -827,7 +838,7 @@ const BlocksView = () => {
                     // If there's an error, stop polling and set the task as not running
                     setRunningTasks(prev => ({
                         ...prev,
-                        [`${blockName}-${taskIndex}`]: false
+                        [`${blockName}-${task.task_id}`]: false
                     }));
                 }
             };
@@ -848,62 +859,75 @@ const BlocksView = () => {
             // Set the task as not running
             setRunningTasks(prev => ({
                 ...prev,
-                [`${blockName}-${taskIndex}`]: false
+                [`${blockName}-${task.task_id}`]: false
             }));
         }
     };
 
     // Execute selected tasks or all tasks if none selected
     const executeSelectedTasks = (blockName) => {
-        const tasksToExecute = selectedTasks[blockName]?.length > 0
-            ? selectedTasks[blockName]
-            : Array.from({length: blocks.find(b => b.name === blockName)?.todo_list.length || 0}, (_, i) => i);
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) return;
 
-        tasksToExecute.forEach(taskIndex => {
-            executeTask(blockName, taskIndex);
+        const tasksToExecute = selectedTasks[blockName]?.length > 0
+            ? selectedTasks[blockName].map(index => block.todo_list[index])
+            : Object.values(block.todo_list);
+
+        tasksToExecute.forEach(task => {
+            if (task) {
+                executeTask(blockName, task.task_id);
+            }
         });
     };
 
     // Execute selected tasks with Git integration
     const executeSelectedGitTasks = (blockName) => {
-        const tasksToExecute = selectedTasks[blockName]?.length > 0
-            ? selectedTasks[blockName]
-            : Array.from({length: blocks.find(b => b.name === blockName)?.todo_list.length || 0}, (_, i) => i);
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) return;
 
-        tasksToExecute.forEach(taskIndex => {
-            executeGitTask(blockName, taskIndex);
+        const tasksToExecute = selectedTasks[blockName]?.length > 0
+            ? selectedTasks[blockName].map(index => block.todo_list[index])
+            : Object.values(block.todo_list);
+
+        tasksToExecute.forEach(task => {
+            if (task) {
+                executeGitTask(blockName, task.task_id);
+            }
         });
     };
 
     // Stop all running tasks
     const stopAllTasks = (blockName) => {
-        const blockTasks = blocks.find(b => b.name === blockName)?.todo_list || [];
+        const block = blocks.find(b => b.name === blockName);
+        if (!block) return;
 
-        blockTasks.forEach((_, index) => {
+        const blockTasks = Object.values(block.todo_list);
+
+        blockTasks.forEach(task => {
             setRunningTasks(prev => ({
                 ...prev,
-                [`${blockName}-${index}`]: false
+                [`${blockName}-${task.task_id}`]: false
             }));
         });
     };
 
     // Check if a task is running
-    const isTaskRunning = (blockName, taskIndex) => {
-        return runningTasks[`${blockName}-${taskIndex}`] || false;
+    const isTaskRunning = (blockName, taskId) => {
+        return runningTasks[`${blockName}-${taskId}`] || false;
     };
 
     // Check if any task is running for a block
     const areTasksRunning = (blockName) => {
-        const blockTasks = blocks.find(b => b.name === blockName)?.todo_list || [];
-        return blockTasks.some((_, index) => isTaskRunning(blockName, index));
+        const blockTasks = blocks.find(b => b.name === blockName)?.todo_list || {};
+        return Object.values(blockTasks).some(task => isTaskRunning(blockName, task.task_id));
     };
 
     // Show task log
-    const showTaskLog = (blockName, taskIndex) => {
+    const showTaskLog = (blockName, taskId) => {
         const block = blocks.find(b => b.name === blockName);
         if (!block) return;
 
-        const task = block.todo_list[taskIndex];
+        const task = block.todo_list[taskId];
         if (!task) return;
 
         setCurrentTaskLog(task.log || '');
@@ -911,11 +935,11 @@ const BlocksView = () => {
     };
 
     // Show task diff
-    const showTaskDiff = async (blockName, taskIndex) => {
+    const showTaskDiff = async (blockName, taskId) => {
         const block = blocks.find(b => b.name === blockName);
         if (!block) return;
 
-        const task = block.todo_list[taskIndex];
+        const task = block.todo_list[taskId];
         if (!task) return;
 
         // If the task doesn't have a commit ID, show an error message
@@ -940,7 +964,7 @@ const BlocksView = () => {
                 },
                 body: JSON.stringify({
                     block_name: blockName,
-                    task_index: taskIndex
+                    task_id: task.task_id
                 }),
             });
 
@@ -1075,10 +1099,11 @@ const BlocksView = () => {
     const convertTasksToMarkdown = (block) => {
         let markdown = `# ${block.name} Tasks (ID: ${block.block_id})\n\n`;
 
-        if (block.todo_list.length === 0) {
+        const tasks = Object.values(block.todo_list);
+        if (tasks.length === 0) {
             markdown += "No tasks available.\n";
         } else {
-            block.todo_list.forEach((task, index) => {
+            tasks.forEach(task => {
                 markdown += `- [ ] ${task.description}\n`;
             });
         }
@@ -1204,7 +1229,7 @@ const BlocksView = () => {
                     input_connections: [],
                     output_connections: []
                 },
-                todo_list: []
+                todo_list: {}
             });
 
             // Close the dialog
@@ -1882,7 +1907,7 @@ const BlocksView = () => {
                                                 onClick={() => {
                                                     setSelectedTasks({
                                                         ...selectedTasks,
-                                                        [block.name]: Array.from({length: block.todo_list.length}, (_, i) => i)
+                                                        [block.name]: Object.keys(block.todo_list)
                                                     })
                                                 }}
                                             />
@@ -1914,9 +1939,9 @@ const BlocksView = () => {
                                                 tooltip="Show task logs"
                                                 className="p-button-sm p-button-info ml-2"
                                                 onClick={() => {
-                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
-                                                    if (selectedTaskIndices.length === 1) {
-                                                        showTaskLog(block.name, selectedTaskIndices[0]);
+                                                    const selectedTaskIds = selectedTasks[block.name] || [];
+                                                    if (selectedTaskIds.length === 1) {
+                                                        showTaskLog(block.name, selectedTaskIds[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',
@@ -1933,9 +1958,9 @@ const BlocksView = () => {
                                                 tooltip="Show task diff"
                                                 className="p-button-sm p-button-code ml-2"
                                                 onClick={() => {
-                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
-                                                    if (selectedTaskIndices.length === 1) {
-                                                        showTaskDiff(block.name, selectedTaskIndices[0]);
+                                                    const selectedTaskIds = selectedTasks[block.name] || [];
+                                                    if (selectedTaskIds.length === 1) {
+                                                        showTaskDiff(block.name, selectedTaskIds[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',
@@ -1994,30 +2019,30 @@ const BlocksView = () => {
                                     )}
 
                                     {/* Task List */}
-                                    {block.todo_list.length > 0 ? (
+                                    {Object.keys(block.todo_list).length > 0 ? (
                                         <div className="task-list-scrollable">
                                             <ul className="m-0 p-0 list-none">
-                                                {block.todo_list.map((todo, index) => (
-                                                    <li key={index}
+                                                {Object.values(block.todo_list).map((todo) => (
+                                                    <li key={todo.task_id}
                                                         className="mb-2 flex align-items-center justify-content-between task-item">
                                                         <div className="flex align-items-center">
                                                             <Checkbox
-                                                                checked={isTaskSelected(block.name, index)}
-                                                                onChange={(e) => handleTaskSelection(block.name, index, e.checked)}
+                                                                checked={isTaskSelected(block.name, todo.task_id)}
+                                                                onChange={(e) => handleTaskSelection(block.name, todo.task_id, e.checked)}
                                                                 className="mr-2"
-                                                                disabled={isTaskRunning(block.name, index)}
+                                                                disabled={isTaskRunning(block.name, todo.task_id)}
                                                             />
-                                                            {editingTask.blockName === block.name && editingTask.taskIndex === index ? (
+                                                            {editingTask.blockName === block.name && editingTask.taskId === todo.task_id ? (
                                                                 <div className="flex flex-column w-full">
                                                                     <InputTextarea
-                                                                        value={editingTaskText[`${block.name}-${index}`]}
-                                                                        onChange={(e) => handleTaskTextChange(block.name, index, e.target.value)}
+                                                                        value={editingTaskText[`${block.name}-${todo.task_id}`]}
+                                                                        onChange={(e) => handleTaskTextChange(block.name, todo.task_id, e.target.value)}
                                                                         className="task-edit-textarea"
                                                                         autoFocus
                                                                         rows={3}
                                                                         onKeyDown={(e) => {
                                                                             if (e.key === 'Enter' && e.ctrlKey) {
-                                                                                saveEditedTask(block.name, index);
+                                                                                saveEditedTask(block.name, todo.task_id);
                                                                                 e.preventDefault();
                                                                             } else if (e.key === 'Escape') {
                                                                                 cancelEditingTask();
@@ -2028,8 +2053,8 @@ const BlocksView = () => {
                                                                         <Button
                                                                             icon="pi pi-check"
                                                                             className="p-button-sm p-button-success ml-2"
-                                                                            onClick={() => saveEditedTask(block.name, index)}
-                                                                            disabled={!editingTaskText[`${block.name}-${index}`]?.trim()}
+                                                                            onClick={() => saveEditedTask(block.name, todo.task_id)}
+                                                                            disabled={!editingTaskText[`${block.name}-${todo.task_id}`]?.trim()}
                                                                         />
                                                                         <Button
                                                                             icon="pi pi-times"
@@ -2040,14 +2065,14 @@ const BlocksView = () => {
                                                                 </div>
                                                             ) : (
                                                                 <span
-                                                                    className={isTaskRunning(block.name, index) ? 'task-running' : 'task-text'}
-                                                                    onDoubleClick={() => !isTaskRunning(block.name, index) && startEditingTask(block.name, index, todo.description)}
+                                                                    className={isTaskRunning(block.name, todo.task_id) ? 'task-running' : 'task-text'}
+                                                                    onDoubleClick={() => !isTaskRunning(block.name, todo.task_id) && startEditingTask(block.name, todo.task_id, todo.description)}
                                                                     title={`Task ID: ${todo.task_id}`}
                                                                 >
-                                    {isTaskRunning(block.name, index) && (
+                                    {isTaskRunning(block.name, todo.task_id) && (
                                         <span className="sandclock"></span>
                                     )}
-                                                                    <span className="task-id">[{todo.task_id || index}]</span> {todo.description}
+                                                                    <span className="task-id">[{todo.task_id}]</span> {todo.description}
                                   </span>
                                                             )}
                                                         </div>
