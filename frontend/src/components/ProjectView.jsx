@@ -4,17 +4,43 @@ import {InputText} from 'primereact/inputtext';
 import {Button} from 'primereact/button';
 import {Toast} from 'primereact/toast';
 import {Editor} from '@monaco-editor/react';
+import {Dropdown} from 'primereact/dropdown';
 import './ProjectView.css';
 
 const ProjectView = () => {
     const [projectConfig, setProjectConfig] = useState({
         git_repository_url: '',
         project_home_directory: '',
-        project_description: ''
+        project_description: '',
+        llm_provider: '',
+        openrouter_model: '',
+        gemini_model: ''
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testingConnection, setTestingConnection] = useState(false);
+
+    // LLM provider options
+    const llmProviderOptions = [
+        { label: 'OpenRouter', value: 'OpenRouter' },
+        { label: 'Gemini', value: 'Gemini' }
+    ];
+
+    // OpenRouter model options
+    const openrouterModelOptions = [
+        { label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash-preview-05-20' },
+        { label: 'Gemini 1.5 Pro', value: 'google/gemini-1.5-pro-latest' },
+        { label: 'Claude 3 Opus', value: 'anthropic/claude-3-opus:beta' },
+        { label: 'Claude 3 Sonnet', value: 'anthropic/claude-3-sonnet:beta' },
+        { label: 'GPT-4o', value: 'openai/gpt-4o' }
+    ];
+
+    // Gemini model options
+    const geminiModelOptions = [
+        { label: 'Gemini 2.5 Flash', value: 'gemini-2.5-flash-preview-05-20' },
+        { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro-latest' },
+        { label: 'Gemini Pro', value: 'gemini-pro' }
+    ];
 
     // Create a ref for the toast
     const toastRef = useRef(null);
@@ -33,7 +59,10 @@ const ProjectView = () => {
                 setProjectConfig({
                     git_repository_url: '',
                     project_home_directory: '',
-                    project_description: ''
+                    project_description: '',
+                    llm_provider: '',
+                    openrouter_model: '',
+                    gemini_model: ''
                 });
                 setLoading(false);
                 return;
@@ -223,6 +252,49 @@ const ProjectView = () => {
                         <small className="text-muted">A descriptive summary of the project. Markdown is
                             supported.</small>
                     </div>
+
+                    <div className="field">
+                        <label htmlFor="llm_provider">LLM Provider</label>
+                        <Dropdown
+                            id="llm_provider"
+                            value={projectConfig.llm_provider}
+                            options={llmProviderOptions}
+                            onChange={(e) => handleInputChange('llm_provider', e.value)}
+                            placeholder="Select an LLM Provider"
+                            className="w-full"
+                        />
+                        <small className="text-muted">The LLM provider to use for AI-powered features. If not selected, OpenRouter will be used by default.</small>
+                    </div>
+
+                    {projectConfig.llm_provider === 'OpenRouter' && (
+                        <div className="field">
+                            <label htmlFor="openrouter_model">OpenRouter Model</label>
+                            <Dropdown
+                                id="openrouter_model"
+                                value={projectConfig.openrouter_model}
+                                options={openrouterModelOptions}
+                                onChange={(e) => handleInputChange('openrouter_model', e.value)}
+                                placeholder="Select an OpenRouter Model"
+                                className="w-full"
+                            />
+                            <small className="text-muted">The model to use with OpenRouter. If not selected, the default model will be used.</small>
+                        </div>
+                    )}
+
+                    {projectConfig.llm_provider === 'Gemini' && (
+                        <div className="field">
+                            <label htmlFor="gemini_model">Gemini Model</label>
+                            <Dropdown
+                                id="gemini_model"
+                                value={projectConfig.gemini_model}
+                                options={geminiModelOptions}
+                                onChange={(e) => handleInputChange('gemini_model', e.value)}
+                                placeholder="Select a Gemini Model"
+                                className="w-full"
+                            />
+                            <small className="text-muted">The model to use with Gemini. If not selected, the default model will be used.</small>
+                        </div>
+                    )}
                 </div>
             </Card>
         </div>

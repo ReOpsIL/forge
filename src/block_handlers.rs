@@ -90,9 +90,18 @@ pub async fn add_block_handler(block: web::Json<Block>, data: web::Data<AppState
 }
 
 // Function to enhance block description and generate tasks using LLM
-async fn enhance_block_with_llm(mut block: Block) -> Result<Block, String> {
+async fn enhance_block_with_llm(mut block: Block, data: &web::Data<AppState>) -> Result<Block, String> {
+    // Get the project configuration to get the LLM provider setting
+    let project_config = data.project_manager.get_config()
+        .map_err(|e| format!("Failed to get project config: {}", e))?;
+
     // Enhance the description using LLM
-    let enhanced_description = enhance_description(&block.description).await?;
+    let enhanced_description = enhance_description(
+        &block.description, 
+        project_config.llm_provider,
+        project_config.openrouter_model.clone(),
+        project_config.gemini_model.clone()
+    ).await?;
 
     // Update the block with the enhanced description
     block.description = enhanced_description;
@@ -100,10 +109,18 @@ async fn enhance_block_with_llm(mut block: Block) -> Result<Block, String> {
     Ok(block)
 }
 
-async fn generate_tasks_with_llm(mut block: Block) -> Result<Block, String> {
+async fn generate_tasks_with_llm(mut block: Block, data: &web::Data<AppState>) -> Result<Block, String> {
+    // Get the project configuration to get the LLM provider setting
+    let project_config = data.project_manager.get_config()
+        .map_err(|e| format!("Failed to get project config: {}", e))?;
 
     // Generate tasks based on the enhanced description
-    let generated_tasks = generate_tasks(&block.description).await?;
+    let generated_tasks = generate_tasks(
+        &block.description, 
+        project_config.llm_provider,
+        project_config.openrouter_model.clone(),
+        project_config.gemini_model.clone()
+    ).await?;
 
     // Add the generated tasks to the block's todo list
     for task_description in generated_tasks {
@@ -118,7 +135,7 @@ async fn generate_tasks_with_llm(mut block: Block) -> Result<Block, String> {
 pub async fn enhance_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
     let mut block = block.into_inner();
 
-    match enhance_block_with_llm(block.clone()).await {
+    match enhance_block_with_llm(block.clone(), &data).await {
         Ok(enhanced_block) => {
             block = enhanced_block;
         },
@@ -145,7 +162,7 @@ pub async fn enhance_block_handler(block: web::Json<Block>, data: web::Data<AppS
 pub async fn generate_tasks_block_handler(block: web::Json<Block>, data: web::Data<AppState>) -> impl Responder {
     let mut block = block.into_inner();
 
-    match generate_tasks_with_llm(block.clone()).await {
+    match generate_tasks_with_llm(block.clone(), &data).await {
         Ok(block_with_tasks) => {
             block = block_with_tasks;
         },
@@ -240,10 +257,24 @@ pub async fn generate_sample_config_handler() -> impl Responder {
 }
 
 // API endpoint for auto-complete suggestions
-pub async fn auto_complete_handler(description: web::Json<String>) -> impl Responder {
+pub async fn auto_complete_handler(description: web::Json<String>, data: web::Data<AppState>) -> impl Responder {
     let description = description.into_inner();
 
-    match auto_complete_description(&description).await {
+    // Get the project configuration to get the LLM provider setting
+    let project_config = match data.project_manager.get_config() {
+        Ok(config) => config,
+        Err(e) => {
+            println!("Failed to get project config: {}", e);
+            return HttpResponse::InternalServerError().body(format!("Failed to get project config: {}", e));
+        }
+    };
+
+    match auto_complete_description(
+        &description, 
+        project_config.llm_provider,
+        project_config.openrouter_model.clone(),
+        project_config.gemini_model.clone()
+    ).await {
         Ok(enhanced_description) => {
             let response = AutoCompleteResponse {
                 suggestion: enhanced_description,
@@ -272,8 +303,17 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
         return HttpResponse::BadRequest().body(format!("Block '{}' not found", request.block_name));
     }
 
+    // Get the project configuration to get the LLM provider setting
+    let project_config = match data.project_manager.get_config() {
+        Ok(config) => config,
+        Err(e) => {
+            println!("Failed to get project config: {}", e);
+            return HttpResponse::InternalServerError().body(format!("Failed to get project config: {}", e));
+        }
+    };
+
     // Process the markdown file and generate tasks
-    match process_markdown_file(&request.markdown_content).await {
+    match process_markdown_file(&request.markdown_content, project_config.llm_provider).await {
         Ok(tasks) => {
             // Add the generated tasks to the block's todo list
             let block = &mut blocks[block_index.unwrap()];
@@ -311,8 +351,17 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
 pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: web::Data<AppState>) -> impl Responder {
     let request = request.into_inner();
 
+    // Get the project configuration to get the LLM provider setting
+    let project_config = match data.project_manager.get_config() {
+        Ok(config) => config,
+        Err(e) => {
+            println!("Failed to get project config: {}", e);
+            return HttpResponse::InternalServerError().body(format!("Failed to get project config: {}", e));
+        }
+    };
+
     // Process the markdown specification and generate blocks
-    match process_markdown_spec(&request.markdown_content).await {
+    match process_markdown_spec(&request.markdown_content, project_config.llm_provider).await {
         Ok(generated_blocks) => {
             let mut created_blocks = Vec::new();
 

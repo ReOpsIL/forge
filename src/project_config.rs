@@ -11,6 +11,9 @@ pub struct ProjectConfig {
     pub git_repository_url: String,
     pub project_home_directory: String,
     pub project_description: String,
+    pub llm_provider: Option<crate::llm_handler::LLMProvider>,
+    pub openrouter_model: Option<String>,
+    pub gemini_model: Option<String>,
 }
 
 impl Default for ProjectConfig {
@@ -19,6 +22,9 @@ impl Default for ProjectConfig {
             git_repository_url: String::new(),
             project_home_directory: String::new(),
             project_description: String::new(),
+            llm_provider: None,
+            openrouter_model: None,
+            gemini_model: None,
         }
     }
 }
@@ -38,7 +44,7 @@ impl ProjectConfigManager {
 
     pub fn load_config(&self) -> io::Result<ProjectConfig> {
         let config_path = Path::new(&self.config_file);
-        
+
         //Print the current working directory:
         //let cwd_path = env::current_dir()?;
         //println!("The current directory is {}", cwd_path.display());
@@ -47,32 +53,32 @@ impl ProjectConfigManager {
         if !config_path.exists() {
             return Ok(ProjectConfig::default());
         }
-        
+
         let config_str = fs::read_to_string(config_path)?;
         let config: ProjectConfig = serde_json::from_str(&config_str)?;
-        
+
         // Update the internal config
         let mut internal_config = self.config.lock().unwrap();
         *internal_config = config.clone();
-        
+
         Ok(config)
     }
 
     pub fn save_config(&self, config: &ProjectConfig) -> io::Result<()> {
         let config_str = serde_json::to_string_pretty(config)?;
-        
+
         // Update the internal config
         let mut internal_config = self.config.lock().unwrap();
         *internal_config = config.clone();
-        
+
         // Create the directory if it doesn't exist
         if let Some(parent) = Path::new(&self.config_file).parent() {
             fs::create_dir_all(parent)?;
         }
-        
+
         // Write the config to file
         fs::write(&self.config_file, config_str)?;
-        
+
         // If project_home_directory is specified, create it if it doesn't exist
         if !config.project_home_directory.is_empty() {
             let project_dir = Path::new(&config.project_home_directory);
@@ -80,7 +86,7 @@ impl ProjectConfigManager {
                 fs::create_dir_all(project_dir)?;
             }
         }
-        
+
         Ok(())
     }
 
@@ -97,11 +103,11 @@ pub async fn test_git_connection(url: &str) -> Result<String, String> {
     if url.is_empty() {
         return Err("Git repository URL cannot be empty".to_string());
     }
-    
+
     if !(url.starts_with("http://") || url.starts_with("https://") || url.starts_with("git@")) {
         return Err("Invalid Git repository URL format".to_string());
     }
-    
+
     // For now, just return success if the URL looks valid
     Ok("Successfully connected to Git repository".to_string())
 }
