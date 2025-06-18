@@ -10,7 +10,7 @@ import {Checkbox} from 'primereact/checkbox';
 import {ConfirmDialog, confirmDialog} from 'primereact/confirmdialog';
 import {Dialog} from 'primereact/dialog';
 import {Toast} from 'primereact/toast';
-import Editor from '@monaco-editor/react';
+import Editor, { DiffEditor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import './BlocksView.css';
 
@@ -31,9 +31,11 @@ const BlocksView = () => {
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [showDiffDialog, setShowDiffDialog] = useState(false);
     const [currentTaskLog, setCurrentTaskLog] = useState('');
-    const [currentDiff, setCurrentDiff] = useState('');
+    const [currentDiff, setCurrentDiff] = useState({ original: '', modified: '' });
     const [currentCommitId, setCurrentCommitId] = useState('');
     const [isDiffLoading, setIsDiffLoading] = useState(false);
+    const [filesDiff, setFilesDiff] = useState([]);
+    const [selectedFile, setSelectedFile] = useState(null);
     const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
     const [isAutoCompleteLoading, setIsAutoCompleteLoading] = useState(false);
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
@@ -945,8 +947,22 @@ const BlocksView = () => {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                setCurrentDiff(data.diff || '');
+                // Store both original and modified content for the diff editor
+                setCurrentDiff({
+                    original: data.original_content || '',
+                    modified: data.modified_content || ''
+                });
                 setCurrentCommitId(data.commit_id || '');
+
+                // Store the list of modified files
+                if (data.files_diff && data.files_diff.length > 0) {
+                    setFilesDiff(data.files_diff);
+                    // Select the first file by default
+                    setSelectedFile(data.files_diff[0]);
+                } else {
+                    setFilesDiff([]);
+                    setSelectedFile(null);
+                }
             } else {
                 toastRef.current.show({
                     severity: 'error',
@@ -954,8 +970,10 @@ const BlocksView = () => {
                     detail: data.message || 'Failed to fetch diff',
                     life: 3000
                 });
-                setCurrentDiff('');
+                setCurrentDiff({ original: '', modified: '' });
                 setCurrentCommitId('');
+                setFilesDiff([]);
+                setSelectedFile(null);
             }
         } catch (error) {
             console.error('Error fetching diff:', error);
@@ -965,8 +983,10 @@ const BlocksView = () => {
                 detail: 'Failed to fetch diff',
                 life: 3000
             });
-            setCurrentDiff('');
+            setCurrentDiff({ original: '', modified: '' });
             setCurrentCommitId('');
+            setFilesDiff([]);
+            setSelectedFile(null);
         } finally {
             setIsDiffLoading(false);
         }
@@ -1298,12 +1318,14 @@ const BlocksView = () => {
                             icon="pi pi-times"
                             className="p-button-text"
                             onClick={rejectAutoCompleteSuggestion}
+                            size="small"
                         />
                         <Button
                             label="Accept"
                             icon="pi pi-check"
                             className="p-button-success"
                             onClick={acceptAutoCompleteSuggestion}
+                            size="small"
                         />
                     </div>
                 }
@@ -1331,6 +1353,7 @@ const BlocksView = () => {
                             icon="pi pi-times"
                             className="p-button-text"
                             onClick={() => setShowLogDialog(false)}
+                            size="small"
                         />
                     </div>
                 }
@@ -1361,8 +1384,9 @@ const BlocksView = () => {
             <Dialog
                 header={`Git Diff for Commit ${currentCommitId}`}
                 visible={showDiffDialog}
-                style={{width: '80vw'}}
+                style={{width: '85vw'}}
                 onHide={() => setShowDiffDialog(false)}
+                contentStyle={{padding: '0.5rem'}}
                 footer={
                     <div>
                         <Button
@@ -1370,39 +1394,97 @@ const BlocksView = () => {
                             icon="pi pi-times"
                             className="p-button-text"
                             onClick={() => setShowDiffDialog(false)}
+                            size="small"
                         />
                     </div>
                 }
             >
-                <div className="p-fluid">
-                    <div className="field">
-                        {isDiffLoading ? (
-                            <div className="p-2 border-1 surface-border border-round mt-2 text-center">
-                                Loading diff...
+                <div className="p-0">
+                    {isDiffLoading ? (
+                        <div className="p-1 border-1 surface-border border-round text-center">
+                            Loading diff...
+                        </div>
+                    ) : (
+                        <div className="grid m-0">
+                            {/* File List */}
+                            <div className="col-2 p-0 pr-1">
+                                <h4 className="m-0 mb-1">Modified Files</h4>
+                                <div className="p-1 border-1 surface-border border-round">
+                                    {filesDiff && filesDiff.length > 0 ? (
+                                        <ul className="list-none p-0 m-0">
+                                            {filesDiff.map((file, index) => (
+                                                <li key={index} className="mb-1">
+                                                    <Button
+                                                        label={file.file_path}
+                                                        className={`p-button-text p-button-plain w-full text-left p-1 ${selectedFile && selectedFile.file_path === file.file_path ? 'bg-primary' : ''}`}
+                                                        onClick={() => setSelectedFile(file)}
+                                                        size="small"
+                                                    />
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <div className="text-center p-1">
+                                            No modified files found.
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        ) : currentDiff ? (
-                            <div className="monaco-editor-container">
-                                <Editor
-                                    height="500px"
-                                    defaultLanguage="diff"
-                                    theme="vs-dark"
-                                    value={currentDiff}
-                                    options={{
-                                        readOnly: true,
-                                        minimap: {enabled: true},
-                                        scrollBeyondLastLine: false,
-                                        wordWrap: 'on',
-                                        lineNumbers: 'on',
-                                        automaticLayout: true
-                                    }}
-                                />
+
+                            {/* Diff Editor */}
+                            <div className="col-10 p-0 pl-1">
+                                {selectedFile ? (
+                                    <div>
+                                        <h4 className="m-0 mb-1">Diff for {selectedFile.file_path}</h4>
+                                        <div className="monaco-editor-container">
+                                            <DiffEditor
+                                                height="500px"
+                                                language="javascript" // Use appropriate language or detect from file extension
+                                                theme="vs-dark"
+                                                original={selectedFile.original_content || ''}
+                                                modified={selectedFile.modified_content || ''}
+                                                options={{
+                                                    readOnly: true,
+                                                    minimap: {enabled: false},
+                                                    scrollBeyondLastLine: false,
+                                                    wordWrap: 'on',
+                                                    lineNumbers: 'on',
+                                                    automaticLayout: true,
+                                                    renderSideBySide: true
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (currentDiff && (currentDiff.original || currentDiff.modified)) ? (
+                                    <div>
+                                        <h4 className="m-0 mb-1">Full Commit Diff</h4>
+                                        <div className="monaco-editor-container">
+                                            <DiffEditor
+                                                height="500px"
+                                                language="javascript" // Use appropriate language or detect from file extension
+                                                theme="vs-dark"
+                                                original={currentDiff.original}
+                                                modified={currentDiff.modified}
+                                                options={{
+                                                    readOnly: true,
+                                                    minimap: {enabled: false},
+                                                    scrollBeyondLastLine: false,
+                                                    wordWrap: 'on',
+                                                    lineNumbers: 'on',
+                                                    automaticLayout: true,
+                                                    renderSideBySide: true
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-1 border-1 surface-border border-round text-center">
+                                        No diff available for this commit.
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <div className="p-2 border-1 surface-border border-round mt-2 text-center">
-                                No diff available for this commit.
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </Dialog>
 
@@ -1422,6 +1504,7 @@ const BlocksView = () => {
                                 setShowMarkdownEditorDialog(false);
                                 setCurrentEditingBlock(null);
                             }}
+                            size="small"
                         />
                         <Button
                             label="Save"
@@ -1434,6 +1517,7 @@ const BlocksView = () => {
                                     setCurrentEditingBlock(null);
                                 }
                             }}
+                            size="small"
                         />
                     </div>
                 }
@@ -1482,6 +1566,7 @@ const BlocksView = () => {
                             icon="pi pi-times"
                             className="p-button-text"
                             onClick={() => setShowNewBlockDialog(false)}
+                            size="small"
                         />
                         <Button
                             label="Create"
@@ -1489,6 +1574,7 @@ const BlocksView = () => {
                             className="p-button-success"
                             onClick={handleCreateBlock}
                             disabled={!newBlock.name.trim() || !newBlock.description.trim()}
+                            size="small"
                         />
                     </div>
                 }
@@ -1835,7 +1921,7 @@ const BlocksView = () => {
                                                 disabled={!selectedTasks[block.name]?.length || selectedTasks[block.name]?.length !== 1}
                                             />
                                             <Button
-                                                icon="pi pi-book"
+                                                icon="pi pi-code"
                                                 tooltip="Show task diff"
                                                 className="p-button-sm p-button-code ml-2"
                                                 onClick={() => {

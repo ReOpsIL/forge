@@ -73,13 +73,21 @@ pub struct GetTaskDiffRequest {
     pub task_index: usize,
 }
 
+// Struct to hold original and modified content for a file
+#[derive(Debug, Serialize)]
+pub struct CommitFiles {
+    pub file_path: String,
+    pub original_content: Option<String>,
+    pub modified_content: Option<String>,
+}
+
 // Response for getting a task's diff
 #[derive(Debug, Serialize)]
 pub struct GetTaskDiffResponse {
     pub success: bool,
     pub message: String,
-    pub diff: Option<String>,
     pub commit_id: Option<String>,
+    pub files_diff: Vec<CommitFiles>,
 }
 
 // Handler to create a new Git branch
@@ -754,8 +762,8 @@ pub async fn get_task_diff_handler(
             return HttpResponse::InternalServerError().json(GetTaskDiffResponse {
                 success: false,
                 message: format!("Failed to get project configuration: {}", e),
-                diff: None,
                 commit_id: None,
+                files_diff: Vec::new(),
             });
         }
     };
@@ -765,8 +773,8 @@ pub async fn get_task_diff_handler(
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
             message: "Project home directory is not set. Please configure it in the project settings.".to_string(),
-            diff: None,
             commit_id: None,
+            files_diff: Vec::new(),
         });
     }
 
@@ -775,8 +783,8 @@ pub async fn get_task_diff_handler(
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
             message: format!("Project home directory does not exist: {}", project_dir),
-            diff: None,
             commit_id: None,
+            files_diff: Vec::new(),
         });
     }
 
@@ -787,8 +795,8 @@ pub async fn get_task_diff_handler(
             return HttpResponse::InternalServerError().json(GetTaskDiffResponse {
                 success: false,
                 message: format!("Failed to get blocks: {}", e),
-                diff: None,
                 commit_id: None,
+                files_diff: Vec::new(),
             });
         }
     };
@@ -799,8 +807,8 @@ pub async fn get_task_diff_handler(
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
             message: format!("Block '{}' not found", request.block_name),
-            diff: None,
             commit_id: None,
+            files_diff: Vec::new(),
         });
     }
 
@@ -809,8 +817,8 @@ pub async fn get_task_diff_handler(
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
             message: format!("Task index {} is out of bounds for block '{}'", request.task_index, request.block_name),
-            diff: None,
             commit_id: None,
+            files_diff: Vec::new(),
         });
     }
 
@@ -822,46 +830,101 @@ pub async fn get_task_diff_handler(
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
             message: "No commit ID associated with this task".to_string(),
-            diff: None,
             commit_id: None,
+            files_diff: Vec::new(),
         });
     }
 
     let commit_id = commit_id.unwrap();
 
-    // Get the diff for the commit
-    let diff_output = Command::new("git")
+    // Get the list of modified files in the commit
+    let files_output = Command::new("git")
         .arg("diff")
-        .arg(format!("{}^..{}", commit_id, commit_id)) // Show changes in this commit
+        .arg("--name-only")
+        .arg(format!("{}^", commit_id))
+        .arg(&commit_id)
         .current_dir(&project_dir)
         .output();
 
-    match diff_output {
-        Ok(output) => {
-            if output.status.success() {
-                let diff = String::from_utf8_lossy(&output.stdout).to_string();
+
+    // Check if all commands were successful
+    match (files_output ) {
+        (Ok(files)) => {
+            if files.status.success() {
+
+                // Parse the list of modified files
+                let files_content = String::from_utf8_lossy(&files.stdout).to_string();
+                let files_list = files_content
+                    .trim()
+                    .split('\n')
+                    .filter(|s| !s.is_empty())
+                    .collect::<Vec<&str>>();
+
+                // For each file, get the original and modified content
+                let mut files_diff = Vec::new();
+                for file_path in files_list {
+                    // Get the original content for this file
+                    let file_original_output = Command::new("git")
+                        .arg("show")
+                        .arg(format!("{}^:{}", commit_id, file_path))
+                        .current_dir(&project_dir)
+                        .output();
+
+                    // Get the modified content for this file
+                    let file_modified_output = Command::new("git")
+                        .arg("show")
+                        .arg(format!("{}:{}", commit_id, file_path))
+                        .current_dir(&project_dir)
+                        .output();
+
+                    match (file_original_output, file_modified_output) {
+                        (Ok(file_original), Ok(file_modified)) => {
+                            let file_original_content = if file_original.status.success() {
+                                Some(String::from_utf8_lossy(&file_original.stdout).to_string())
+                            } else {
+                                None
+                            };
+
+                            let file_modified_content = if file_modified.status.success() {
+                                Some(String::from_utf8_lossy(&file_modified.stdout).to_string())
+                            } else {
+                                None
+                            };
+
+                            files_diff.push(CommitFiles {
+                                file_path: file_path.to_string(),
+                                original_content: file_original_content,
+                                modified_content: file_modified_content,
+                            });
+                        },
+                        _ => {
+                            // If we can't get the content for this file, skip it
+                            continue;
+                        }
+                    }
+                }
+
                 HttpResponse::Ok().json(GetTaskDiffResponse {
                     success: true,
-                    message: "Diff retrieved successfully".to_string(),
-                    diff: Some(diff),
+                    message: "File versions retrieved successfully".to_string(),
                     commit_id: Some(commit_id),
+                    files_diff,
                 })
             } else {
-                let error_message = String::from_utf8_lossy(&output.stderr).to_string();
                 HttpResponse::BadRequest().json(GetTaskDiffResponse {
                     success: false,
-                    message: format!("Failed to get diff: {}", error_message),
-                    diff: None,
+                    message: "Failed to get file versions".to_string(),
                     commit_id: Some(commit_id),
+                    files_diff: Vec::new(),
                 })
             }
         }
-        Err(e) => {
+        (Err(e)) => {
             HttpResponse::InternalServerError().json(GetTaskDiffResponse {
                 success: false,
-                message: format!("Failed to execute git diff command: {}", e),
-                diff: None,
+                message: format!("Failed to execute git command: {}", e),
                 commit_id: Some(commit_id),
+                files_diff: Vec::new(),
             })
         }
     }
