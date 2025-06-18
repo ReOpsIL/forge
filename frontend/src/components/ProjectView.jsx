@@ -15,6 +15,7 @@ const ProjectView = () => {
         llm_provider: '',
         openrouter_model: '',
         gemini_model: '',
+        anthropic_model: '',
 
         // User-configurable prompts
         auto_complete_system_prompt: '',
@@ -33,22 +34,21 @@ const ProjectView = () => {
     // LLM provider options
     const llmProviderOptions = [
         { label: 'OpenRouter', value: 'OpenRouter' },
-        { label: 'Gemini', value: 'Gemini' }
+        { label: 'Gemini', value: 'Gemini' },
+        { label: 'Anthropic', value: 'Anthropic' }
     ];
 
     // OpenRouter model options
     const openrouterModelOptions = [
         { label: 'Gemini 2.5 Pro',        value: 'google/gemini-2.5-pro' },
         { label: 'Gemini 2.5 Flash',      value: 'google/gemini-2.5-flash' },
-        { label: 'Gemini 2.5 Flash‑Lite (preview)', value: 'google/gemini-2.5-flash-lite-preview' },
         { label: 'Claude 4 Opus',        value: 'anthropic/claude-opus-4-20250514' },
         { label: 'Claude 4 Sonnet',      value: 'anthropic/claude-sonnet-4-20250514' },
+        { label: 'Claude 3.7 Sonnet',      value: 'anthropic/claude-3-7-sonnet-20250219' },
         { label: 'GPT‑4o',               value: 'openai/gpt-4o' },
         { label: 'GPT‑4 Turbo',          value: 'openai/gpt-4-turbo' },
         { label: 'Mistral Large',        value: 'mistralai/mistral-large-latest' }
     ];
-
-
 
     // Gemini model options
     const geminiModelOptions = [
@@ -57,6 +57,14 @@ const ProjectView = () => {
         { label: 'Gemini 2.5 Flash‑Lite (preview)', value: 'gemini-2.5-flash-lite-preview' },
         { label: 'Gemini Ultra',                    value: 'gemini-ultra' }
     ];
+
+    // Anthropic model options
+    const anthropicModelOptions = [
+        {label: 'Claude Opus 4', value: 'claude-opus-4-20250514'},
+        {label: 'Claude Sonnet 4', value: 'claude-sonnet-4-20250514'},
+        {label: 'Claude Sonnet 3.7', value: 'claude-3-7-sonnet-20250219'}
+    ];
+
 
     // Create a ref for the toast
     const toastRef = useRef(null);
@@ -79,6 +87,7 @@ const ProjectView = () => {
                     llm_provider: '',
                     openrouter_model: '',
                     gemini_model: '',
+                    anthropic_model: '',
 
                     // User-configurable prompts
                     auto_complete_system_prompt: '',
@@ -319,6 +328,21 @@ const ProjectView = () => {
                                 className="w-full"
                             />
                             <small className="text-muted">The model to use with Gemini. If not selected, the default model will be used.</small>
+                        </div>
+                    )}
+
+                    {projectConfig.llm_provider === 'Anthropic' && (
+                        <div className="field">
+                            <label htmlFor="anthropic_model">Gemini Model</label>
+                            <Dropdown
+                                id="anthropic_model"
+                                value={projectConfig.anthropic_model}
+                                options={anthropicModelOptions}
+                                onChange={(e) => handleInputChange('anthropic_model', e.value)}
+                                placeholder="Select a Anthropic Model"
+                                className="w-full"
+                            />
+                            <small className="text-muted">The model to use with Anthropic. If not selected, the default model will be used.</small>
                         </div>
                     )}
 

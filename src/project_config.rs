@@ -156,6 +156,7 @@ pub struct ProjectConfig {
     pub llm_provider: Option<crate::llm_handler::LLMProvider>,
     pub openrouter_model: Option<String>,
     pub gemini_model: Option<String>,
+    pub anthropic_model: Option<String>,
 
     // User-configurable prompts
     pub auto_complete_system_prompt: Option<String>,
@@ -177,6 +178,7 @@ impl Default for ProjectConfig {
             llm_provider: None,
             openrouter_model: None,
             gemini_model: None,
+            anthropic_model: None,
 
             // Default values for user-configurable prompts
             auto_complete_system_prompt: Some(DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT.to_string()),

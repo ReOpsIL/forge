@@ -16,6 +16,7 @@ use crate::project_config::{
 pub enum LLMProvider {
     OpenRouter,
     Gemini,
+    Anthropic,
 }
 
 impl Default for LLMProvider {
@@ -32,6 +33,10 @@ const DEFAULT_OPENROUTER_MODEL: &str = "google/gemini-2.5-flash-preview-05-20";
 const GEMINI_API_URL: &str = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 const DEFAULT_GEMINI_MODEL: &str = "gemini-2.5-flash-preview-05-20";
 
+// Anthropic API configuration
+const ANTHROPIC_API_URL: &str = "https://api.anthropic.com/v1/messages";
+const DEFAULT_ANTHROPIC_MODEL: &str = "claude-sonnet-4-20250514";
+
 // Function to get the OpenRouter model from the project configuration
 fn get_openrouter_model(openrouter_model: Option<&str>) -> &str {
     openrouter_model.unwrap_or(DEFAULT_OPENROUTER_MODEL)
@@ -40,6 +45,11 @@ fn get_openrouter_model(openrouter_model: Option<&str>) -> &str {
 // Function to get the Gemini model from the project configuration
 fn get_gemini_model(gemini_model: Option<&str>) -> &str {
     gemini_model.unwrap_or(DEFAULT_GEMINI_MODEL)
+}
+
+// Function to get the Anthropic model from the project configuration
+fn get_anthropic_model(anthropic_model: Option<&str>) -> &str {
+    anthropic_model.unwrap_or(DEFAULT_ANTHROPIC_MODEL)
 }
 
 // Struct to hold the OpenRouter LLM response
@@ -80,12 +90,26 @@ struct GeminiPart {
     text: String,
 }
 
+// Struct to hold the Anthropic LLM response
+#[derive(Debug, Deserialize)]
+struct AnthropicResponse {
+    content: Vec<AnthropicContent>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AnthropicContent {
+    text: String,
+    #[serde(rename = "type")]
+    content_type: String,
+}
+
 // LLM Provider implementation
 pub struct LLMProviderImpl {
     provider_type: LLMProvider,
     client: Client,
     openrouter_model: Option<String>,
     gemini_model: Option<String>,
+    anthropic_model: Option<String>,
 }
 
 impl LLMProviderImpl {
@@ -100,12 +124,14 @@ impl LLMProviderImpl {
 
                 let openrouter_model: Option<String>  = config.openrouter_model;
                 let gemini_model: Option<String>  = config.gemini_model;
+                let anthropic_model: Option<String>  = config.anthropic_model;
 
                 Self {
                     provider_type,
                     client: Client::new(),
                     openrouter_model,
                     gemini_model,
+                    anthropic_model,
                 }
 
             },
@@ -117,7 +143,8 @@ impl LLMProviderImpl {
                     provider_type,
                     client: Client::new(),
                     openrouter_model: None,
-                    gemini_model: None
+                    gemini_model: None,
+                    anthropic_model: None
                 }
             }
         }
@@ -128,6 +155,7 @@ impl LLMProviderImpl {
         match self.provider_type {
             LLMProvider::OpenRouter => self.send_openrouter_prompt(system_prompt, user_prompt).await,
             LLMProvider::Gemini => self.send_gemini_prompt(system_prompt, user_prompt).await,
+            LLMProvider::Anthropic => self.send_anthropic_prompt(system_prompt, user_prompt).await,
         }
     }
 
@@ -221,12 +249,61 @@ impl LLMProviderImpl {
 
         Err("No response from Gemini".to_string())
     }
+
+    async fn send_anthropic_prompt(&self, system_prompt: &str, user_prompt: &str) -> Result<String, String> {
+        let api_key = env::var("ANTHROPIC_API_KEY")
+            .map_err(|_| "ANTHROPIC_API_KEY environment variable not set".to_string())?;
+
+        // Use the provided model or fall back to the default
+        let model = get_anthropic_model(self.anthropic_model.as_deref());
+
+        // Create the request payload
+        let payload = json!({
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ],
+            "max_tokens": 4096
+        });
+
+        // Send the request to Anthropic
+        let response = self.client.post(ANTHROPIC_API_URL)
+            .header("x-api-key", api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to send request to Anthropic: {}", e))?;
+
+        // Parse the response
+        let response_body = response.json::<AnthropicResponse>()
+            .await
+            .map_err(|e| format!("Failed to parse Anthropic response: {}", e))?;
+
+        // Extract the content
+        if let Some(content) = response_body.content.first() {
+            if content.content_type == "text" {
+                return Ok(content.text.clone());
+            }
+        }
+
+        Err("No response from Anthropic".to_string())
+    }
 }
 
 
 pub async fn auto_complete_description(description: &str, provider_type: Option<LLMProvider>,
                                        openrouter_model: Option<String>,
-                                       gemini_model: Option<String>) -> Result<String, String> {
+                                       gemini_model: Option<String>,
+                                       anthropic_model: Option<String>) -> Result<String, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
@@ -250,11 +327,14 @@ pub async fn auto_complete_description(description: &str, provider_type: Option<
         LLMProvider::Gemini => {
             provider.send_gemini_prompt(system_prompt, &user_prompt).await
         },
+        LLMProvider::Anthropic => {
+            provider.send_anthropic_prompt(system_prompt, &user_prompt).await
+        },
     }
 }
 
 // Function to enhance a block description using LLM
-pub async fn enhance_description(description: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<String, String> {
+pub async fn enhance_description(description: &str, provider_type: Option<LLMProvider>) -> Result<String, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
@@ -279,11 +359,14 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
         LLMProvider::Gemini => {
             provider.send_gemini_prompt(system_prompt, &user_prompt).await
         },
+        LLMProvider::Anthropic => {
+            provider.send_anthropic_prompt(system_prompt, &user_prompt).await
+        },
     }
 }
 
 // Function to generate tasks for a block based on its description
-pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<Vec<String>, String> {
+pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
@@ -307,6 +390,9 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
         },
         LLMProvider::Gemini => {
             provider.send_gemini_prompt(system_prompt, &user_prompt).await?
+        },
+        LLMProvider::Anthropic => {
+            provider.send_anthropic_prompt(system_prompt, &user_prompt).await?
         },
     };
 
@@ -394,7 +480,7 @@ pub struct GeneratedBlock {
 }
 
 // Function to process a markdown specification and generate blocks
-pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<Vec<GeneratedBlock>, String> {
+pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option<LLMProvider>) -> Result<Vec<GeneratedBlock>, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
