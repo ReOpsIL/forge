@@ -1,12 +1,12 @@
 .blocks-container {
     padding: 0.5rem;
-    background-color: #121212;
+    background-color: #2D2D2D;
     color: #fff;
     height: calc(100vh - 70px);
 }
 
 .block-card {
-    background-color: #1e1e2f;
+    background-color: #1e1e1e;
     height: 100%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s, box-shadow 0.2s;
@@ -274,9 +274,9 @@
 
 /* Custom styles for monaco editor */
 .monaco-editor .margin {
-    background-color: #1e1e2f;
+    background-color: #1e1e1e;
 }
 
 .monaco-editor .monaco-editor-background {
-    background-color: #1e1e2f;
+    background-color: #1e1e1e;
 }

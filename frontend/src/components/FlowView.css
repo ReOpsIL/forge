@@ -3,7 +3,7 @@
     flex-direction: column;
     height: calc(100vh - 70px);
     width: 100%;
-    background-color: #121212;
+    background-color: #2D2D2D;
     color: #fff;
 }
 
@@ -23,7 +23,7 @@
 }
 
 .dark-flow {
-    background-color: #121212;
+    background-color: #2D2D2D;
 }
 
 .flow-node-title {
@@ -41,7 +41,7 @@
 }
 
 .layout-button {
-    background-color: #1e1e2f;
+    background-color: #1e1e1e;
     color: #00f2ff;
     border: 1px solid #00f2ff;
     padding: 4px 8px;

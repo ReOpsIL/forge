@@ -58,7 +58,7 @@ const FlowView = () => {
                 },
                 position: {x: posX, y: posY},
                 style: {
-                    background: '#1e1e2f',
+                    background: '#1e1e1e',
                     color: '#fff',
                     border: '1px solid #00f2ff',
                     boxShadow: '0 0 10px rgba(0, 242, 255, 0.5)',
