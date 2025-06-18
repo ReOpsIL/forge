@@ -14,7 +14,17 @@ const ProjectView = () => {
         project_description: '',
         llm_provider: '',
         openrouter_model: '',
-        gemini_model: ''
+        gemini_model: '',
+
+        // User-configurable prompts
+        auto_complete_system_prompt: '',
+        auto_complete_user_prompt: '',
+        enhance_description_system_prompt: '',
+        enhance_description_user_prompt: '',
+        generate_tasks_system_prompt: '',
+        generate_tasks_user_prompt: '',
+        process_markdown_spec_system_prompt: '',
+        process_markdown_spec_user_prompt: ''
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -62,7 +72,17 @@ const ProjectView = () => {
                     project_description: '',
                     llm_provider: '',
                     openrouter_model: '',
-                    gemini_model: ''
+                    gemini_model: '',
+
+                    // User-configurable prompts
+                    auto_complete_system_prompt: '',
+                    auto_complete_user_prompt: '',
+                    enhance_description_system_prompt: '',
+                    enhance_description_user_prompt: '',
+                    generate_tasks_system_prompt: '',
+                    generate_tasks_user_prompt: '',
+                    process_markdown_spec_system_prompt: '',
+                    process_markdown_spec_user_prompt: ''
                 });
                 setLoading(false);
                 return;
@@ -235,7 +255,7 @@ const ProjectView = () => {
                         <label htmlFor="project_description">Project Description</label>
                         <div className="monaco-editor-container">
                             <Editor
-                                height="200px"
+                                height="100px"
                                 defaultLanguage="markdown"
                                 theme="vs-dark"
                                 value={projectConfig.project_description}
@@ -295,6 +315,177 @@ const ProjectView = () => {
                             <small className="text-muted">The model to use with Gemini. If not selected, the default model will be used.</small>
                         </div>
                     )}
+
+                    <h3>LLM Prompts Configuration</h3>
+                    <p className="text-muted">Configure the prompts used by the LLM for various features. Leave empty to use default prompts.</p>
+
+                    <div className="field">
+                        <label htmlFor="auto_complete_system_prompt">Auto Complete System Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.auto_complete_system_prompt}
+                                onChange={(value) => handleInputChange('auto_complete_system_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">System prompt for auto-completing block descriptions.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="auto_complete_user_prompt">Auto Complete User Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.auto_complete_user_prompt}
+                                onChange={(value) => handleInputChange('auto_complete_user_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">User prompt template for auto-completing block descriptions. Use {} as a placeholder for the description.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="enhance_description_system_prompt">Enhance Description System Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.enhance_description_system_prompt}
+                                onChange={(value) => handleInputChange('enhance_description_system_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">System prompt for enhancing block descriptions.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="enhance_description_user_prompt">Enhance Description User Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.enhance_description_user_prompt}
+                                onChange={(value) => handleInputChange('enhance_description_user_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">User prompt template for enhancing block descriptions. Use {} as a placeholder for the description.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="generate_tasks_system_prompt">Generate Tasks System Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.generate_tasks_system_prompt}
+                                onChange={(value) => handleInputChange('generate_tasks_system_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">System prompt for generating tasks from block descriptions.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="generate_tasks_user_prompt">Generate Tasks User Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.generate_tasks_user_prompt}
+                                onChange={(value) => handleInputChange('generate_tasks_user_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">User prompt template for generating tasks from block descriptions. Use {} as a placeholder for the description.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="process_markdown_spec_system_prompt">Process Markdown Spec System Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.process_markdown_spec_system_prompt}
+                                onChange={(value) => handleInputChange('process_markdown_spec_system_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">System prompt for processing markdown specifications.</small>
+                    </div>
+
+                    <div className="field">
+                        <label htmlFor="process_markdown_spec_user_prompt">Process Markdown Spec User Prompt</label>
+                        <div className="monaco-editor-container">
+                            <Editor
+                                height="100px"
+                                defaultLanguage="markdown"
+                                theme="vs-dark"
+                                value={projectConfig.process_markdown_spec_user_prompt}
+                                onChange={(value) => handleInputChange('process_markdown_spec_user_prompt', value || '')}
+                                options={{
+                                    minimap: {enabled: false},
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true
+                                }}
+                            />
+                        </div>
+                        <small className="text-muted">User prompt template for processing markdown specifications. Use {} as a placeholder for the markdown content.</small>
+                    </div>
                 </div>
             </Card>
         </div>

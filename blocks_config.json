@@ -1,8 +1,82 @@
 [
   {
-    "block_id": "Pfj3Fv",
-    "name": "MIP Generator",
-    "description": "**DICOM Loader and MIP Generator Module Specification**\n\n**Purpose:**\nThe purpose of this module is to efficiently load DICOM (Digital Imaging and Communications in Medicine) files and generate two distinct MIP (Maximum Intensity Projection) spans, specifically from sagittal and coronal views. This module aims to assist in medical visualization applications, enhancing the analysis and interpretation of medical imaging data.\n\n**Functional Components:**\n\n1. **DICOM File Loader:**\n   - **Description:** This component is responsible for loading and parsing DICOM files from a designated source. It must handle various DICOM file formats and ensure compliance with the DICOM standard specifications for medical imaging.\n   - **Functionality:**\n     - Validate the integrity and conformity of the input DICOM files.\n     - Extract essential metadata (such as the patient ID, study date, modality, etc.) which might be necessary for processing and categorization.\n     - Manage errors or inconsistencies in the data gracefully, providing logs or warnings without software failure.\n\n2. **MIP Generation Engine:**\n   - **Description:** Utilizes the loaded DICOM images to produce Maximum Intensity Projections, which is a visualization technique that enhances the perception of high-intensity structures within a volumetric image. Two orientations are specifically targeted: sagittal and coronal.\n   - **Functionality:**\n     - **Sagittal MIP Span Generation:**\n       - Perform image processing to reshape and align the DICOM dataset into a sagittal view.\n       - Apply the MIP technique longitudinally to generate a projection that represents the highest intensity values at each pixel position across the medial-lateral extent of the anatomy.\n     - **Coronal MIP Span Generation:**\n       - Transform the DICOM dataset to align with the coronal plane.\n       - Implement the MIP technique frontally to produce a visualization that displays the most intense pixels along the anterior-posterior axis of the body.\n   - **Output:**\n     - Each view will produce a distinct output file or data stream, formatted appropriately for downstream use (e.g., in further diagnostic tools, reporting, or within an integrated PACS system).\n     - Ensure that output data retains associated metadata for traceability and compliance with medical standards.\n\n**Performance Requirements:**\n- Optimize processing for speed and efficiency to handle large datasets typical in medical imaging environments.\n- Ensure that the output is generated with high fidelity, preserving the clarity and details crucial for diagnostic purposes.\n\n**Security and Compliance:**\n- Adhere to HIPAA and other relevant standards concerning the handling of sensitive medical information.\n- Implement secure processing practices to safeguard patient data integrity and confidentiality throughout the process.\n\n**Scalability:**\n- Design the module to be scalable to accommodate varying sizes and numbers of DICOM files, allowing easy integration into systems of different capacities and specifications.\n\n**Logging and Monitoring:**\n- Implement comprehensive logging for tracking processes, errors, and performance metrics.\n- Provide monitoring capabilities to oversee the health and efficiency of the operations, particularly in a high-throughput medical imaging environment.\n\nBy detailing the requirements and functionalities of each component, this enhanced module description ensures clarity and completeness, guiding the development, testing, and deployment stages effectively.",
+    "block_id": "HAz49p",
+    "name": "DataIngestion",
+    "description": "This is the DataIngestion module",
+    "inputs": [
+      "Input1",
+      "Input2",
+      "Input3"
+    ],
+    "outputs": [
+      "Output1"
+    ],
+    "connections": {
+      "input_connections": [],
+      "output_connections": [
+        {
+          "to_module": "DataProcessing",
+          "input_type": "Input3",
+          "output_id": "Ez7N"
+        }
+      ]
+    },
+    "todo_list": [
+      {
+        "description": "Todo item 1 for DataIngestion",
+        "log": null,
+        "task_id": "dChTKD",
+        "commit_id": null
+      },
+      {
+        "description": "Todo item 2 for DataIngestion",
+        "log": null,
+        "task_id": "IhiCwB",
+        "commit_id": null
+      }
+    ]
+  },
+  {
+    "block_id": "zVVlt7",
+    "name": "DataProcessing",
+    "description": "This is the DataProcessing module",
+    "inputs": [
+      "Input1",
+      "Input2"
+    ],
+    "outputs": [
+      "Output1",
+      "Output2"
+    ],
+    "connections": {
+      "input_connections": [
+        {
+          "from_module": "DataIngestion",
+          "output_type": "Output2",
+          "input_id": "19oJsd"
+        }
+      ],
+      "output_connections": [
+        {
+          "to_module": "DataReporting",
+          "input_type": "Input3",
+          "output_id": "NymP"
+        }
+      ]
+    },
+    "todo_list": [
+      {
+        "description": "Todo item 1 for DataProcessing",
+        "log": null,
+        "task_id": "Ytf9AA",
+        "commit_id": null
+      }
+    ]
+  },
+  {
+    "block_id": "Ph5RhL",
+    "name": "DataVisualization",
+    "description": "This is the DataVisualization module",
     "inputs": [
       "Input1",
       "Input2"
@@ -13,23 +87,38 @@
       "Output3"
     ],
     "connections": {
-      "input_connections": [],
+      "input_connections": [
+        {
+          "from_module": "DataProcessing",
+          "output_type": "Output1",
+          "input_id": "cMPKd0"
+        }
+      ],
       "output_connections": [
         {
-          "to_module": "DataStorage",
+          "to_module": "DataExport",
           "input_type": "Input1",
-          "unique_id": "EaH2"
+          "output_id": "bR7K"
         }
       ]
     },
-    "todo_list": []
+    "todo_list": [
+      {
+        "description": "Todo item 1 for DataVisualization",
+        "log": null,
+        "task_id": "DkH3su",
+        "commit_id": null
+      }
+    ]
   },
   {
-    "block_id": "UBH0j1",
-    "name": "Dicoms Iterator",
-    "description": "### DICOM Compatibility Checker Module\n\n#### Purpose:\nThe DICOM Compatibility Checker Module is a specialized software component designed to systematically process a directory containing DICOM (Digital Imaging and Communications in Medicine) files. Its primary function is to validate each DICOM file against specified compatibility criteria.\n\n#### Functionality Overview:\n1. **Directory Traversal:**\n   - The module initiates its operation by scanning a predefined folder pathway that contains DICOM files. It systematically iterates through each file within the folder, ensuring no file is omitted from the compatibility check.\n\n2. **File Handling and Verification:**\n   - For each DICOM file located during the directory traversal, the module performs a series of operations:\n     - **File Open:** Each DICOM file is opened using a robust file handling mechanism to ensure safe access to the file’s contents without corruption.\n     - **Compatibility Check:** The core functionality of this module involves assessing each DICOM file against established compatibility guidelines. This includes verifying file headers, metadata consistency, and adherence to specific DICOM standards that are critical for downstream processing and integration with other medical imaging systems.\n\n3. **Error Handling and Logging:**\n   - Throughout the process, the module employs comprehensive error handling strategies to manage issues such as file access errors, data corruption, or non-compliance to DICOM standards. Each incident is logged with detailed error messages and the file details, facilitating easier troubleshooting and quality control.\n\n4. **Report Generation:**\n   - Upon completion of the directory traversal and compatibility checks, the module compiles a detailed report outlining the results. This report includes information on the number of files processed, a list of compliant and non-compliant files, and detailed error descriptions for files that failed the compatibility check.\n\n#### Technical Specifications:\n- **Supported DICOM Standards:** DICOM 3.0 and earlier versions.\n- **Compatibility Criteria:** Check includes validation of file header integrity, mandatory tag presence according to specified profiles, encoding checks, and other customizable compatibility rules.\n- **Input:** Configurable path to the directory containing DICOM files.\n- **Output:** Detailed report with compatibility check results, including statistical summaries and individual file reports.\n- **Error Logging:** Errors and exceptions are logged in a structured format to a designated log file.\n\n#### Usage Scenario:\nThis module is particularly valuable in healthcare IT environments where ensuring DICOM file integrity and compatibility is critical, such as in hospitals, diagnostic centers, and research institutions. Additionally, it serves a critical role in preprocessing steps for data migration or system integration projects involving medical images.\n\nBy performing these essential checks efficiently and automatically, the DICOM Compatibility Checker Module ensures that all DICOM files in the system are up to standards, thereby protecting data integrity and facilitating smooth interoperability between diverse medical imaging systems.",
+    "block_id": "L6xDUb",
+    "name": "DataStorage",
+    "description": "This is the DataStorage module",
     "inputs": [
-      "Input1"
+      "Input1",
+      "Input2",
+      "Input3"
     ],
     "outputs": [
       "Output1",
@@ -41,207 +130,28 @@
         {
           "from_module": "DataIngestion",
           "output_type": "Output1",
-          "unique_id": "PTn9"
+          "input_id": "gHWf9y"
         }
       ],
       "output_connections": [
         {
-          "to_module": "DataReporting",
-          "input_type": "Input3",
-          "unique_id": "AeUg"
-        }
-      ]
-    },
-    "todo_list": [
-      "Directory Traversal Implementation:**",
-      "Design and implement a function to read input for a directory path where DICOM files are stored.",
-      "Implement a loop mechanism to traverse each file within the specified directory, ensuring no file is skipped.",
-      "DICOM File Handling:**",
-      "Create a utility to safely open and read contents of DICOM files.",
-      "Implement file integrity checks to confirm that each file can be opened without errors.",
-      "Compatibility Check Design:**",
-      "Define a schema or a set of rules for the DICOM compatibility criteria based on DICOM 3.0 and earlier standards.",
-      "Implement a function that checks each DICOM file’s headers, metadata consistency, and other required tags against the predefined compatibility rules.",
-      "Error Handling and Logging:**",
-      "Design and implement comprehensive error handling mechanisms to catch and manage exceptions like file access errors or data corruption.",
-      "Configure a logging system to log detailed error messages and affected file information into a structured log file for easy troubleshooting.",
-      "Report Generation Tools:**",
-      "Implement functionality to compile and summarize results from the compatibility checks into a structured report.",
-      "Include details in the report such as total number of files processed, list of compliant and non-compliant files, and descriptions of any errors or mismatches found.",
-      "Testing:**",
-      "Write unit tests for each functional component (directory traversal, file handling, compatibility checking, and report generation).",
-      "Create integration tests to ensure that the module works as a cohesive whole and interacts correctly with file systems and logging mechanisms.",
-      "Documentation:**",
-      "Document the codebase thoroughly to outline module functionality, usage, and configuration options.",
-      "Create a user guide explaining how to install, configure, and use the DICOM Compatibility Checker module.",
-      "Deployment Setup:**",
-      "Prepare deployment scripts or instructions to facilitate easy release and deployment of the module in different environments.",
-      "Ensure the module is containerizable, potentially facilitating integration into larger systems or workflows in healthcare IT environments.",
-      "Performance Optimization:**",
-      "Analyze and optimize the performance of the module, particularly focusing on the efficiency of file processing and error handling.",
-      "Compliance and Security Checks:**",
-      "Review the implementation for compliance with relevant healthcare IT standards and regulations.",
-      "Ensure that the module handles DICOM data securely, especially when dealing with sensitive medical information.",
-      "These steps provide a structured plan to ensure that the DICOM Compatibility Checker Module is efficiently developed, deployed, and capable of performing its intended functions in real-world applications, particularly in critical environments like hospitals and diagnostic centers."
-    ]
-  },
-  {
-    "block_id": "Bk5LjC",
-    "name": "DataVisualization",
-    "description": "Certainly! Here is your revised and enhanced software component description provided by you:\n\n---\n\n**Component Name:** User Authentication Module\n\n**Version:** 1.2.3\n\n**Last Updated:** December 1, 2023\n\n**Author:** Jane Doe\n\n**Description:**\nThe User Authentication Module is a critical security component responsible for managing the verification of user credentials and enforcing access controls within the application. Designed to support scalability and adaptability, the module operates seamlessly across various platforms and devices.\n\n**Key Features:**\n\n1. **Multi-Factor Authentication Support:**\n   - Integrates multiple forms of user verification, including biometrics, one-time passwords (OTP), and security questions, to strengthen access security.\n\n2. **Session Management:**\n   - Handles user sessions from login to logout, including session timeout, session renewal, and concurrent session limits to ensure secure user interactions throughout their engagement with the application.\n\n3. **Password Management:**\n   - Provides robust mechanisms for password creation, storage, retrieval, and updates. Uses advanced encryption standards to secure passwords thereby mitigating the risk of unauthorized access.\n\n4. **User Role Management:**\n   - Enables detailed configuration of user roles and permissions, allowing for fine-grained access control to different parts of the application based on the user’s role and privileges.\n\n5. **Audit and Compliance Tracking:**\n   - Automatically logs all access and authentication-related actions, facilitating compliance with regulatory requirements and aiding in audit processes.\n\n6. **API Security:**\n   - Protects APIs used in authentication processes against common security vulnerabilities and attacks such as SQL injection, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF).\n\n7. **Extensibility for Third-Party Integrations:**\n   - Easily integrates with third-party identity providers and authentication services like OAuth, SAML, and OpenID Connect.\n\n**Technology Stack:**\n- Back End: Node.js, Express\n- Security: JWT for tokens, AES for encryption\n- Database: MySQL\n\n**Implementation Guide:**\n- The module can be integrated into existing systems using RESTful APIs, provided in both JSON and XML formats.\n- The configuration documentation is comprehensive and available in markdown files inside the repository.\n\n**Compliance:**\n- Compliant with the General Data Protection Regulation (GDPR) and local data protection laws.\n- Adheres to best practices in cybersecurity outlined in ISO/IEC 27001.\n\n**Limitations:**\n- The module does not currently support legacy systems using non-web based authentication mechanisms.\n\n**Future Enhancements:**\n- Future updates will include support for risk-based authentication, which dynamically adjusts security requirements based on the user's behavior and location data.\n\n**Usage Scenarios:**\n- Suitable for applications requiring robust security measures like banking software, secure document management systems, and any system dealing with sensitive personal or financial information.\n\n**Support and Maintenance:**\n- The module comes with a one-year support contract which includes bug fixes and minor enhancements.\n- New features and updates will be rolled out based on feedback from the initial deployments and ongoing security trends. \n\nBy incorporating this module, developers can significantly streamline authentication processes while amplifying the security integrity of the system, aligning with modern security standards and regulatory compliance needs.",
-    "inputs": [
-      "Input1"
-    ],
-    "outputs": [
-      "Output1",
-      "Output2"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataProcessing",
-          "output_type": "Output3",
-          "unique_id": "II4Y"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataExport",
+          "to_module": "DataTransformation",
           "input_type": "Input1",
-          "unique_id": "PyXU"
+          "output_id": "9ztz"
         }
       ]
     },
     "todo_list": [
-      "Todo item 1 for DataVisualization",
-      "Based on the provided component description for the ROC Curve Visualization Tool, here is a comprehensive list of actionable tasks for implementing this functionality:",
-      "### 1. Planning and Architecture",
-      "Define the software's architecture, including its modular structure and the interactions between modules.",
-      "Select tools and frameworks suitable for the implementation (e.g., Python with Matplotlib and Scikit-learn).",
-      "### 2. Environment Setup",
-      "Set up a development environment with the necessary programming languages and libraries.",
-      "Ensure compatibility and install dependencies for both Python (NumPy, Matplotlib, Scikit-learn) and R (ggplot2, dplyr).",
-      "### 3. Data Input Handling",
-      "Implement functions to read data from different formats: CSV, JSON, and data arrays.",
-      "Validate and preprocess data to ensure it meets expected formats and types.",
-      "Create a data parser that converts input data into a standardized format for processing.",
-      "### 4. ROC Curve Calculation",
-      "Develop a function to calculate the true positive rate (TPR) and false positive rate (FPR) across varying thresholds.",
-      "Implement the logic to compute the Area Under the Curve (AUC) as part of the ROC curve evaluation.",
-      "Ensure numerical accuracy and efficiency in the computations.",
-      "### 5. Visualization Features",
-      "Implement the main plotting function using Matplotlib or ggplot2 that graphs the ROC curve with FPR on the x-axis and TPR on the y-axis.",
-      "Develop an interactive layer with sliders or input fields to dynamically adjust and view threshold values and corresponding TPR/FPR.",
-      "Add customizable options such as color schemes, line styles, and plot labels.",
-      "Integrate distinct markers or color coding for different thresholds to enhance interpretability.",
-      "### 6. User Interface Development",
-      "Design and implement a graphical user interface that is intuitive for non-technical users.",
-      "Include tooltips and a help section detailing the ROC curve and its interpretation.",
-      "Ensure the interface is responsive and accessible on both Windows and macOS systems.",
-      "### 7. Export and Integration Functionality",
-      "Develop functionality to export the ROC curve and AUC metrics to image formats (PNG, JPEG) and document formats (SVG, PDF).",
-      "Create API endpoints or service hooks for integration with other software tools or dashboards.",
-      "### 8. Advanced Options",
-      "Implement advanced settings for statistical users such as threshold granularity and curve smoothing options.",
-      "Provide functionality to overlay and compare multiple ROC curves from different datasource0s or models on a single plot.",
-      "### 9. Testing and Documentation",
-      "Write comprehensive unit tests for each component and function to ensure reliability and correctness.",
-      "Document the codebase thoroughly, including examples of usage and guidelines for extending the module.",
-      "Conduct user acceptance testing with target user groups to gather feedback and refine the tool.",
-      "### 10. Deployment and Maintenance",
-      "Prepare the tool for deployment on different operating systems, ensuring all dependencies are manageable.",
-      "Set up a continuous integration/continuous deployment (CI/CD) pipeline for regular updates and maintenance.",
-      "Develop a user manual and online help resources to support end-users.",
-      "Each of these tasks requires close management and regular feedback loops to ensure the tool meets user needs and performs efficiently across all the specified functionalities.",
-      "Here is a concrete, actionable task list to develop the User Authentication Module based on the detailed description provided:",
-      "Setup Development Environment:**",
-      "Set up a Node.js environment.",
-      "Install dependencies, such as Express, JWT, and AES libraries.",
-      "Database Setup:**",
-      "Design and create MySQL database schemas for storing user credentials, session data, and audit logs.",
-      "Implement secure storage of passwords using AES encryption.",
-      "API Development:**",
-      "Develop RESTful APIs to handle authentication, including login, logout, and password management functionalities.",
-      "Ensure APIs support both JSON and XML formats.",
-      "Multi-Factor Authentication Implementation:**",
-      "Integrate one-time password (OTP) functionality using third-party services like Twilio or Google Authenticator.",
-      "Implement biometric authentication support dependent on device capabilities.",
-      "Develop and incorporate security questions for user verification.",
-      "Session Management Implementation:**",
-      "Code functionalities for session creation, renewal, timeout, and checking for concurrent sessions.",
-      "Implement security mechanisms to prevent session hijacking.",
-      "Password Management Functionality:**",
-      "Develop functionalities for password creation, updates, and retrieval.",
-      "Ensure all password-related actions utilize AES encryption for data security.",
-      "User Role and Permission Management:**",
-      "Develop a system for defining user roles and permissions within the application.",
-      "Implement functionality to enforce different access controls based on the user's role.",
-      "Audit and Compliance Tracking:**",
-      "Implement logging mechanisms for all authentication-related actions.",
-      "Ensure logs are compliant with GDPR and other regulatory requirements.",
-      "API Security Enhancements:**",
-      "Secure API endpoints against SQL injections, XSS, CSRF, and other common attacks.",
-      "Implement rate limiting and other preventive security measures.",
-      "Third-Party Authentication Services Integration:**",
-      "Integrate with third-party identity providers like OAuth, SAML, and OpenID Connect.",
-      "Ensure seamless authentication process across third-party services.",
-      "Testing and Validation:**",
-      "Write unit tests and integration tests for all functionalities.",
-      "Conduct security audits to identify and fix security vulnerabilities.",
-      "Documentation:**",
-      "Document the API endpoints, configurations, and setup procedures in markdown files within the repository.",
-      "Ensure the documentation clearly explains how to integrate and use each feature.",
-      "Compliance Assurance:**",
-      "Review all functionalities to ensure compliance with GDPR and ISO/IEC 27001 standards.",
-      "Document compliance features and any relevant configurations.",
-      "Deployment Preparation:**",
-      "Prepare the module for deployment, including setting up continuous integration and deployment pipelines.",
-      "Package the module to ensure easy inclusion in other projects or systems.",
-      "Support and Maintenance Plan:**",
-      "Develop a plan for ongoing support and maintenance, specifying how bugs will be handled and the process for rolling out security updates and new features.",
-      "User Feedback and Enhancement Planning:**",
-      "Develop mechanisms to gather user feedback.",
-      "Plan for future enhancements like risk-based authentication, considering the user feedback and new security trends.",
-      "Each of these tasks can be assigned to relevant team members, scheduled, and tracked for successful development and deployment of the User Authentication Module.",
-      "AAA"
+      {
+        "description": "Todo item 1 for DataStorage",
+        "log": null,
+        "task_id": "Xl9SX6",
+        "commit_id": null
+      }
     ]
   },
   {
-    "block_id": "9y3avT",
-    "name": "DataStorage",
-    "description": "This is the DataStorage module",
-    "inputs": [
-      "Input1"
-    ],
-    "outputs": [
-      "Output1",
-      "Output2"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataIngestion",
-          "output_type": "Output1",
-          "unique_id": "o24B"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataAnalysis",
-          "input_type": "Input1",
-          "unique_id": "3mJb"
-        }
-      ]
-    },
-    "todo_list": [
-      "Todo item 1 for DataStorage",
-      "Todo item 2 for DataStorage",
-      "Todo item 3 for DataStorage",
-      "Todo item 4 for DataStorage"
-    ]
-  },
-  {
-    "block_id": "2xcDTx",
+    "block_id": "BCYPrT",
     "name": "DataAnalysis",
     "description": "This is the DataAnalysis module",
     "inputs": [
@@ -251,104 +161,88 @@
     ],
     "outputs": [
       "Output1",
-      "Output2"
+      "Output2",
+      "Output3"
     ],
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataIngestion",
+          "from_module": "DataStorage",
           "output_type": "Output2",
-          "unique_id": "jDoB"
+          "input_id": "fgQ2TF"
         }
       ],
       "output_connections": [
         {
-          "to_module": "DataExport",
-          "input_type": "Input1",
-          "unique_id": "esIt"
+          "to_module": "DataValidation",
+          "input_type": "Input3",
+          "output_id": "pTn3"
         }
       ]
     },
     "todo_list": [
-      "Todo item 1 for DataAnalysis",
-      "Todo item 2 for DataAnalysis"
+      {
+        "description": "Todo item 1 for DataAnalysis",
+        "log": null,
+        "task_id": "9h1wOb",
+        "commit_id": null
+      },
+      {
+        "description": "Todo item 2 for DataAnalysis",
+        "log": null,
+        "task_id": "PzZTqE",
+        "commit_id": null
+      },
+      {
+        "description": "Todo item 3 for DataAnalysis",
+        "log": null,
+        "task_id": "tKqv69",
+        "commit_id": null
+      }
     ]
   },
   {
-    "block_id": "H2ysG5",
+    "block_id": "PVVhdL",
     "name": "DataExport",
     "description": "This is the DataExport module",
     "inputs": [
       "Input1"
     ],
     "outputs": [
-      "Output1",
-      "Output2"
-    ],
-    "connections": {
-      "input_connections": [
-        {
-          "from_module": "DataAnalysis",
-          "output_type": "Output2",
-          "unique_id": "mZ4o"
-        }
-      ],
-      "output_connections": [
-        {
-          "to_module": "DataAggregation",
-          "input_type": "Input1",
-          "unique_id": "znC9"
-        }
-      ]
-    },
-    "todo_list": [
-      "Todo item 1 for DataExport",
-      "Todo item 2 for DataExport",
-      "Todo item 3 for DataExport",
-      "Todo item 4 for DataExport"
-    ]
-  },
-  {
-    "block_id": "0JzBwK",
-    "name": "DataValidation",
-    "description": "This is the DataValidation module",
-    "inputs": [
-      "Input1",
-      "Input2"
-    ],
-    "outputs": [
-      "Output1",
-      "Output2"
+      "Output1"
     ],
     "connections": {
       "input_connections": [
         {
           "from_module": "DataIngestion",
-          "output_type": "Output3",
-          "unique_id": "Ae81"
+          "output_type": "Output2",
+          "input_id": "46uUtn"
         }
       ],
       "output_connections": [
         {
-          "to_module": "DataReporting",
-          "input_type": "Input1",
-          "unique_id": "XRgz"
+          "to_module": "DataAggregation",
+          "input_type": "Input3",
+          "output_id": "WnOd"
         }
       ]
     },
     "todo_list": [
-      "Todo item 1 for DataValidation",
-      "Todo item 2 for DataValidation"
+      {
+        "description": "Todo item 1 for DataExport",
+        "log": null,
+        "task_id": "h795z8",
+        "commit_id": null
+      }
     ]
   },
   {
-    "block_id": "95KMO6",
-    "name": "DataTransformation",
-    "description": "This is the DataTransformation module",
+    "block_id": "K7DxpN",
+    "name": "DataValidation",
+    "description": "This is the DataValidation module",
     "inputs": [
       "Input1",
-      "Input2",
-      "Input3"
+      "Input2"
     ],
     "outputs": [
       "Output1",
@@ -358,28 +252,68 @@
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataAnalysis",
-          "output_type": "Output3",
-          "unique_id": "KJvc"
+          "from_module": "DataProcessing",
+          "output_type": "Output1",
+          "input_id": "4Fstk2"
         }
       ],
       "output_connections": [
         {
-          "to_module": "DataAggregation",
-          "input_type": "Input1",
-          "unique_id": "GmjN"
+          "to_module": "DataTransformation",
+          "input_type": "Input2",
+          "output_id": "UZRh"
         }
       ]
     },
     "todo_list": [
-      "Todo item 1 for DataTransformation",
-      "Todo item 2 for DataTransformation",
-      "Todo item 3 for DataTransformation",
-      "Todo item 4 for DataTransformation"
+      {
+        "description": "Todo item 1 for DataValidation",
+        "log": null,
+        "task_id": "JLPcm4",
+        "commit_id": null
+      }
     ]
   },
   {
-    "block_id": "rkpZMF",
+    "block_id": "neXnwe",
+    "name": "DataTransformation",
+    "description": "This is the DataTransformation module",
+    "inputs": [
+      "Input1",
+      "Input2"
+    ],
+    "outputs": [
+      "Output1",
+      "Output2",
+      "Output3"
+    ],
+    "connections": {
+      "input_connections": [
+        {
+          "from_module": "DataProcessing",
+          "output_type": "Output1",
+          "input_id": "Q5dEj6"
+        }
+      ],
+      "output_connections": [
+        {
+          "to_module": "DataReporting",
+          "input_type": "Input2",
+          "output_id": "4O6w"
+        }
+      ]
+    },
+    "todo_list": [
+      {
+        "description": "Todo item 1 for DataTransformation",
+        "log": null,
+        "task_id": "tBCtXd",
+        "commit_id": null
+      }
+    ]
+  },
+  {
+    "block_id": "4zAAQC",
     "name": "DataAggregation",
     "description": "This is the DataAggregation module",
     "inputs": [
@@ -392,31 +326,46 @@
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataAnalysis",
-          "output_type": "Output1",
-          "unique_id": "tEeO"
+          "from_module": "DataProcessing",
+          "output_type": "Output3",
+          "input_id": "eavsaS"
         }
       ],
       "output_connections": [
         {
           "to_module": "DataReporting",
           "input_type": "Input1",
-          "unique_id": "6iQf"
+          "output_id": "7g5t"
         }
       ]
     },
     "todo_list": [
-      "Todo item 1 for DataAggregation",
-      "Todo item 2 for DataAggregation"
+      {
+        "description": "Todo item 1 for DataAggregation",
+        "log": null,
+        "task_id": "W25qmw",
+        "commit_id": null
+      },
+      {
+        "description": "Todo item 2 for DataAggregation",
+        "log": null,
+        "task_id": "gJ0YNX",
+        "commit_id": null
+      },
+      {
+        "description": "Todo item 3 for DataAggregation",
+        "log": null,
+        "task_id": "u8G39S",
+        "commit_id": null
+      }
     ]
   },
   {
-    "block_id": "1DHQMi",
+    "block_id": "pPxLZ8",
     "name": "DataReporting",
     "description": "This is the DataReporting module",
     "inputs": [
-      "Input1",
-      "Input2"
+      "Input1"
     ],
     "outputs": [
       "Output1"
@@ -424,18 +373,20 @@
     "connections": {
       "input_connections": [
         {
-          "from_module": "DataIngestion",
-          "output_type": "Output3",
-          "unique_id": "ZAsQ"
+          "from_module": "DataProcessing",
+          "output_type": "Output2",
+          "input_id": "0UlKfQ"
         }
       ],
       "output_connections": []
     },
     "todo_list": [
-      "Todo item 1 for DataReporting",
-      "Todo item 2 for DataReporting",
-      "Todo item 3 for DataReporting",
-      "Todo item 4 for DataReporting"
+      {
+        "description": "Todo item 1 for DataReporting",
+        "log": null,
+        "task_id": "1HNPTv",
+        "commit_id": null
+      }
     ]
   }
 ]

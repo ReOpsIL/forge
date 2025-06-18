@@ -1,8 +1,0 @@
-{
-  "git_repository_url": "git@github.com:ReOpsIL/simple.git",
-  "project_home_directory": "/Users/dovcaspi/temp/simple",
-  "project_description": "Simple",
-  "llm_provider": "OpenRouter",
-  "openrouter_model": "google/gemini-2.5-flash-preview-05-20",
-  "gemini_model": "gemini-2.5-flash-preview-05-20"
-}

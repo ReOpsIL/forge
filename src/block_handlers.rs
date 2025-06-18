@@ -117,7 +117,9 @@ async fn generate_tasks_with_llm(mut block: Block, data: &web::Data<AppState>) -
     // Generate tasks based on the enhanced description
     let generated_tasks = generate_tasks(
         &block.description, 
-        project_config.llm_provider
+        project_config.llm_provider,
+        project_config.openrouter_model.clone(),
+        project_config.gemini_model.clone()
     ).await?;
 
     // Add the generated tasks to the block's todo list
@@ -311,7 +313,12 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
     };
 
     // Process the markdown file and generate tasks
-    match generate_tasks(&request.markdown_content, project_config.llm_provider).await {
+    match generate_tasks(
+        &request.markdown_content, 
+        project_config.llm_provider,
+        project_config.openrouter_model.clone(),
+        project_config.gemini_model.clone()
+    ).await {
         Ok(tasks) => {
             // Add the generated tasks to the block's todo list
             let block = &mut blocks[block_index.unwrap()];
@@ -359,7 +366,12 @@ pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: 
     };
 
     // Process the markdown specification and generate blocks
-    match process_markdown_spec(&request.markdown_content, project_config.llm_provider).await {
+    match process_markdown_spec(
+        &request.markdown_content, 
+        project_config.llm_provider,
+        project_config.openrouter_model.clone(),
+        project_config.gemini_model.clone()
+    ).await {
         Ok(generated_blocks) => {
             let mut created_blocks = Vec::new();
 

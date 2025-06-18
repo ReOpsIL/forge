@@ -3,7 +3,13 @@ use std::sync::Arc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use crate::project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
+use crate::project_config::{
+    ProjectConfigManager, PROJECT_CONFIG_FILE,
+    DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT,
+    DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT,
+    DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT, DEFAULT_GENERATE_TASKS_USER_PROMPT,
+    DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT
+};
 
 // LLM Provider enum
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -223,14 +229,18 @@ pub async fn auto_complete_description(description: &str, provider_type: Option<
                                        gemini_model: Option<String>) -> Result<String, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
-    // Create the system prompt
-    let system_prompt = "You are an expert software architect assistant that helps writing software component descriptions. Use simple descriptions.";
+    // Load project configuration to get custom prompts
+    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // Create the user prompt
-    let user_prompt = format!(
-        "You are an expert software architect. Your task is to extend the following block description in few sentences (auto complete), preserving the user's intent. Make it a bit more detailed, rephrase and refine, use simple description:\n\n{}",
-        description
-    );
+    // Get system prompt from config or use default
+    let system_prompt = config.auto_complete_system_prompt.as_deref().unwrap_or(DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT);
+
+    // Get user prompt template from config or use default
+    let user_prompt_template = config.auto_complete_user_prompt.as_deref().unwrap_or(DEFAULT_AUTO_COMPLETE_USER_PROMPT);
+
+    // Create the user prompt by formatting the template with the description
+    let user_prompt = user_prompt_template.replace("{}", description);
 
     // Send the prompt and return the result
     match provider.provider_type {
@@ -247,14 +257,18 @@ pub async fn auto_complete_description(description: &str, provider_type: Option<
 pub async fn enhance_description(description: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<String, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
-    // Create the system prompt
-    let system_prompt = "You are an expert software architect assistant that helps refine and enhance software component descriptions.";
+    // Load project configuration to get custom prompts
+    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // Create the user prompt
-    let user_prompt = format!(
-        "You are an expert software architect. Your task is to refine, enhance, and expand the following block description, preserving the user's intent. Make it more detailed, clear, and professional:\n\n{}",
-        description
-    );
+    // Get system prompt from config or use default
+    let system_prompt = config.enhance_description_system_prompt.as_deref().unwrap_or(DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT);
+
+    // Get user prompt template from config or use default
+    let user_prompt_template = config.enhance_description_user_prompt.as_deref().unwrap_or(DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT);
+
+    // Create the user prompt by formatting the template with the description
+    let user_prompt = user_prompt_template.replace("{}", description);
 
 
     // Send the prompt and return the result
@@ -269,17 +283,21 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
 }
 
 // Function to generate tasks for a block based on its description
-pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
+pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<Vec<String>, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
-    // Create the system prompt
-    let system_prompt = "You are an expert software developer assistant that helps break down software components into actionable implementation tasks.";
+    // Load project configuration to get custom prompts
+    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // Create the user prompt
-    let user_prompt = format!(
-        "Based on the following software component description, generate a list of concrete, actionable tasks required to implement this functionality. Format each task as a separate item in a list:\n\n{}",
-        description
-    );
+    // Get system prompt from config or use default
+    let system_prompt = config.generate_tasks_system_prompt.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT);
+
+    // Get user prompt template from config or use default
+    let user_prompt_template = config.generate_tasks_user_prompt.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_USER_PROMPT);
+
+    // Create the user prompt by formatting the template with the description
+    let user_prompt = user_prompt_template.replace("{}", description);
 
 
     // Send the prompt and get the response
@@ -376,17 +394,21 @@ pub struct GeneratedBlock {
 }
 
 // Function to process a markdown specification and generate blocks
-pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option<LLMProvider>) -> Result<Vec<GeneratedBlock>, String> {
+pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<Vec<GeneratedBlock>, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
-    // Create the system prompt
-    let system_prompt = "You are an expert software architect that helps analyze technical specifications and generate implementation blocks with clear descriptions, inputs, and outputs.";
+    // Load project configuration to get custom prompts
+    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // Create the user prompt
-    let user_prompt = format!(
-        "Process the following markdown file containing a technical specification and generate a structured list of implementation blocks. For each block, provide a clear block description, defined inputs, and defined outputs. Format your response as a JSON array of objects, where each object has the following structure: {{\"name\": \"BlockName\", \"description\": \"Block description\", \"inputs\": [\"input1\", \"input2\"], \"outputs\": [\"output1\", \"output2\"]}}. Ensure the JSON is valid and properly formatted:\n\n{}",
-        markdown_content
-    );
+    // Get system prompt from config or use default
+    let system_prompt = config.process_markdown_spec_system_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT);
+
+    // Get user prompt template from config or use default
+    let user_prompt_template = config.process_markdown_spec_user_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT);
+
+    // Create the user prompt by formatting the template with the markdown content
+    let user_prompt = user_prompt_template.replace("{}", markdown_content);
 
     // Send the prompt and get the response
     let content = provider.send_prompt(system_prompt, &user_prompt).await?;
