@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 use std::process::{Command, Stdio};
 use std::io::Write;
 use std::path::Path;
+use std::time::Duration;
 use tokio::task;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
@@ -365,13 +366,16 @@ pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: 
         &request.markdown_content, 
         project_config.llm_provider
     ).await {
+
         Ok(generated_blocks) => {
             let mut created_blocks = Vec::new();
 
             // Create blocks from the generated blocks
             for generated_block in generated_blocks {
+
                 // Store the name for error reporting
                 let block_name = generated_block.name.clone();
+                println!("Generated block {}",block_name);
 
                 // Create a new Block from the GeneratedBlock
                 let block = Block::new(
@@ -387,6 +391,7 @@ pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: 
                         created_blocks.push(block);
                     },
                     Err(e) => {
+                        println!("Error Failed to add block ");
                         return HttpResponse::BadRequest().body(format!("Failed to add block '{}': {}", block_name, e));
                     }
                 }

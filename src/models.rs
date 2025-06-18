@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use rand::{Rng, distributions::Alphanumeric};
+use crate::llm_handler::BlockConnection;
 
 // Define the structure for a task
 #[derive(Serialize, Deserialize, Clone)]
@@ -70,14 +71,14 @@ pub struct Block {
     pub block_id: String,
     pub name: String,
     pub description: String,
-    pub inputs: Vec<String>,
-    pub outputs: Vec<String>,
+    pub inputs: Vec<BlockConnection>,
+    pub outputs: Vec<BlockConnection>,
     pub connections: Connections,
     pub todo_list: Vec<Task>,
 }
 
 impl Block {
-    pub fn new(name: String, description: String, inputs: Vec<String>, outputs: Vec<String>) -> Self {
+    pub fn new(name: String, description: String, inputs: Vec<BlockConnection>, outputs: Vec<BlockConnection>) -> Self {
         // Generate a random 6-character alphanumeric ID
         let block_id: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)
@@ -107,8 +108,8 @@ pub fn get_blocks() -> Vec<Block> {
             block_id: "abc123".to_string(), // Sample block_id
             name: "DataIngestion".to_string(),
             description: "Handles the ingestion of raw data from various sources".to_string(),
-            inputs: vec!["RawData".to_string()],
-            outputs: vec!["ParsedData".to_string()],
+            inputs: vec![BlockConnection::new()],
+            outputs: vec![BlockConnection::new()],
             connections: Connections {
                 input_connections: vec![],
                 output_connections: vec![
@@ -128,8 +129,8 @@ pub fn get_blocks() -> Vec<Block> {
             block_id: "def456".to_string(), // Sample block_id
             name: "DataProcessing".to_string(),
             description: "Processes and transforms the parsed data".to_string(),
-            inputs: vec!["ParsedData".to_string()],
-            outputs: vec!["ProcessedData".to_string()],
+            inputs: vec![BlockConnection::new()],
+            outputs: vec![BlockConnection::new()],
             connections: Connections {
                 input_connections: vec![
                     InputConnection::new(
@@ -154,8 +155,8 @@ pub fn get_blocks() -> Vec<Block> {
             block_id: "ghi789".to_string(), // Sample block_id
             name: "DataVisualization".to_string(),
             description: "Visualizes the processed data".to_string(),
-            inputs: vec!["ProcessedData".to_string()],
-            outputs: vec!["Visualization".to_string()],
+            inputs: vec![BlockConnection::new()],
+            outputs: vec![BlockConnection::new()],
             connections: Connections {
                 input_connections: vec![
                     InputConnection::new(

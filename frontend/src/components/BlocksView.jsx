@@ -1126,7 +1126,11 @@ const BlocksView = () => {
         if (!newInput.trim()) return;
         setNewBlock({
             ...newBlock,
-            inputs: [...newBlock.inputs, newInput]
+            inputs: [...newBlock.inputs, {
+                name: newInput,
+                ctype: "string", // Default ctype
+                description: "Input description" // Default description
+            }]
         });
         setNewInput('');
     };
@@ -1136,7 +1140,11 @@ const BlocksView = () => {
         if (!newOutput.trim()) return;
         setNewBlock({
             ...newBlock,
-            outputs: [...newBlock.outputs, newOutput]
+            outputs: [...newBlock.outputs, {
+                name: newOutput,
+                ctype: "string", // Default ctype
+                description: "Output description" // Default description
+            }]
         });
         setNewOutput('');
     };
@@ -1620,7 +1628,7 @@ const BlocksView = () => {
                                 {newBlock.inputs.map((input, index) => (
                                     <Chip
                                         key={index}
-                                        label={input}
+                                        label={input.name}
                                         removable
                                         onRemove={() => handleRemoveInput(index)}
                                     />
@@ -1649,7 +1657,7 @@ const BlocksView = () => {
                                 {newBlock.outputs.map((output, index) => (
                                     <Chip
                                         key={index}
-                                        label={output}
+                                        label={output.name}
                                         removable
                                         onRemove={() => handleRemoveOutput(index)}
                                     />
@@ -1779,7 +1787,7 @@ const BlocksView = () => {
                                     <h4>Inputs:</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {block.inputs.map((input, index) => (
-                                            <Chip key={index} label={input}/>
+                                            <Chip key={index} label={input.name}/>
                                         ))}
                                     </div>
                                 </div>
@@ -1788,7 +1796,7 @@ const BlocksView = () => {
                                     <h4>Outputs:</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {block.outputs.map((output, index) => (
-                                            <Chip key={index} label={output}/>
+                                            <Chip key={index} label={output.name}/>
                                         ))}
                                     </div>
                                 </div>

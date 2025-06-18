@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::io::{self, Write};
 use serde_json;
 use rand::{Rng, distributions::Alphanumeric};
-
+use crate::llm_handler::BlockConnection;
 use crate::models::{Block, Connections, InputConnection, OutputConnection, Task};
 
 // Struct to manage block configurations
@@ -209,15 +209,7 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
         // Generate random inputs and outputs
         let num_inputs = rand::thread_rng().gen_range(1..=3);
         let num_outputs = rand::thread_rng().gen_range(1..=3);
-
-        let inputs = (0..num_inputs)
-            .map(|j| format!("Input{}", j + 1))
-            .collect::<Vec<String>>();
-
-        let outputs = (0..num_outputs)
-            .map(|j| format!("Output{}", j + 1))
-            .collect::<Vec<String>>();
-
+        
         // Generate random connections
         let mut input_connections = Vec::new();
         let mut output_connections = Vec::new();
@@ -272,8 +264,8 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
             block_id,
             name,
             description,
-            inputs,
-            outputs,
+            inputs: vec![BlockConnection::new()],
+            outputs: vec![BlockConnection::new()],
             connections: Connections {
                 input_connections,
                 output_connections,

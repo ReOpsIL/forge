@@ -50,8 +50,8 @@ const FlowView = () => {
                         <div>
                             <div className="flow-node-title">{block.name}</div>
                             <div className="flow-node-io">
-                                <div>Inputs: {block.inputs.join(', ')}</div>
-                                <div>Outputs: {block.outputs.join(', ')}</div>
+                                <div>Inputs: {block.inputs.map(input => input.name).join(', ')}</div>
+                                <div>Outputs: {block.outputs.map(output => output.name).join(', ')}</div>
                             </div>
                         </div>
                     )

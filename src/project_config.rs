@@ -86,10 +86,10 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the followi
   \"name\": \"CamelCaseBlockName\",
   \"description\": \"Detailed implementation description with technical specifics\",
   \"inputs\": [
-    {\"name\": \"inputName\", \"type\": \"dataType\", \"description\": \"purpose and format\"}
+    {\"name\": \"inputName\", \"ctype\": \"dataType\", \"description\": \"purpose and format\"}
   ],
   \"outputs\": [
-    {\"name\": \"outputName\", \"type\": \"dataType\", \"description\": \"expected result format\"}
+    {\"name\": \"outputName\", \"ctype\": \"dataType\", \"description\": \"expected result format\"}
   ],
   \"dependencies\": [\"RequiredComponent1\", \"RequiredComponent2\"],
   \"complexity\": \"Low|Medium|High\",

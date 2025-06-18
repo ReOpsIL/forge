@@ -30,7 +30,7 @@ const OPENROUTER_API_URL: &str = "https://openrouter.ai/api/v1/chat/completions"
 const DEFAULT_OPENROUTER_MODEL: &str = "google/gemini-2.5-flash-preview-05-20";
 
 // Gemini API configuration
-const GEMINI_API_URL: &str = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+const GEMINI_API_URL: &str = "https://generativelanguage.googleapis.com/v1beta";
 const DEFAULT_GEMINI_MODEL: &str = "gemini-2.5-flash-preview-05-20";
 
 // Anthropic API configuration
@@ -193,12 +193,16 @@ impl LLMProviderImpl {
         // Parse the response
         let response_body = response.json::<OpenRouterResponse>()
             .await
-            .map_err(|e| format!("Failed to parse OpenRouter response: {}", e))?;
+            .map_err(|e| {
+                println!("Failed to parse OpenRouter response: {}", e);
+                format!("Failed to parse OpenRouter response: {}", e)
+            })?;
 
         // Extract the content
         if let Some(choice) = response_body.choices.first() {
             Ok(choice.message.content.clone())
         } else {
+            println!("No response from OpenRouter");
             Err("No response from OpenRouter".to_string())
         }
     }
@@ -227,18 +231,25 @@ impl LLMProviderImpl {
         });
 
         // Send the request to Gemini
-        let url = format!("{}?key={}", GEMINI_API_URL, api_key);
+        let url = format!("{}/models/{}:generateContent?key={}", GEMINI_API_URL, model_to_use.clone().unwrap(), api_key);
         let response = self.client.post(url)
             .header("Content-Type", "application/json")
             .json(&payload)
             .send()
             .await
-            .map_err(|e| format!("Failed to send request to Gemini: {}", e))?;
+            .map_err(|e| {
+                println!("Failed to send request to Gemini: {}", e);
+                format!("Failed to send request to Gemini: {}", e)
+            })?;
 
+        //println!("{:?}", response);
         // Parse the response
         let response_body = response.json::<GeminiResponse>()
             .await
-            .map_err(|e| format!("Failed to parse Gemini response: {}", e))?;
+            .map_err(|e| {
+                println!("Failed to parse Gemini response body: {}", e);
+                format!("Failed to parse Gemini response body: {}", e)
+            })?;
 
         // Extract the content
         if let Some(candidate) = response_body.candidates.first() {
@@ -246,7 +257,7 @@ impl LLMProviderImpl {
                 return Ok(part.text.clone());
             }
         }
-
+        println!("No response from Gemini");
         Err("No response from Gemini".to_string())
     }
 
@@ -281,12 +292,18 @@ impl LLMProviderImpl {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| format!("Failed to send request to Anthropic: {}", e))?;
+            .map_err(|e| {
+                println!("Failed to send request to Anthropic: {}", e);
+                format!("Failed to send request to Anthropic: {}", e)
+            })?;
 
         // Parse the response
         let response_body = response.json::<AnthropicResponse>()
             .await
-            .map_err(|e| format!("Failed to parse Anthropic response: {}", e))?;
+            .map_err(|e| {
+                println!("Failed to parse Anthropic response: {}", e);
+                format!("Failed to parse Anthropic response: {}", e)
+            })?;
 
         // Extract the content
         if let Some(content) = response_body.content.first() {
@@ -294,7 +311,7 @@ impl LLMProviderImpl {
                 return Ok(content.text.clone());
             }
         }
-
+        println!("No response from Anthropic");
         Err("No response from Anthropic".to_string())
     }
 }
@@ -471,12 +488,29 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
 // }
 
 // Define the structure for a block generated from a markdown specification
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct BlockConnection {
+    pub name: String,
+    pub ctype: String,
+    pub description: String,
+}
+
+impl BlockConnection {
+    pub(crate) fn new() -> BlockConnection {
+        Self {
+            name: String::new(),
+            ctype: String::new(),
+            description: String::new(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeneratedBlock {
     pub name: String,
     pub description: String,
-    pub inputs: Vec<String>,
-    pub outputs: Vec<String>,
+    pub inputs: Vec<BlockConnection>,
+    pub outputs: Vec<BlockConnection>,
 }
 
 // Function to process a markdown specification and generate blocks
@@ -504,6 +538,7 @@ pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option
     let json_end = content.rfind(']').map(|i| i + 1).unwrap_or(content.len());
     let json_str = &content[json_start..json_end];
 
+    //println!("{}",json_str);
     // Parse the JSON into a list of GeneratedBlock objects
     let blocks: Vec<GeneratedBlock> = serde_json::from_str(json_str)
         .map_err(|e| format!("Failed to parse generated blocks: {}", e))?;
