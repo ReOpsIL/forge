@@ -8,7 +8,7 @@ use tokio::task;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::Block;
-use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_file, process_markdown_spec, GeneratedBlock};
+use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec, GeneratedBlock};
 use crate::project_config::ProjectConfigManager;
 
 // Define a response type for auto-complete suggestions
@@ -117,9 +117,7 @@ async fn generate_tasks_with_llm(mut block: Block, data: &web::Data<AppState>) -
     // Generate tasks based on the enhanced description
     let generated_tasks = generate_tasks(
         &block.description, 
-        project_config.llm_provider,
-        project_config.openrouter_model.clone(),
-        project_config.gemini_model.clone()
+        project_config.llm_provider
     ).await?;
 
     // Add the generated tasks to the block's todo list
@@ -313,7 +311,7 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
     };
 
     // Process the markdown file and generate tasks
-    match process_markdown_file(&request.markdown_content, project_config.llm_provider).await {
+    match generate_tasks(&request.markdown_content, project_config.llm_provider).await {
         Ok(tasks) => {
             // Add the generated tasks to the block's todo list
             let block = &mut blocks[block_index.unwrap()];

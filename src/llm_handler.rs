@@ -101,7 +101,7 @@ impl LLMProviderImpl {
                     openrouter_model,
                     gemini_model,
                 }
-                
+
             },
             Err(e) => {
                 println!("Failed to load project configuration from {}: {}", PROJECT_CONFIG_FILE, e);
@@ -115,7 +115,7 @@ impl LLMProviderImpl {
                 }
             }
         }
-        
+
     }
 
     pub async fn send_prompt(&self, system_prompt: &str, user_prompt: &str) -> Result<String, String> {
@@ -269,7 +269,7 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
 }
 
 // Function to generate tasks for a block based on its description
-pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>, openrouter_model: Option<String>, gemini_model: Option<String>) -> Result<Vec<String>, String> {
+pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Create the system prompt
@@ -321,50 +321,50 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
     Ok(tasks)
 }
 
-// Function to process a markdown file and generate tasks
-pub async fn process_markdown_file(markdown_content: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
-    let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
-
-    // Create the system prompt
-    let system_prompt = "You are an expert software developer assistant that helps extract and format tasks from markdown files.";
-
-    // Create the user prompt
-    let user_prompt = format!(
-        "Process the following markdown file and extract a list of tasks. Format each task as a separate item in a list. If the markdown already contains a list of tasks, extract and format them appropriately:\n\n{}",
-        markdown_content
-    );
-
-    // Send the prompt and get the response
-    let content = provider.send_prompt(system_prompt, &user_prompt).await?;
-
-    // Parse the content into a list of tasks
-    // Simple parsing: split by newlines and filter out empty lines and list markers
-    let tasks: Vec<String> = content
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            // Remove list markers like "1.", "- ", "* ", etc.
-            if line.starts_with(|c: char| c.is_numeric() || c == '-' || c == '*') {
-                let mut chars = line.chars();
-                chars.next(); // Skip the first character
-
-                // Skip any following characters that are not letters (like ".", ")", " ")
-                let mut result = chars.as_str();
-                while !result.is_empty() && !result.chars().next().unwrap().is_alphabetic() {
-                    result = &result[1..];
-                }
-
-                result.trim().to_string()
-            } else {
-                line.to_string()
-            }
-        })
-        .filter(|line| !line.is_empty())
-        .collect();
-
-    Ok(tasks)
-}
+// // Function to process a markdown file and generate tasks
+// pub async fn process_markdown_file(markdown_content: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
+//     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
+// 
+//     // Create the system prompt
+//     let system_prompt = "You are an expert software developer assistant that helps extract and format tasks from markdown files.";
+// 
+//     // Create the user prompt
+//     let user_prompt = format!(
+//         "Process the following markdown file and extract a list of tasks. Format each task as a separate item in a list. If the markdown already contains a list of tasks, extract and format them appropriately:\n\n{}",
+//         markdown_content
+//     );
+// 
+//     // Send the prompt and get the response
+//     let content = provider.send_prompt(system_prompt, &user_prompt).await?;
+// 
+//     // Parse the content into a list of tasks
+//     // Simple parsing: split by newlines and filter out empty lines and list markers
+//     let tasks: Vec<String> = content
+//         .lines()
+//         .map(|line| line.trim())
+//         .filter(|line| !line.is_empty())
+//         .map(|line| {
+//             // Remove list markers like "1.", "- ", "* ", etc.
+//             if line.starts_with(|c: char| c.is_numeric() || c == '-' || c == '*') {
+//                 let mut chars = line.chars();
+//                 chars.next(); // Skip the first character
+// 
+//                 // Skip any following characters that are not letters (like ".", ")", " ")
+//                 let mut result = chars.as_str();
+//                 while !result.is_empty() && !result.chars().next().unwrap().is_alphabetic() {
+//                     result = &result[1..];
+//                 }
+// 
+//                 result.trim().to_string()
+//             } else {
+//                 line.to_string()
+//             }
+//         })
+//         .filter(|line| !line.is_empty())
+//         .collect();
+// 
+//     Ok(tasks)
+// }
 
 // Define the structure for a block generated from a markdown specification
 #[derive(Serialize, Deserialize, Debug)]
