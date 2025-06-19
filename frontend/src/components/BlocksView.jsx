@@ -1809,7 +1809,7 @@ const BlocksView = () => {
 
                             <Panel header="Inputs & Outputs" toggleable>
                                 <div className="mb-3">
-                                    <h4>Inputs:</h4>
+                                    <h4 style={{fontSize: '1.0rem'}}>Inputs:</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {block.inputs.map((input, index) => (
                                             <Chip key={index} label={input.name}/>
@@ -1818,7 +1818,7 @@ const BlocksView = () => {
                                 </div>
 
                                 <div>
-                                    <h4>Outputs:</h4>
+                                    <h4 style={{fontSize: '1.0rem'}}>Outputs:</h4>
                                     <div className="flex flex-wrap gap-2">
                                         {block.outputs.map((output, index) => (
                                             <Chip key={index} label={output.name}/>
@@ -1829,7 +1829,7 @@ const BlocksView = () => {
 
                             <Panel header="Connections" toggleable>
                                 <div className="mb-3">
-                                    <h4>Input Connections:</h4>
+                                    <h4 style={{fontSize: '1.0rem'}}>Input Connections:</h4>
                                     {block.connections.input_connections.length > 0 ? (
                                         <ul className="m-0 p-0 list-none">
                                             {block.connections.input_connections.map((conn, index) => (
@@ -1841,12 +1841,12 @@ const BlocksView = () => {
                                             ))}
                                         </ul>
                                     ) : (
-                                        <p>No input connections</p>
+                                        <h4 style={{fontSize: '0.7rem'}}>No input connections</h4>
                                     )}
                                 </div>
 
                                 <div>
-                                    <h4>Output Connections:</h4>
+                                    <h4 style={{fontSize: '1.0rem'}}>Output Connections:</h4>
                                     {block.connections.output_connections.length > 0 ? (
                                         <ul className="m-0 p-0 list-none">
                                             {block.connections.output_connections.map((conn, index) => (
@@ -1858,7 +1858,7 @@ const BlocksView = () => {
                                             ))}
                                         </ul>
                                     ) : (
-                                        <p>No output connections</p>
+                                        <h4 style={{fontSize: '0.7rem'}}>No output connections</h4>
                                     )}
                                 </div>
                             </Panel>
@@ -1939,9 +1939,9 @@ const BlocksView = () => {
                                                 tooltip="Show task logs"
                                                 className="p-button-sm p-button-info ml-2"
                                                 onClick={() => {
-                                                    const selectedTaskIds = selectedTasks[block.name] || [];
-                                                    if (selectedTaskIds.length === 1) {
-                                                        showTaskLog(block.name, selectedTaskIds[0]);
+                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
+                                                    if (selectedTaskIndices.length === 1) {
+                                                        showTaskLog(block.name, selectedTaskIndices[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',
@@ -1958,9 +1958,9 @@ const BlocksView = () => {
                                                 tooltip="Show task diff"
                                                 className="p-button-sm p-button-code ml-2"
                                                 onClick={() => {
-                                                    const selectedTaskIds = selectedTasks[block.name] || [];
-                                                    if (selectedTaskIds.length === 1) {
-                                                        showTaskDiff(block.name, selectedTaskIds[0]);
+                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
+                                                    if (selectedTaskIndices.length === 1) {
+                                                        showTaskDiff(block.name, selectedTaskIndices[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',

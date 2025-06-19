@@ -1,32 +1,50 @@
-# Forge
+# Forge IDE
 
-A React application with PrimeReact UI components.
+A Visual Software Architecture & Modules-Driven Development Platform with LLM-Powered Task Programming
+
+## Overview
+
+Forge IDE is a revolutionary development platform that visualizes software as an interconnected graph of intelligent modules. Developers can architect systems through high-level specifications and task definitions rather than writing code directly. The integrated LLM backend translates architectural intent into functioning code while maintaining perfect awareness of inter-module relationships and data flows.
+
+## Features
+
+### Block-Based Architecture
+- Software modules represented as blocks with inputs, outputs, and connections
+- JSON-based configuration for storing block definitions
+- Dynamic loading and management of block configurations
+
+### Visual Interface
+- Card-based view for detailed block information
+- Interactive flow diagram for visualizing block connections using ReactFlow
+- Ability to edit block descriptions and manage todo items
+- Built with Vite, React, and styled with PrimeReact components
+
+### Backend API
+- RESTful API for CRUD operations on blocks
+- Support for adding and removing todo items
+- Sample configuration generation
+
+### LLM Integration
+- Multiple LLM providers supported (OpenRouter, Gemini, Anthropic)
+- Auto-completion and enhancement of block descriptions
+- Automatic task generation from block descriptions
+- Processing markdown specifications to generate blocks
+
+### Git Integration
+- Branch creation and management
+- Commit, merge, push, and pull operations
+- Task execution with Git integration
+- Diff viewing for tasks
+- Build handling
+
+### Task Management
+- Task execution functionality
+- Task status tracking
+- Task logs and commit tracking
 
 ## Quick Start
 
 To run the application:
-
-1. Open a terminal
-2. Navigate to the project directory
-3. Install frontend dependencies (if not already installed):
-   ```bash
-   npm run install-frontend
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open your browser and go to http://localhost:5173
-
-## Features
-
-- Top menu with Blocks, Flow, and Help items
-- Built with Vite and React
-- Styled with PrimeReact, PrimeIcons, and PrimeFlex
-- Interactive block visualization with ReactFlow
-- Dynamic block configuration management
-- RESTful API for CRUD operations on blocks
-- JSON-based configuration storage
 
 ## Getting Started
 
@@ -143,6 +161,8 @@ The backend provides the following RESTful API endpoints:
 
 #### Example API Usage
 
+##### Block Management
+
 Get all blocks:
 ```bash
 curl -X GET http://localhost:8080/api/blocks
@@ -202,6 +222,131 @@ curl -X DELETE http://localhost:8080/api/blocks/BlockName/todo/0
 Generate a new sample configuration:
 ```bash
 curl -X POST http://localhost:8080/api/generate-sample
+```
+
+##### LLM Integration
+
+Enhance a block's description:
+```bash
+curl -X PUT http://localhost:8080/api/blocks/BlockName/enhance \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Generate tasks for a block:
+```bash
+curl -X PUT http://localhost:8080/api/blocks/BlockName/generate-tasks \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Auto-complete a partial description:
+```bash
+curl -X POST http://localhost:8080/api/blocks/auto-complete \
+  -H "Content-Type: application/json" \
+  -d '{
+    "partial_description": "This block handles user authentication and"
+  }'
+```
+
+Process markdown specifications:
+```bash
+curl -X POST http://localhost:8080/api/blocks/process-markdown \
+  -H "Content-Type: application/json" \
+  -d '{
+    "markdown_content": "# User Authentication Module\n\nThis module handles user login, registration, and session management."
+  }'
+```
+
+Execute a task:
+```bash
+curl -X POST http://localhost:8080/api/blocks/execute-task \
+  -H "Content-Type: application/json" \
+  -d '{
+    "block_name": "BlockName",
+    "task_index": 0
+  }'
+```
+
+##### Project Configuration
+
+Get project configuration:
+```bash
+curl -X GET http://localhost:8080/api/project
+```
+
+Update project configuration:
+```bash
+curl -X PUT http://localhost:8080/api/project \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_name": "My Project",
+    "project_home_directory": "/path/to/project",
+    "git_repository_url": "https://github.com/username/repo.git",
+    "llm_provider": "openrouter"
+  }'
+```
+
+Test Git connection:
+```bash
+curl -X POST http://localhost:8080/api/project/test-git-connection \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+##### Git Integration
+
+Create a new branch:
+```bash
+curl -X POST http://localhost:8080/api/git/branch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "branch_name": "feature/new-feature"
+  }'
+```
+
+Commit changes:
+```bash
+curl -X POST http://localhost:8080/api/git/commit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "commit_message": "Implement new feature"
+  }'
+```
+
+Merge a branch:
+```bash
+curl -X POST http://localhost:8080/api/git/merge \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source_branch": "feature/new-feature",
+    "target_branch": "main"
+  }'
+```
+
+Push changes:
+```bash
+curl -X POST http://localhost:8080/api/git/push \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Pull changes:
+```bash
+curl -X POST http://localhost:8080/api/git/pull \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Execute a task with Git integration:
+```bash
+curl -X POST http://localhost:8080/api/git/execute-task \
+  -H "Content-Type: application/json" \
+  -d '{
+    "block_name": "BlockName",
+    "task_index": 0,
+    "branch_name": "feature/task-implementation"
+  }'
 ```
 
 ### Data Models
@@ -280,6 +425,39 @@ Key methods:
 - `delete_block(&self, block_name: &str) -> Result<(), String>`: Deletes a block
 - `add_todo_item(&self, block_name: &str, todo_item: &str) -> Result<(), String>`: Adds a todo item to a block
 - `remove_todo_item(&self, block_name: &str, todo_index: usize) -> Result<(), String>`: Removes a todo item from a block
+
+### Configuration
+
+#### Project Configuration
+
+The project configuration is stored in `project_config.json` and can be managed through the API or by directly editing the file. The configuration includes:
+
+- `project_name`: Name of the project
+- `project_home_directory`: Path to the project's home directory
+- `git_repository_url`: URL of the Git repository
+- `llm_provider`: Default LLM provider to use (openrouter, gemini, or anthropic)
+- `openrouter_model`: Model to use with OpenRouter
+- `gemini_model`: Model to use with Gemini
+- `anthropic_model`: Model to use with Anthropic
+- `auto_complete_system_prompt`: System prompt for auto-completion
+- `auto_complete_user_prompt`: User prompt template for auto-completion
+- `enhance_description_system_prompt`: System prompt for enhancing descriptions
+- `enhance_description_user_prompt`: User prompt template for enhancing descriptions
+- `generate_tasks_system_prompt`: System prompt for generating tasks
+- `generate_tasks_user_prompt`: User prompt template for generating tasks
+- `process_markdown_spec_system_prompt`: System prompt for processing markdown specifications
+- `process_markdown_spec_user_prompt`: User prompt template for processing markdown specifications
+
+#### Block Configuration
+
+Block configurations are stored in `blocks_config.json` (or a custom path specified in the project configuration). Each block includes:
+
+- `name`: Unique identifier for the block
+- `description`: Description of the block's functionality
+- `inputs`: List of input port types
+- `outputs`: List of output port types
+- `connections`: Input and output connections to other blocks
+- `todo_list`: List of todo items for this block
 
 ### Frontend Components
 
@@ -373,3 +551,35 @@ const FlowView = () => {
   )
 }
 ```
+
+## Contributing
+
+Contributions to Forge IDE are welcome! Here's how you can contribute:
+
+1. **Report Bugs**: If you find a bug, please create an issue with a detailed description of the problem, steps to reproduce, and your environment.
+
+2. **Suggest Features**: Have an idea for a new feature? Open an issue to discuss it.
+
+3. **Submit Pull Requests**: Want to contribute code? Fork the repository, create a branch, make your changes, and submit a pull request.
+
+4. **Improve Documentation**: Help improve the documentation by fixing errors, adding examples, or clarifying explanations.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes
+4. Run tests to ensure your changes don't break existing functionality
+5. Commit your changes: `git commit -m "Add some feature"`
+6. Push to the branch: `git push origin feature/your-feature-name`
+7. Submit a pull request
+
+### Code Style
+
+- Follow the existing code style
+- Write clear, concise comments
+- Include tests for new functionality
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

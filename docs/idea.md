@@ -21,23 +21,41 @@ The current implementation of Forge includes:
    - Support for adding and removing todo items
    - Sample configuration generation
 
+4. **LLM Integration**
+   - Multiple LLM providers supported (OpenRouter, Gemini, Anthropic)
+   - Auto-completion and enhancement of block descriptions
+   - Automatic task generation from block descriptions
+   - Processing markdown specifications to generate blocks
+
+5. **Git Integration**
+   - Branch creation and management
+   - Commit, merge, push, and pull operations
+   - Task execution with Git integration
+   - Diff viewing for tasks
+   - Build handling
+
+6. **Task Management**
+   - Task execution functionality
+   - Task status tracking
+   - Task logs and commit tracking
+
 ### Future Development
 Planned enhancements for the Forge IDE include:
 
-1. **LLM Integration**
-   - Natural language processing for task definitions
-   - Automatic code generation based on block specifications
+1. **Advanced LLM Capabilities**
+   - More sophisticated code generation based on block specifications
    - Intelligent suggestions for block connections and configurations
+   - Automated refactoring and code optimization
 
 2. **Enhanced Visualization**
    - Real-time collaboration on block diagrams
    - Advanced layout algorithms for complex graphs
    - Custom block templates and themes
 
-3. **Code Generation**
-   - Translation of block diagrams into executable code
+3. **Expanded Code Generation**
    - Support for multiple programming languages and frameworks
-   - Continuous integration with version control systems
+   - More comprehensive code generation from block diagrams
+   - Automated test generation
 
 4. **Extensibility**
    - Plugin system for custom block types
