@@ -768,12 +768,12 @@ fn update_task_status_with_log_and_commit_id(
 
                 // Store the output in the task's log field
                 if !log.is_empty() {
-                    task.log = Some(log.to_string());
+                    task.log = log.to_string();
                 }
 
                 // Store the commit ID in the task's commit_id field
                 if let Some(id) = commit_id {
-                    task.commit_id = Some(id);
+                    task.commit_id = id;
                 }
 
                 // Update the block in the database
@@ -866,7 +866,7 @@ pub async fn get_task_diff_handler(
     let commit_id = task.commit_id.clone();
 
     // If there's no commit ID, return an error
-    if commit_id.is_none() {
+    if commit_id.len() == 0 {
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
             message: "No commit ID associated with this task".to_string(),
@@ -875,7 +875,7 @@ pub async fn get_task_diff_handler(
         });
     }
 
-    let commit_id = commit_id.unwrap();
+    let commit_id = commit_id;
 
     // Get the list of modified files in the commit
     let files_output = Command::new("git")

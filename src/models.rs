@@ -4,12 +4,22 @@ use rand::{Rng, distributions::Alphanumeric};
 use crate::llm_handler::BlockConnection;
 
 // Define the structure for a task
-#[derive(Serialize, Deserialize, Clone)]
+
+// Define the structure for task response from LLM
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Task {
-    pub description: String,
-    pub log: Option<String>,
     pub task_id: String,
-    pub commit_id: Option<String>,
+    pub task_name: String,
+    pub description: String,
+    pub acceptance_criteria: Vec<String>,
+    pub dependencies: Vec<String>,
+    pub estimated_effort: String,
+    pub files_affected: Vec<String>,
+    pub function_signatures: Vec<String>,
+    pub testing_requirements: Vec<String>,
+    pub log: String,
+    pub commit_id: String,
+    pub status: String,
 }
 
 impl Task {
@@ -20,10 +30,19 @@ impl Task {
             .map(char::from)
             .collect();
         Self {
-            description,
-            log: None,
             task_id: unique_id,
-            commit_id: None,
+            task_name: "".to_string(),
+            description: description,
+            acceptance_criteria: Vec::new(),
+            dependencies: Vec::new(),
+            estimated_effort: "".to_string(),
+            files_affected: Vec::new(),
+            function_signatures: Vec::new(),
+            testing_requirements: Vec::new(),
+            log: String::new(),
+            commit_id: "".to_string(),
+            status: "".to_string()
+
         }
     }
 }
@@ -123,8 +142,8 @@ pub fn get_blocks() -> Vec<Block> {
             },
             todo_list: {
                 let mut map = HashMap::new();
-                let task1 = Task::new("Add support for CSV files".to_string());
-                let task2 = Task::new("Improve error handling".to_string());
+                let task1 = Task::new( "Add support for CSV files".to_string());
+                let task2 = Task::new( "Improve error handling".to_string());
                 map.insert(task1.task_id.clone(), task1);
                 map.insert(task2.task_id.clone(), task2);
                 map
@@ -153,8 +172,8 @@ pub fn get_blocks() -> Vec<Block> {
             },
             todo_list: {
                 let mut map = HashMap::new();
-                let task1 = Task::new("Implement data normalization".to_string());
-                let task2 = Task::new("Add support for filtering".to_string());
+                let task1 = Task::new( "Implement data normalization".to_string());
+                let task2 = Task::new( "Add support for filtering".to_string());
                 map.insert(task1.task_id.clone(), task1);
                 map.insert(task2.task_id.clone(), task2);
                 map
@@ -177,8 +196,8 @@ pub fn get_blocks() -> Vec<Block> {
             },
             todo_list: {
                 let mut map = HashMap::new();
-                let task1 = Task::new("Add more chart types".to_string());
-                let task2 = Task::new("Implement interactive visualizations".to_string());
+                let task1 = Task::new( "Add more chart types".to_string());
+                let task2 = Task::new( "Implement interactive visualizations".to_string());
                 map.insert(task1.task_id.clone(), task1);
                 map.insert(task2.task_id.clone(), task2);
                 map

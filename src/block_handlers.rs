@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use actix_web::{web, Responder, HttpResponse};
 use std::sync::Arc;
 use serde::{Serialize, Deserialize};
@@ -5,11 +6,12 @@ use std::process::{Command, Stdio};
 use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
+use serde::de::Unexpected::Option;
 use tokio::task;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
-use crate::models::Block;
-use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec, GeneratedBlock};
+use crate::models::{Block, Task};
+use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec};
 use crate::project_config::ProjectConfigManager;
 
 // Define a response type for auto-complete suggestions
@@ -43,7 +45,6 @@ pub struct ProcessMarkdownRequest {
 pub struct ProcessMarkdownResponse {
     pub status: String,
     pub message: String,
-    pub tasks: Vec<String>,
 }
 
 // Define request and response types for markdown specification processing
@@ -120,8 +121,7 @@ async fn generate_tasks_with_llm(mut block: Block, data: &web::Data<AppState>) -
     ).await?;
 
     // Add the generated tasks to the block's todo list
-    for task_description in generated_tasks {
-        let task = crate::models::Task::new(task_description);
+    for task in generated_tasks {
         let task_id = task.task_id.clone();
         block.todo_list.insert(task_id, task);
     }
@@ -319,8 +319,8 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
         Ok(tasks) => {
             // Add the generated tasks to the block's todo list
             let block = &mut blocks[block_index.unwrap()];
-            for task_description in &tasks {
-                let task = crate::models::Task::new(task_description.clone());
+            for task in &tasks {
+                let task = crate::models::Task::new(task.description.clone());
                 let task_id = task.task_id.clone();
                 block.todo_list.insert(task_id,task);
             }
@@ -336,8 +336,7 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
                     // Return the response with the generated tasks
                     let response = ProcessMarkdownResponse {
                         status: "success".to_string(),
-                        message: format!("Successfully processed markdown file and added {} tasks to block '{}'", tasks.len(), request.block_name),
-                        tasks,
+                        message: format!("Successfully processed markdown file and added {} tasks to block '{}'", tasks.len(), request.block_name)
                     };
                     HttpResponse::Ok().json(response)
                 },
@@ -505,15 +504,15 @@ pub async fn execute_task_handler(
                         if let Some(task) = block.todo_list.get_mut(&task_id) {
                             // Append a completion marker to the task description based on success/failure
                             let status_marker = if output.status.success() {
-                                "[COMPLETED]"
+                                "[DONE]"
                             } else {
                                 "[FAILED]"
                             };
-                            task.description = format!("{} {}", task.description, status_marker);
+                            task.status = status_marker.to_string();
 
                             // Store the stdout output in the task's log field
                             let log_output = String::from_utf8_lossy(&output.stdout).to_string();
-                            task.log = Some(log_output);
+                            task.log = log_output;
 
                             // Update the block in the database
                             if let Err(e) = block_manager.update_block(block.clone()) {

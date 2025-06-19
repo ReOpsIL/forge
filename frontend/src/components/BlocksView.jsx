@@ -10,6 +10,7 @@ import {Checkbox} from 'primereact/checkbox';
 import {ConfirmDialog, confirmDialog} from 'primereact/confirmdialog';
 import {Dialog} from 'primereact/dialog';
 import {Toast} from 'primereact/toast';
+import {Accordion, AccordionTab} from 'primereact/accordion';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import './BlocksView.css';
@@ -2021,64 +2022,136 @@ const BlocksView = () => {
                                     {/* Task List */}
                                     {Object.keys(block.todo_list).length > 0 ? (
                                         <div className="task-list-scrollable">
-                                            <ul className="m-0 p-0 list-none">
+                                            <Accordion multiple className="w-full">
                                                 {Object.values(block.todo_list).map((todo) => (
-                                                    <li key={todo.task_id}
-                                                        className="mb-2 flex align-items-center justify-content-between task-item">
-                                                        <div className="flex align-items-center">
-                                                            <Checkbox
-                                                                checked={isTaskSelected(block.name, todo.task_id)}
-                                                                onChange={(e) => handleTaskSelection(block.name, todo.task_id, e.checked)}
-                                                                className="mr-2"
-                                                                disabled={isTaskRunning(block.name, todo.task_id)}
-                                                            />
-                                                            {editingTask.blockName === block.name && editingTask.taskId === todo.task_id ? (
-                                                                <div className="flex flex-column w-full">
-                                                                    <InputTextarea
-                                                                        value={editingTaskText[`${block.name}-${todo.task_id}`]}
-                                                                        onChange={(e) => handleTaskTextChange(block.name, todo.task_id, e.target.value)}
-                                                                        className="task-edit-textarea"
-                                                                        autoFocus
-                                                                        rows={3}
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === 'Enter' && e.ctrlKey) {
-                                                                                saveEditedTask(block.name, todo.task_id);
-                                                                                e.preventDefault();
-                                                                            } else if (e.key === 'Escape') {
-                                                                                cancelEditingTask();
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                    <div className="flex justify-content-end mt-2 gap-2">
-                                                                        <Button
-                                                                            icon="pi pi-check"
-                                                                            className="p-button-sm p-button-success ml-2"
-                                                                            onClick={() => saveEditedTask(block.name, todo.task_id)}
-                                                                            disabled={!editingTaskText[`${block.name}-${todo.task_id}`]?.trim()}
+                                                    <AccordionTab 
+                                                        key={todo.task_id}
+                                                        headerClassName="task-accordion-header"
+                                                        header={
+                                                            <div className="flex align-items-center w-full">
+                                                                <Checkbox
+                                                                    checked={isTaskSelected(block.name, todo.task_id)}
+                                                                    onChange={(e) => handleTaskSelection(block.name, todo.task_id, e.checked)}
+                                                                    className="mr-2"
+                                                                    disabled={isTaskRunning(block.name, todo.task_id)}
+                                                                />
+                                                                {editingTask.blockName === block.name && editingTask.taskId === todo.task_id ? (
+                                                                    <div className="flex flex-column w-full">
+                                                                        <InputTextarea
+                                                                            value={editingTaskText[`${block.name}-${todo.task_id}`]}
+                                                                            onChange={(e) => handleTaskTextChange(block.name, todo.task_id, e.target.value)}
+                                                                            className="task-edit-textarea"
+                                                                            autoFocus
+                                                                            rows={3}
+                                                                            onKeyDown={(e) => {
+                                                                                if (e.key === 'Enter' && e.ctrlKey) {
+                                                                                    saveEditedTask(block.name, todo.task_id);
+                                                                                    e.preventDefault();
+                                                                                } else if (e.key === 'Escape') {
+                                                                                    cancelEditingTask();
+                                                                                }
+                                                                            }}
                                                                         />
-                                                                        <Button
-                                                                            icon="pi pi-times"
-                                                                            className="p-button-sm p-button-danger ml-2"
-                                                                            onClick={cancelEditingTask}
-                                                                        />
+                                                                        <div className="flex justify-content-end mt-2 gap-2">
+                                                                            <Button
+                                                                                icon="pi pi-check"
+                                                                                className="p-button-sm p-button-success ml-2"
+                                                                                onClick={() => saveEditedTask(block.name, todo.task_id)}
+                                                                                disabled={!editingTaskText[`${block.name}-${todo.task_id}`]?.trim()}
+                                                                            />
+                                                                            <Button
+                                                                                icon="pi pi-times"
+                                                                                className="p-button-sm p-button-danger ml-2"
+                                                                                onClick={cancelEditingTask}
+                                                                            />
+                                                                        </div>
                                                                     </div>
+                                                                ) : (
+                                                                    <span
+                                                                        className={isTaskRunning(block.name, todo.task_id) ? 'task-running' : 'task-text'}
+                                                                        onDoubleClick={() => !isTaskRunning(block.name, todo.task_id) && startEditingTask(block.name, todo.task_id, todo.description)}
+                                                                        title={`Task ID: ${todo.task_id}`}
+                                                                    >
+                                                                        {isTaskRunning(block.name, todo.task_id) && (
+                                                                            <span className="sandclock"></span>
+                                                                        )}
+                                                                        <span className="task-id">[{todo.task_id}]</span> {todo.task_name || todo.description}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        }
+                                                    >
+                                                        <div className="task-details p-3">
+                                                            <div className="mb-3">
+                                                                <h4 className="m-0 mb-2">Description</h4>
+                                                                <p className="m-0">{todo.description}</p>
+                                                            </div>
+
+                                                            {todo.acceptance_criteria && todo.acceptance_criteria.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2">Acceptance Criteria</h4>
+                                                                    <ul className="m-0 pl-3">
+                                                                        {todo.acceptance_criteria.map((criteria, index) => (
+                                                                            <li key={index}>{criteria}</li>
+                                                                        ))}
+                                                                    </ul>
                                                                 </div>
-                                                            ) : (
-                                                                <span
-                                                                    className={isTaskRunning(block.name, todo.task_id) ? 'task-running' : 'task-text'}
-                                                                    onDoubleClick={() => !isTaskRunning(block.name, todo.task_id) && startEditingTask(block.name, todo.task_id, todo.description)}
-                                                                    title={`Task ID: ${todo.task_id}`}
-                                                                >
-                                    {isTaskRunning(block.name, todo.task_id) && (
-                                        <span className="sandclock"></span>
-                                    )}
-                                                                    <span className="task-id">[{todo.task_id}]</span> {todo.description}
-                                  </span>
+                                                            )}
+
+                                                            {todo.dependencies && todo.dependencies.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2">Dependencies</h4>
+                                                                    <ul className="m-0 pl-3">
+                                                                        {todo.dependencies.map((dependency, index) => (
+                                                                            <li key={index}>{dependency}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+
+                                                            {todo.estimated_effort && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2">Estimated Effort</h4>
+                                                                    <p className="m-0">{todo.estimated_effort}</p>
+                                                                </div>
+                                                            )}
+
+                                                            {todo.files_affected && todo.files_affected.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2">Files Affected</h4>
+                                                                    <ul className="m-0 pl-3">
+                                                                        {todo.files_affected.map((file, index) => (
+                                                                            <li key={index}>{file}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+
+                                                            {todo.function_signatures && todo.function_signatures.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2">Function Signatures</h4>
+                                                                    <ul className="m-0 pl-3">
+                                                                        {todo.function_signatures.map((signature, index) => (
+                                                                            <li key={index}><code>{signature}</code></li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+
+                                                            {todo.testing_requirements && todo.testing_requirements.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2">Testing Requirements</h4>
+                                                                    <ul className="m-0 pl-3">
+                                                                        {todo.testing_requirements.map((requirement, index) => (
+                                                                            <li key={index}>{requirement}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
                                                             )}
                                                         </div>
-                                                    </li>
+                                                    </AccordionTab>
                                                 ))}
-                                            </ul>
+                                            </Accordion>
                                         </div>
                                     ) : (
                                         <p>No tasks</p>

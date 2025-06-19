@@ -212,7 +212,7 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
         // Generate random inputs and outputs
         let num_inputs = rand::thread_rng().gen_range(1..=3);
         let num_outputs = rand::thread_rng().gen_range(1..=3);
-        
+
         // Generate random connections
         let mut input_connections = Vec::new();
         let mut output_connections = Vec::new();
@@ -262,7 +262,7 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
             });
             map
         };
-        
+
         // Generate a random 6-character alphanumeric ID for the block
         let block_id: String = rand::thread_rng()
             .sample_iter(&Alphanumeric)

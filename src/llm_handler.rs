@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::env;
 use std::sync::Arc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use crate::models::Task;
 use crate::project_config::{
     ProjectConfigManager, PROJECT_CONFIG_FILE,
     DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT,
@@ -382,25 +384,12 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
     }
 }
 
-// Define the structure for task response from LLM
-#[derive(Debug, Deserialize, Serialize)]
-pub struct TaskItem {
-    pub task_id: String,
-    pub task_name: String,
-    pub description: String,
-    pub acceptance_criteria: Vec<String>,
-    pub dependencies: Vec<String>,
-    pub estimated_effort: String,
-    pub files_affected: Vec<String>,
-    pub function_signatures: Vec<String>,
-    pub testing_requirements: Vec<String>,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TaskResponse {
     pub component_name: String,
     pub total_tasks: u32,
-    pub tasks: Vec<TaskItem>,
+    pub tasks: Vec<Task>,
 }
 
 // Function to get the full task response from LLM
@@ -446,22 +435,22 @@ pub async fn get_task_response(description: &str, provider_type: &Option<LLMProv
 }
 
 // Function to generate tasks for a block based on its description
-pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
+pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<Task>, String> {
     // Try to get the structured task response
     match get_task_response(description, &provider_type).await {
         Ok(task_response) => {
             // Extract task names from the structured response
-            let tasks: Vec<String> = task_response.tasks
-                .into_iter()
-                .map(|task| task.task_name)
-                .collect();
+            // let tasks: Vec<String> = task_response.tasks
+            //     .into_iter()
+            //     .map(|task| task.task_name)
+            //     .collect();
 
-            Ok(tasks)
+            Ok(task_response.tasks)
         },
         Err(json_err) => {
             println!("Failed to parse JSON response: {}", json_err);
             println!("Falling back to text parsing");
-            let tasks: Vec<String> = vec!["Error creating tasks".to_string()];
+            let tasks: Vec<Task> = Vec::default();
             Ok(tasks)
         }
     }

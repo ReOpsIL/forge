@@ -261,6 +261,61 @@
     margin: 0;
 }
 
+/* Task Accordion Styles */
+.p-accordion .p-accordion-header .p-accordion-header-link {
+    background-color: #2d2d2d;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+    background-color: #3f3f3f;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled) .p-accordion-header-link:hover {
+    background-color: #3a3a3a;
+}
+
+.p-accordion .p-accordion-content {
+    background-color: #1e1e1e;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 0;
+    padding: 0;
+}
+
+.task-accordion-header {
+    width: 100%;
+}
+
+.task-details h4 {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.task-details p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.task-details ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.task-details code {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
 /* Monaco editor container styles */
 .monaco-editor-container {
     border-radius: 4px;

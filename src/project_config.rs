@@ -78,7 +78,10 @@ Based on the software component description below, generate a prioritized list o
       ],
       \"testing_requirements\": [
         \"string\"
-      ]
+      ],
+      \"log\": \"\",
+      \"commit_id\": \"\",
+      \"status\": \"[TODO]\", 
     }
   ]
 }
