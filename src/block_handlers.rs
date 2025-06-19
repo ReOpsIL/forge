@@ -23,7 +23,7 @@ pub struct AutoCompleteResponse {
 // Define request and response types for task execution
 #[derive(Deserialize)]
 pub struct ExecuteTaskRequest {
-    pub block_name: String,
+    pub block_id: String,
     pub task_id: String,
     pub task_description: String,
 }
@@ -37,7 +37,7 @@ pub struct ExecuteTaskResponse {
 // Define request and response types for markdown file processing
 #[derive(Deserialize)]
 pub struct ProcessMarkdownRequest {
-    pub block_name: String,
+    pub block_id: String,
     pub markdown_content: String,
 }
 
@@ -297,9 +297,9 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
         Err(e) => return HttpResponse::InternalServerError().body(e),
     };
 
-    let block_index = blocks.iter().position(|b| b.name == request.block_name);
+    let block_index = blocks.iter().position(|b| b.block_id == request.block_id);
     if block_index.is_none() {
-        return HttpResponse::BadRequest().body(format!("Block '{}' not found", request.block_name));
+        return HttpResponse::BadRequest().body(format!("Block '{}' not found", request.block_id));
     }
 
     // Get the project configuration to get the LLM provider setting
@@ -336,7 +336,7 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
                     // Return the response with the generated tasks
                     let response = ProcessMarkdownResponse {
                         status: "success".to_string(),
-                        message: format!("Successfully processed markdown file and added {} tasks to block '{}'", tasks.len(), request.block_name)
+                        message: format!("Successfully processed markdown file and added {} tasks to block '{}'", tasks.len(), request.block_id)
                     };
                     HttpResponse::Ok().json(response)
                 },
@@ -375,8 +375,9 @@ pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: 
             for generated_block in generated_blocks {
 
                 // Store the name for error reporting
-                let block_name = generated_block.name.clone();
-                println!("Generated block {}",block_name);
+                let block_id = generated_block.block_id.clone();
+                let block_name = generated_block.block_id.clone();
+                println!("Generated block {}: {}",block_id, block_name);
 
                 // Create a new Block from the GeneratedBlock
                 let block = Block::new(
@@ -457,7 +458,7 @@ pub async fn execute_task_handler(
 
     // Clone the data for use in the background task
     let block_manager = data.block_manager.clone();
-    let block_name = request.block_name.clone();
+    let block_id = request.block_id.clone();
     let task_id = request.task_id;
 
     // Spawn a background task to execute the Claude CLI command
@@ -500,7 +501,7 @@ pub async fn execute_task_handler(
 
                 // Update the task status and log in the block config
                 if let Ok(mut blocks) = block_manager.get_blocks() {
-                    if let Some(block) = blocks.iter_mut().find(|b| b.name == block_name) {
+                    if let Some(block) = blocks.iter_mut().find(|b| b.block_id == block_id) {
                         if let Some(task) = block.todo_list.get_mut(&task_id) {
                             // Append a completion marker to the task description based on success/failure
                             let status_marker = if output.status.success() {

@@ -19,7 +19,7 @@ pub struct GitAppState {
 // Request body for executing a task with Git integration
 #[derive(Debug, Deserialize)]
 pub struct ExecuteGitTaskRequest {
-    pub block_name: String,
+    pub block_id: String,
     pub task_id: String,
     pub task_description: String,
 }
@@ -68,7 +68,7 @@ pub struct BuildResponse {
 // Request body for getting a task's diff
 #[derive(Debug, Deserialize)]
 pub struct GetTaskDiffRequest {
-    pub block_name: String,
+    pub block_id: String,
     pub task_id: String,
 }
 
@@ -496,7 +496,7 @@ pub async fn execute_git_task_handler(
 
     // Clone the data for use in the background task
     let block_manager = data.block_manager.clone();
-    let block_name = request.block_name.clone();
+    let block_id = request.block_id.clone();
     let task_id = format!("task_{}", request.task_id);
 
     // Spawn a background task to execute the Git task flow
@@ -512,7 +512,7 @@ pub async fn execute_git_task_handler(
     if let Err(e) = pull_output {
         let task_id = task_id.clone();
         println!("Failed to checkout main branch: {}", e);
-        update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git checkout main failed");
+        update_task_status(&block_manager, &block_id, task_id, "[FAILED] Git checkout main failed");
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Failed to checkout main branch: {}", e),
@@ -527,7 +527,7 @@ pub async fn execute_git_task_handler(
     if let Err(e) = pull_output {
         let task_id = task_id.clone();
         println!("Failed to pull latest changes: {}", e);
-        update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git pull failed");
+        update_task_status(&block_manager, &block_id, task_id, "[FAILED] Git pull failed");
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Git pull failed: {}", e),
@@ -546,7 +546,7 @@ pub async fn execute_git_task_handler(
     if let Err(e) = branch_output {
         let task_id = task_id.clone();
         println!("Failed to create task branch: {}", e);
-        update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git branch creation failed");
+        update_task_status(&block_manager, &block_id, task_id, "[FAILED] Git branch creation failed");
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Failed to create task branch: {}", e),
@@ -567,7 +567,7 @@ pub async fn execute_git_task_handler(
         Ok(child) => child,
         Err(e) => {
             println!("Failed to execute Claude CLI: {}", e);
-            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed");
+            update_task_status(&block_manager, &block_id, task_id, "[FAILED] Claude execution failed");
             return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
                 status: "error".to_string(),
                 message: format!("Failed to execute Claude CLI: {}", e),
@@ -579,7 +579,7 @@ pub async fn execute_git_task_handler(
     if let Some(mut stdin) = child.stdin.take() {
         if let Err(e) = stdin.write_all(task_description.as_bytes()) {
             println!("Failed to write to Claude CLI stdin: {}", e);
-            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude input failed");
+            update_task_status(&block_manager, &block_id, task_id, "[FAILED] Claude input failed");
             return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
                 status: "error".to_string(),
                 message: format!("Failed to write to Claude CLI stdin: {}", e),
@@ -592,7 +592,7 @@ pub async fn execute_git_task_handler(
         Ok(output) => output,
         Err(e) => {
             println!("Failed to wait for Claude CLI command: {}", e);
-            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed");
+            update_task_status(&block_manager, &block_id, task_id, "[FAILED] Claude execution failed");
             return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
                 status: "error".to_string(),
                 message: format!("Failed to wait for Claude CLI command: {}", e),
@@ -606,7 +606,7 @@ pub async fn execute_git_task_handler(
     if !task_success {
         println!("Claude CLI command failed with exit code: {:?}", output.status.code());
         println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
-        update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed", &log_output);
+        update_task_status_with_log(&block_manager, &block_id, task_id, "[FAILED] Claude execution failed", &log_output);
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Claude CLI command failed with exit code: {:?}", output.status.code()),
@@ -626,7 +626,7 @@ pub async fn execute_git_task_handler(
 
     if let Err(e) = add_output {
         println!("Failed to stage changes: {}", e);
-        update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Git add failed", &log_output);
+        update_task_status_with_log(&block_manager, &block_id, task_id, "[FAILED] Git add failed", &log_output);
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Failed to stage changes: {}", e),
@@ -644,7 +644,7 @@ pub async fn execute_git_task_handler(
 
     if let Err(e) = commit_output {
         println!("Failed to commit changes: {}", e);
-        update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Git commit failed", &log_output);
+        update_task_status_with_log(&block_manager, &block_id, task_id, "[FAILED] Git commit failed", &log_output);
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Failed to commit changes: {}", e),
@@ -689,7 +689,7 @@ pub async fn execute_git_task_handler(
 
     if let Err(e) = checkout_output {
         println!("Failed to checkout main branch: {}", e);
-        update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[FAILED] Git checkout main failed", &log_output, commit_id);
+        update_task_status_with_log_and_commit_id(&block_manager, &block_id, task_id, "[FAILED] Git checkout main failed", &log_output, commit_id);
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Failed to checkout main branch: {}", e),
@@ -705,7 +705,7 @@ pub async fn execute_git_task_handler(
 
     if let Err(e) = merge_output {
         println!("Failed to merge task branch: {}", e);
-        update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[FAILED] Git merge failed", &log_output, commit_id);
+        update_task_status_with_log_and_commit_id(&block_manager, &block_id, task_id, "[FAILED] Git merge failed", &log_output, commit_id);
         return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
             status: "error".to_string(),
             message: format!("Failed to merge task branch: {}", e),
@@ -726,8 +726,11 @@ pub async fn execute_git_task_handler(
         // This is not a critical error, so we continue
     }
 
+    let task_id_c = task_id.clone();
+    let commit_id_c = commit_id.clone();
+
     // Update the task status, log, and commit ID in the block config
-    update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[COMPLETED]", &log_output, commit_id);
+    update_task_status_with_log_and_commit_id(&block_manager, &block_id, task_id, "[COMPLETED]", &log_output, commit_id);
 
 
     // Return a response indicating the task has been started
@@ -736,40 +739,38 @@ pub async fn execute_git_task_handler(
         message: "Git task execution has been started in the background".to_string(),
     };
 
+    println!("Task ended: {} : {}", task_id_c, commit_id_c.unwrap_or("no commit id".to_string()));
     HttpResponse::Ok().json(response)
 }
 
 // Helper function to update task status
-fn update_task_status(block_manager: &Arc<BlockConfigManager>, block_name: &str, task_id: String, status: &str) {
-    update_task_status_with_log(block_manager, block_name, task_id, status, "");
+fn update_task_status(block_manager: &Arc<BlockConfigManager>, block_id: &str, task_id: String, status: &str) {
+    update_task_status_with_log(block_manager, block_id, task_id, status, "");
 }
 
 // Helper function to update task status and log
-fn update_task_status_with_log(block_manager: &Arc<BlockConfigManager>, block_name: &str, task_id: String, status: &str, log: &str) {
-    update_task_status_with_log_and_commit_id(block_manager, block_name, task_id, status, log, None);
+fn update_task_status_with_log(block_manager: &Arc<BlockConfigManager>, block_id: &str, task_id: String, status: &str, log: &str) {
+    update_task_status_with_log_and_commit_id(block_manager, block_id, task_id, status, log, None);
 }
 
 // Helper function to update task status, log, and commit ID
 fn update_task_status_with_log_and_commit_id(
     block_manager: &Arc<BlockConfigManager>,
-    block_name: &str,
+    block_id: &str,
     task_id: String,
     status: &str,
     log: &str,
     commit_id: Option<String>,
 ) {
     if let Ok(mut blocks) = block_manager.get_blocks() {
-        if let Some(block) = blocks.iter_mut().find(|b| b.name == block_name) {
+        if let Some(block) = blocks.iter_mut().find(|b| b.block_id == block_id) {
             if let Some(task) = block.todo_list.get_mut(&task_id) {
                 // Append a status marker to the task description
-                if !task.description.contains(status) {
-                    task.description = format!("{} {}", task.description, status);
-                }
+
+                task.description = format!("{} {}", task.description, status);
 
                 // Store the output in the task's log field
-                if !log.is_empty() {
-                    task.log = log.to_string();
-                }
+                task.log = log.to_string();
 
                 // Store the commit ID in the task's commit_id field
                 if let Some(id) = commit_id {
@@ -842,11 +843,11 @@ pub async fn get_task_diff_handler(
     };
 
     // Find the block and task
-    let block = blocks.iter().find(|b| b.name == request.block_name);
+    let block = blocks.iter().find(|b| b.block_id == request.block_id);
     if block.is_none() {
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
-            message: format!("Block '{}' not found", request.block_name),
+            message: format!("Block '{}' not found", request.block_id),
             commit_id: None,
             files_diff: Vec::new(),
         });
@@ -856,7 +857,7 @@ pub async fn get_task_diff_handler(
     if !block.todo_list.contains_key(&request.task_id) {
         return HttpResponse::BadRequest().json(GetTaskDiffResponse {
             success: false,
-            message: format!("Task index {} is out of bounds for block '{}'", request.task_id, request.block_name),
+            message: format!("Task index {} is out of bounds for block '{}'", request.task_id, request.block_id),
             commit_id: None,
             files_diff: Vec::new(),
         });

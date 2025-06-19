@@ -522,6 +522,7 @@ impl BlockConnection {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GeneratedBlock {
     pub name: String,
+    pub block_id: String,
     pub description: String,
     pub inputs: Vec<BlockConnection>,
     pub outputs: Vec<BlockConnection>,

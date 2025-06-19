@@ -66,8 +66,16 @@ const BlocksView = () => {
     const toastRef = useRef(null);
 
     // Function to fetch auto-complete suggestions
-    const fetchAutoCompleteSuggestion = useCallback(async (description) => {
-        if (!description || description.trim() === '') return;
+    const fetchAutoCompleteSuggestion = async (block_id) => {
+
+        // Find the block to update
+        const blockToEnhance = blocks.find(block => block.block_id === block_id);
+        if (!blockToEnhance) return;
+
+        // Show loading dialog
+        setShowLoadingDialog(true);
+
+        if (!blockToEnhance.description || blockToEnhance.description.trim() === '') return;
 
         setIsAutoCompleteLoading(true);
         try {
@@ -76,46 +84,55 @@ const BlocksView = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(description),
+                body: JSON.stringify(blockToEnhance.description ),
             });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch auto-complete suggestion');
             }
 
+            setShowLoadingDialog(false);
+
             const data = await response.json();
             setAutoCompleteSuggestion(data.suggestion);
             setShowAutoCompleteDialog(true);
         } catch (error) {
+            setShowLoadingDialog(false);
             console.error('Error fetching auto-complete suggestion:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to fetch auto-complete suggestion',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to fetch auto-complete suggestion',
+                    life: 3000
+                });
+            }
+
         } finally {
             setIsAutoCompleteLoading(false);
+            setShowLoadingDialog(false);
         }
-    }, []);
+    };
 
     // Function to accept the auto-complete suggestion
     const acceptAutoCompleteSuggestion = useCallback(() => {
         if (currentEditingBlock && autoCompleteSuggestion) {
             setEditingDescription({
                 ...editingDescription,
-                [currentEditingBlock.name]: autoCompleteSuggestion
+                [currentEditingBlock.block_id]: autoCompleteSuggestion
             });
             setShowAutoCompleteDialog(false);
             setAutoCompleteSuggestion('');
 
             // Show success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Auto-complete suggestion applied',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Auto-complete suggestion applied',
+                    life: 3000
+                });
+            }
         }
     }, [currentEditingBlock, autoCompleteSuggestion, editingDescription]);
 
@@ -125,24 +142,12 @@ const BlocksView = () => {
         setAutoCompleteSuggestion('');
     }, []);
 
-    // Debounced function to handle description changes
-    const debouncedHandleDescriptionChange = useCallback((blockName, newDescription) => {
-        // Update the description immediately
+    const handleDescriptionChange = (block_id, newDescription) => {
         setEditingDescription({
             ...editingDescription,
-            [blockName]: newDescription
+            [block_id]: newDescription
         });
-
-        // Clear any existing timeout
-        if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-        }
-
-        // Set a new timeout to fetch auto-complete suggestions after 2 seconds of inactivity
-        typingTimeoutRef.current = setTimeout(() => {
-            fetchAutoCompleteSuggestion(newDescription);
-        }, 2000);
-    }, [editingDescription, fetchAutoCompleteSuggestion]);
+    };
 
     const fetchBlocks = async () => {
         try {
@@ -160,18 +165,15 @@ const BlocksView = () => {
         }
     };
 
-    // This function is now replaced by debouncedHandleDescriptionChange
-    const handleDescriptionChange = debouncedHandleDescriptionChange;
-
-    const saveDescription = async (blockName) => {
+    const saveDescription = async (block_id) => {
         // Find the block to update
-        const blockToUpdate = blocks.find(block => block.name === blockName);
+        const blockToUpdate = blocks.find(block => block.block_id === block_id);
         if (!blockToUpdate) return;
 
         // Create an updated block with the new description
         const updatedBlock = {
             ...blockToUpdate,
-            description: editingDescription[blockName]
+            description: editingDescription[block_id]
         };
 
         // Show loading dialog
@@ -197,33 +199,37 @@ const BlocksView = () => {
             // Clear the editing state
             setEditingDescription({
                 ...editingDescription,
-                [blockName]: undefined
+                [block_id]: undefined
             });
 
             // Show success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Block description updated successfully',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Block description updated successfully',
+                    life: 3000
+                });
+            }
         } catch (error) {
             console.error('Error updating block description:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to update block description',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to update block description',
+                    life: 3000
+                });
+            }
         } finally {
             // Hide loading dialog
             setShowLoadingDialog(false);
         }
     };
 
-    const enhanceDescription = async (blockName) => {
+    const enhanceDescription = async (block_id) => {
         // Find the block to update
-        const blockToEnhance = blocks.find(block => block.name === blockName);
+        const blockToEnhance = blocks.find(block => block.block_id === block_id);
         if (!blockToEnhance) return;
 
         // Show loading dialog
@@ -231,7 +237,7 @@ const BlocksView = () => {
 
         try {
             // Send the updated block to the server
-            const response = await fetch(`/api/blocks/${blockToEnhance.name}/enhance`, {
+            const response = await fetch(`/api/blocks/${blockToEnhance.block_id}/enhance`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -249,40 +255,44 @@ const BlocksView = () => {
             // Clear the editing state
             setEditingDescription({
                 ...editingDescription,
-                [blockName]: undefined
+                [block_id]: undefined
             });
 
             // Show a success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Block description enhanced successfully',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Block description enhanced successfully',
+                    life: 3000
+                });
+            }
         } catch (error) {
             console.error('Error enhancing block description:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to enhance block description',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to enhance block description',
+                    life: 3000
+                });
+            }
         } finally {
             // Hide loading dialog
             setShowLoadingDialog(false);
         }
     };
 
-    const generateTasks = async (blockName) => {
+    const generateTasks = async (block_id) => {
         // Find the block to update
-        const blockToEnhance = blocks.find(block => block.name === blockName);
+        const blockToEnhance = blocks.find(block => block.block_id === block_id);
         if (!blockToEnhance) return;
         // Show loading dialog
         setShowLoadingDialog(true);
 
         try {
             // Send the updated block to the server
-            const response = await fetch(`/api/blocks/${blockToEnhance.name}/generate-tasks`, {
+            const response = await fetch(`/api/blocks/${blockToEnhance.block_id}/generate-tasks`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -300,24 +310,28 @@ const BlocksView = () => {
             // Clear the editing state
             setEditingDescription({
                 ...editingDescription,
-                [blockName]: undefined
+                [block_id]: undefined
             });
 
             // Show a success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Block description enhanced successfully',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Block description enhanced successfully',
+                    life: 3000
+                });
+            }
         } catch (error) {
             console.error('Error enhancing block description:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to enhance block description',
-                life: 3000
-            });
+            if (toastRef.current) {
+                toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to enhance block description',
+                    life: 3000
+                });
+            }
         } finally {
             // Hide loading dialog
             setShowLoadingDialog(false);
@@ -329,7 +343,7 @@ const BlocksView = () => {
     const startEditingName = (block) => {
         setEditingBlockName({
             ...editingBlockName,
-            [block.name]: block.name
+            [block.block_id]: block.name
         });
     };
 
@@ -353,7 +367,7 @@ const BlocksView = () => {
         }
 
         // Find the block to update
-        const blockToUpdate = blocks.find(block => block.name === oldName);
+        const blockToUpdate = blocks.find(block => block.block_id === oldName);
         if (!blockToUpdate) return;
 
         // Create an updated block with the new name, preserving the block_id
@@ -408,40 +422,40 @@ const BlocksView = () => {
         setCurrentEditingBlock(block);
         setEditingDescription({
             ...editingDescription,
-            [block.name]: block.description
+            [block.block_id]: block.description
         });
         setShowMarkdownEditorDialog(true);
     };
 
     // Task selection handling
-    const handleTaskSelection = (blockName, taskId, isSelected) => {
+    const handleTaskSelection = (block_id, taskId, isSelected) => {
         setSelectedTasks(prev => {
-            const blockTasks = prev[blockName] || [];
+            const blockTasks = prev[block_id] || [];
             if (isSelected) {
                 return {
                     ...prev,
-                    [blockName]: [...blockTasks, taskId]
+                    [block_id]: [...blockTasks, taskId]
                 };
             } else {
                 return {
                     ...prev,
-                    [blockName]: blockTasks.filter(id => id !== taskId)
+                    [block_id]: blockTasks.filter(id => id !== taskId)
                 };
             }
         });
     };
 
     // Check if a task is selected
-    const isTaskSelected = (blockName, taskId) => {
-        return selectedTasks[blockName]?.includes(taskId) || false;
+    const isTaskSelected = (block_id, taskId) => {
+        return selectedTasks[block_id]?.includes(taskId) || false;
     };
 
     // Add a new task
-    const addNewTask = async (blockName) => {
-        if (!newTaskText[blockName] || newTaskText[blockName].trim() === '') return;
+    const addNewTask = async (block_id) => {
+        if (!newTaskText[block_id] || newTaskText[block_id].trim() === '') return;
 
         // Find the block to update
-        const blockToUpdate = blocks.find(block => block.name === blockName);
+        const blockToUpdate = blocks.find(block => block.block_id === block_id);
         if (!blockToUpdate) return;
 
         try {
@@ -450,7 +464,7 @@ const BlocksView = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newTaskText[blockName]),
+                body: JSON.stringify(newTaskText[block_id]),
             });
 
             if (!response.ok) {
@@ -462,14 +476,14 @@ const BlocksView = () => {
 
             // Update the blocks state with the new task
             setBlocks(blocks.map(block => {
-                if (block.name === blockName) {
+                if (block.block_id === block_id) {
                     return {
                         ...block,
                         todo_list: {
                             ...block.todo_list,
                             [newTaskId]: { 
                                 task_id: newTaskId,
-                                description: newTaskText[blockName], 
+                                description: newTaskText[block_id], 
                                 log: null 
                             }
                         }
@@ -481,7 +495,7 @@ const BlocksView = () => {
             // Clear the new task input
             setNewTaskText({
                 ...newTaskText,
-                [blockName]: ''
+                [block_id]: ''
             });
         } catch (error) {
             console.error('Error adding task:', error);
@@ -489,12 +503,12 @@ const BlocksView = () => {
     };
 
     // Delete selected tasks
-    const deleteSelectedTasks = async (blockName) => {
-        const taskIdsToDelete = selectedTasks[blockName] || [];
+    const deleteSelectedTasks = async (block_id) => {
+        const taskIdsToDelete = selectedTasks[block_id] || [];
         if (taskIdsToDelete.length === 0) return;
 
         // Find the block to update
-        const blockToUpdate = blocks.find(block => block.name === blockName);
+        const blockToUpdate = blocks.find(block => block.block_id === block_id);
         if (!blockToUpdate) return;
 
         for (const taskId of taskIdsToDelete) {
@@ -513,7 +527,7 @@ const BlocksView = () => {
 
         // Update the blocks state by removing the deleted tasks
         setBlocks(blocks.map(block => {
-            if (block.name === blockName) {
+            if (block.block_id === block_id) {
                 // Create a new todo_list without the deleted tasks
                 const updatedTodoList = { ...block.todo_list };
                 taskIdsToDelete.forEach(taskId => {
@@ -530,37 +544,37 @@ const BlocksView = () => {
         // Clear the selection for this block
         setSelectedTasks({
             ...selectedTasks,
-            [blockName]: []
+            [block_id]: []
         });
     };
 
     // Start editing a task
-    const startEditingTask = (blockName, taskId, taskText) => {
+    const startEditingTask = (block_id, taskId, taskText) => {
         setEditingTask({
-            blockName,
+            block_id,
             taskId
         });
         setEditingTaskText({
             ...editingTaskText,
-            [`${blockName}-${taskId}`]: taskText
+            [`${block_id}-${taskId}`]: taskText
         });
     };
 
     // Handle task text change
-    const handleTaskTextChange = (blockName, taskId, newText) => {
+    const handleTaskTextChange = (block_id, taskId, newText) => {
         setEditingTaskText({
             ...editingTaskText,
-            [`${blockName}-${taskId}`]: newText
+            [`${block_id}-${taskId}`]: newText
         });
     };
 
     // Save edited task
-    const saveEditedTask = async (blockName, taskId) => {
-        const newText = editingTaskText[`${blockName}-${taskId}`];
+    const saveEditedTask = async (block_id, taskId) => {
+        const newText = editingTaskText[`${block_id}-${taskId}`];
         if (!newText || newText.trim() === '') return;
 
         // Find the block to update
-        const blockToUpdate = blocks.find(block => block.name === blockName);
+        const blockToUpdate = blocks.find(block => block.block_id === block_id);
         if (!blockToUpdate) return;
 
         try {
@@ -595,7 +609,7 @@ const BlocksView = () => {
             setEditingTask({});
             setEditingTaskText({
                 ...editingTaskText,
-                [`${blockName}-${taskId}`]: undefined
+                [`${block_id}-${taskId}`]: undefined
             });
 
             // Show success message
@@ -622,8 +636,8 @@ const BlocksView = () => {
     };
 
     // Confirm deletion of multiple tasks
-    const confirmDeleteTasks = (blockName) => {
-        const tasksToDelete = selectedTasks[blockName] || [];
+    const confirmDeleteTasks = (block_id) => {
+        const tasksToDelete = selectedTasks[block_id] || [];
         if (tasksToDelete.length === 0) return;
 
         confirmDialog({
@@ -631,27 +645,27 @@ const BlocksView = () => {
             header: 'Confirm Deletion',
             icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
-            accept: () => deleteSelectedTasks(blockName),
+            accept: () => deleteSelectedTasks(block_id),
         });
     };
 
     // Execute a single task
-    const executeTask = async (blockName, taskId) => {
+    const executeTask = async (block_id, taskId) => {
         // Find the block and task
-        const block = blocks.find(b => b.name === blockName);
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) {
-            throw new Error(`Block ${blockName} not found`);
+            throw new Error(`Block ${block_id} not found`);
         }
 
         const task = block.todo_list[taskId];
         if (!task) {
-            throw new Error(`Task ${taskId} not found in block ${blockName}`);
+            throw new Error(`Task ${taskId} not found in block ${block_id}`);
         }
 
         // Set the task as running
         setRunningTasks(prev => ({
             ...prev,
-            [`${blockName}-${task.task_id}`]: true
+            [`${block_id}-${task.task_id}`]: true
         }));
 
         try {
@@ -661,7 +675,7 @@ const BlocksView = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    block_name: blockName,
+                    block_id: block_id,
                     task_id: task.task_id,
                     task_description: task.description
                 }),
@@ -686,7 +700,7 @@ const BlocksView = () => {
                     }
 
                     const updatedBlocks = await blocksResponse.json();
-                    const updatedBlock = updatedBlocks.find(b => b.name === blockName);
+                    const updatedBlock = updatedBlocks.find(b => b.block_id === block_id);
 
                     if (updatedBlock) {
                         // Find the task by task_id
@@ -700,7 +714,7 @@ const BlocksView = () => {
                             // Set the task as not running
                             setRunningTasks(prev => ({
                                 ...prev,
-                                [`${blockName}-${task.task_id}`]: false
+                                [`${block_id}-${task.task_id}`]: false
                             }));
 
                             // Show success message
@@ -723,7 +737,7 @@ const BlocksView = () => {
                     // If there's an error, stop polling and set the task as not running
                     setRunningTasks(prev => ({
                         ...prev,
-                        [`${blockName}-${task.task_id}`]: false
+                        [`${block_id}-${task.task_id}`]: false
                     }));
                 }
             };
@@ -744,28 +758,28 @@ const BlocksView = () => {
             // Set the task as not running
             setRunningTasks(prev => ({
                 ...prev,
-                [`${blockName}-${taskIndex}`]: false
+                [`${block_id}-${taskIndex}`]: false
             }));
         }
     };
 
     // Execute a single task with Git integration
-    const executeGitTask = async (blockName, taskId) => {
+    const executeGitTask = async (block_id, taskId) => {
         // Find the block and task
-        const block = blocks.find(b => b.name === blockName);
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) {
-            throw new Error(`Block ${blockName} not found`);
+            throw new Error(`Block ${block_id} not found`);
         }
 
         const task = block.todo_list[taskId];
         if (!task) {
-            throw new Error(`Task ${taskId} not found in block ${blockName}`);
+            throw new Error(`Task ${taskId} not found in block ${block_id}`);
         }
 
         // Set the task as running
         setRunningTasks(prev => ({
             ...prev,
-            [`${blockName}-${task.task_id}`]: true
+            [`${block_id}-${task.task_id}`]: true
         }));
 
         try {
@@ -777,7 +791,7 @@ const BlocksView = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    block_name: blockName,
+                    block_id: block_id,
                     task_id: task.task_id,
                     task_description: task.description
                 }),
@@ -802,7 +816,7 @@ const BlocksView = () => {
                     }
 
                     const updatedBlocks = await blocksResponse.json();
-                    const updatedBlock = updatedBlocks.find(b => b.name === blockName);
+                    const updatedBlock = updatedBlocks.find(b => b.block_id === block_id);
 
                     if (updatedBlock) {
                         // Find the task by task_id
@@ -816,7 +830,7 @@ const BlocksView = () => {
                             // Set the task as not running
                             setRunningTasks(prev => ({
                                 ...prev,
-                                [`${blockName}-${task.task_id}`]: false
+                                [`${block_id}-${task.task_id}`]: false
                             }));
 
                             // Show success message
@@ -839,7 +853,7 @@ const BlocksView = () => {
                     // If there's an error, stop polling and set the task as not running
                     setRunningTasks(prev => ({
                         ...prev,
-                        [`${blockName}-${task.task_id}`]: false
+                        [`${block_id}-${task.task_id}`]: false
                     }));
                 }
             };
@@ -860,46 +874,46 @@ const BlocksView = () => {
             // Set the task as not running
             setRunningTasks(prev => ({
                 ...prev,
-                [`${blockName}-${task.task_id}`]: false
+                [`${block_id}-${task.task_id}`]: false
             }));
         }
     };
 
     // Execute selected tasks or all tasks if none selected
-    const executeSelectedTasks = (blockName) => {
-        const block = blocks.find(b => b.name === blockName);
+    const executeSelectedTasks = (block_id) => {
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) return;
 
-        const tasksToExecute = selectedTasks[blockName]?.length > 0
-            ? selectedTasks[blockName].map(index => block.todo_list[index])
+        const tasksToExecute = selectedTasks[block_id]?.length > 0
+            ? selectedTasks[block_id].map(index => block.todo_list[index])
             : Object.values(block.todo_list);
 
         tasksToExecute.forEach(task => {
             if (task) {
-                executeTask(blockName, task.task_id);
+                executeTask(block_id, task.task_id);
             }
         });
     };
 
     // Execute selected tasks with Git integration
-    const executeSelectedGitTasks = (blockName) => {
-        const block = blocks.find(b => b.name === blockName);
+    const executeSelectedGitTasks = (block_id) => {
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) return;
 
-        const tasksToExecute = selectedTasks[blockName]?.length > 0
-            ? selectedTasks[blockName].map(index => block.todo_list[index])
+        const tasksToExecute = selectedTasks[block_id]?.length > 0
+            ? selectedTasks[block_id].map(index => block.todo_list[index])
             : Object.values(block.todo_list);
 
         tasksToExecute.forEach(task => {
             if (task) {
-                executeGitTask(blockName, task.task_id);
+                executeGitTask(block_id, task.task_id);
             }
         });
     };
 
     // Stop all running tasks
-    const stopAllTasks = (blockName) => {
-        const block = blocks.find(b => b.name === blockName);
+    const stopAllTasks = (block_id) => {
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) return;
 
         const blockTasks = Object.values(block.todo_list);
@@ -907,25 +921,25 @@ const BlocksView = () => {
         blockTasks.forEach(task => {
             setRunningTasks(prev => ({
                 ...prev,
-                [`${blockName}-${task.task_id}`]: false
+                [`${block_id}-${task.task_id}`]: false
             }));
         });
     };
 
     // Check if a task is running
-    const isTaskRunning = (blockName, taskId) => {
-        return runningTasks[`${blockName}-${taskId}`] || false;
+    const isTaskRunning = (block_id, taskId) => {
+        return runningTasks[`${block_id}-${taskId}`] || false;
     };
 
     // Check if any task is running for a block
-    const areTasksRunning = (blockName) => {
-        const blockTasks = blocks.find(b => b.name === blockName)?.todo_list || {};
-        return Object.values(blockTasks).some(task => isTaskRunning(blockName, task.task_id));
+    const areTasksRunning = (block_id) => {
+        const blockTasks = blocks.find(b => b.block_id === block_id)?.todo_list || {};
+        return Object.values(blockTasks).some(task => isTaskRunning(block_id, task.task_id));
     };
 
     // Show task log
-    const showTaskLog = (blockName, taskId) => {
-        const block = blocks.find(b => b.name === blockName);
+    const showTaskLog = (block_id, taskId) => {
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) return;
 
         const task = block.todo_list[taskId];
@@ -936,8 +950,8 @@ const BlocksView = () => {
     };
 
     // Show task diff
-    const showTaskDiff = async (blockName, taskId) => {
-        const block = blocks.find(b => b.name === blockName);
+    const showTaskDiff = async (block_id, taskId) => {
+        const block = blocks.find(b => b.block_id === block_id);
         if (!block) return;
 
         const task = block.todo_list[taskId];
@@ -964,7 +978,7 @@ const BlocksView = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    block_name: blockName,
+                    block_id: bloc_id,
                     task_id: task.task_id
                 }),
             });
@@ -1018,8 +1032,8 @@ const BlocksView = () => {
     };
 
     // Function to handle file selection for importing tasks
-    const handleFileSelect = (blockName) => {
-        setCurrentImportBlock(blockName);
+    const handleFileSelect = (block_id) => {
+        setCurrentImportBlock(block_id);
         fileInputRef.current.click();
     };
 
@@ -1058,7 +1072,7 @@ const BlocksView = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    block_name: currentImportBlock,
+                    block_id: currentImportBlock,
                     markdown_content: fileContent
                 }),
             });
@@ -1098,7 +1112,7 @@ const BlocksView = () => {
 
     // Function to convert tasks to markdown format
     const convertTasksToMarkdown = (block) => {
-        let markdown = `# ${block.name} Tasks (ID: ${block.block_id})\n\n`;
+        let markdown = `# ${block.block_id} Tasks (ID: ${block.block_id})\n\n`;
 
         const tasks = Object.values(block.todo_list);
         if (tasks.length === 0) {
@@ -1115,7 +1129,7 @@ const BlocksView = () => {
     // Function to export tasks as markdown file
     const exportTasksAsMarkdown = (block) => {
         const markdown = convertTasksToMarkdown(block);
-        const filename = `${block.name}_${block.block_id}.md`;
+        const filename = `${block.block_id}_${block.block_id}.md`;
 
         // Create a blob with the markdown content
         const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
@@ -1255,9 +1269,9 @@ const BlocksView = () => {
     };
 
     // Function to handle deleting a block
-    const handleDeleteBlock = async (blockName) => {
+    const handleDeleteBlock = async (block_id) => {
         // Find the block to delete
-        const blockToDelete = blocks.find(block => block.name === blockName);
+        const blockToDelete = blocks.find(block => block.block_id === block_id);
         if (!blockToDelete) return;
 
         try {
@@ -1291,13 +1305,13 @@ const BlocksView = () => {
     };
 
     // Function to confirm block deletion
-    const confirmDeleteBlock = (blockName) => {
+    const confirmDeleteBlock = (block_id) => {
         confirmDialog({
-            message: `Are you sure you want to delete the block "${blockName}"?`,
+            message: `Are you sure you want to delete the block "${block_id}"?`,
             header: 'Confirm Deletion',
             icon: 'pi pi-exclamation-triangle',
             acceptClassName: 'p-button-danger',
-            accept: () => handleDeleteBlock(blockName),
+            accept: () => handleDeleteBlock(block_id),
         });
     };
 
@@ -1546,7 +1560,7 @@ const BlocksView = () => {
                             className="p-button-success"
                             onClick={() => {
                                 if (currentEditingBlock) {
-                                    saveDescription(currentEditingBlock.name);
+                                    saveDescription(currentEditingBlock.block_id);
                                     setShowMarkdownEditorDialog(false);
                                     setCurrentEditingBlock(null);
                                 }
@@ -1561,10 +1575,10 @@ const BlocksView = () => {
                         height="400px"
                         defaultLanguage="markdown"
                         theme="vs-dark"
-                        value={currentEditingBlock ? editingDescription[currentEditingBlock.name] : ''}
+                        value={currentEditingBlock ? editingDescription[currentEditingBlock.block_id] : ''}
                         onChange={(value) => {
                             if (currentEditingBlock) {
-                                handleDescriptionChange(currentEditingBlock.name, value || '');
+                                handleDescriptionChange(currentEditingBlock.block_id, value || '');
                             }
                         }}
                         options={{
@@ -1696,23 +1710,23 @@ const BlocksView = () => {
 
             <div className="grid">
                 {blocks.map((block) => (
-                    <div key={block.name} className="col-12 md:col-6 lg:col-4 p-2">
+                    <div key={block.block_id} className="col-12 md:col-6 lg:col-4 p-2">
                         <Card
                             className="block-card"
                             title={
                                 <div className="flex align-items-center justify-content-between">
-                                    {editingBlockName[block.name] !== undefined ? (
+                                    {editingBlockName[block.block_id] !== undefined ? (
                                         <div className="w-full">
                                             <InputText
-                                                value={editingBlockName[block.name]}
-                                                onChange={(e) => handleBlockNameChange(block.name, e.target.value)}
+                                                value={editingBlockName[block.block_id]}
+                                                onChange={(e) => handleBlockNameChange(block.block_id, e.target.value)}
                                                 className="w-full"
                                             />
                                             <div className="flex justify-content-end mt-2">
                                                 <Button
                                                     icon="pi pi-check"
                                                     className="p-button-sm p-button-success ml-2"
-                                                    onClick={() => saveBlockName(block.name)}
+                                                    onClick={() => saveBlockName(block.block_id)}
                                                     tooltip="Save name"
                                                 />
                                                 <Button
@@ -1720,7 +1734,7 @@ const BlocksView = () => {
                                                     className="p-button-sm p-button-danger ml-2"
                                                     onClick={() => setEditingBlockName({
                                                         ...editingBlockName,
-                                                        [block.name]: undefined
+                                                        [block.block_id]: undefined
                                                     })}
                                                     tooltip="Cancel"
                                                 />
@@ -1730,7 +1744,7 @@ const BlocksView = () => {
                                         <>
                                             <div>
                                                 <span>{block.name}</span>
-                                                <span className="ml-2 text-xs text-gray-500">ID: {block.block_id}</span>
+                                                <span className="ml-2 text-s text-gray-500">ID: {block.block_id}</span>
                                             </div>
                                             <div className="flex">
                                                 <Button
@@ -1742,7 +1756,7 @@ const BlocksView = () => {
                                                 <Button
                                                     icon="pi pi-trash"
                                                     className="p-button-sm p-button-text p-button-danger ml-2"
-                                                    onClick={() => confirmDeleteBlock(block.name)}
+                                                    onClick={() => confirmDeleteBlock(block.block_id)}
                                                     tooltip="Delete block"
                                                 />
                                             </div>
@@ -1752,11 +1766,11 @@ const BlocksView = () => {
                             }
                             subTitle={
                                 <div className="flex align-items-center">
-                                    {editingDescription[block.name] !== undefined ? (
+                                    {editingDescription[block.block_id] !== undefined ? (
                                         <div className="w-full">
                                             <InputTextarea
-                                                value={editingDescription[block.name]}
-                                                onChange={(e) => handleDescriptionChange(block.name, e.target.value)}
+                                                value={editingDescription[block.block_id]}
+                                                onChange={(e) => handleDescriptionChange(block.block_id, e.target.value)}
                                                 rows={2}
                                                 className="w-full"
                                             />
@@ -1764,19 +1778,25 @@ const BlocksView = () => {
                                                 <Button
                                                     icon="pi pi-check-square"
                                                     className="p-button-sm p-button-success ml-2"
-                                                    onClick={() => generateTasks(block.name)}
+                                                    onClick={() => generateTasks(block.block_id)}
                                                     tooltip="Generate tasks"
                                                 />
                                                 <Button
                                                     icon="pi pi-microchip-ai"
                                                     className="p-button-sm p-button-success ml-2"
-                                                    onClick={() => enhanceDescription(block.name)}
+                                                    onClick={() => enhanceDescription(block.block_id)}
                                                     tooltip="Enhance description"
+                                                />
+                                                <Button
+                                                    icon="pi pi-megaphone"
+                                                    className="p-button-sm p-button-success ml-2"
+                                                    onClick={() => fetchAutoCompleteSuggestion(block.block_id)}
+                                                    tooltip="Auto-complete description"
                                                 />
                                                 <Button
                                                     icon="pi pi-check"
                                                     className="p-button-sm p-button-success ml-2"
-                                                    onClick={() => saveDescription(block.name)}
+                                                    onClick={() => saveDescription(block.block_id)}
                                                     tooltip="Save description"
                                                 />
                                                 <Button
@@ -1784,7 +1804,7 @@ const BlocksView = () => {
                                                     className="p-button-sm p-button-danger ml-2"
                                                     onClick={() => setEditingDescription({
                                                         ...editingDescription,
-                                                        [block.name]: undefined
+                                                        [block.block_id]: undefined
                                                     })}
                                                     tooltip="Cancel"
                                                 />
@@ -1874,23 +1894,23 @@ const BlocksView = () => {
                                                 onClick={() => {
                                                     setNewTaskText({
                                                         ...newTaskText,
-                                                        [block.name]: newTaskText[block.name] || ''
+                                                        [block.block_id]: newTaskText[block.name] || ''
                                                     });
                                                 }}
                                             />
                                             <Button
                                                 icon="pi pi-play"
                                                 className="p-button-sm p-button-success ml-2"
-                                                onClick={() => executeSelectedTasks(block.name)}
-                                                disabled={areTasksRunning(block.name)}
+                                                onClick={() => executeSelectedTasks(block.block_id)}
+                                                disabled={areTasksRunning(block.block_id)}
                                                 tooltip="Run Tasks"
                                                 tooltipOptions={{position: 'top'}}
                                             />
                                             <Button
                                                 icon="pi pi-github"
                                                 className="p-button-sm p-button-info ml-2"
-                                                onClick={() => executeSelectedGitTasks(block.name)}
-                                                disabled={areTasksRunning(block.name)}
+                                                onClick={() => executeSelectedGitTasks(block.block_id)}
+                                                disabled={areTasksRunning(block.block_id)}
                                                 tooltip="Run Tasks with Git Integration"
                                                 tooltipOptions={{position: 'top'}}
                                             />
@@ -1898,8 +1918,8 @@ const BlocksView = () => {
                                                 icon="pi pi-exclamation-triangle"
                                                 tooltip="Stop tasks execution"
                                                 className="p-button-sm p-button-warning ml-2"
-                                                onClick={() => stopAllTasks(block.name)}
-                                                disabled={!areTasksRunning(block.name)}
+                                                onClick={() => stopAllTasks(block.block_id)}
+                                                disabled={!areTasksRunning(block.block_id)}
                                             />
                                             <Button
                                                 icon="pi pi-check-square"
@@ -1908,7 +1928,7 @@ const BlocksView = () => {
                                                 onClick={() => {
                                                     setSelectedTasks({
                                                         ...selectedTasks,
-                                                        [block.name]: Object.keys(block.todo_list)
+                                                        [block.block_id]: Object.keys(block.todo_list)
                                                     })
                                                 }}
                                             />
@@ -1919,7 +1939,7 @@ const BlocksView = () => {
                                                 onClick={() => {
                                                     setSelectedTasks({
                                                         ...selectedTasks,
-                                                        [block.name]: []
+                                                        [block.block_id]: []
                                                     });
                                                 }}
                                             />
@@ -1928,21 +1948,21 @@ const BlocksView = () => {
                                                 tooltip="Delete task"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => {
-                                                    const tasksToDelete = selectedTasks[block.name] || [];
+                                                    const tasksToDelete = selectedTasks[block.block_id] || [];
                                                     if (tasksToDelete.length > 0) {
-                                                        confirmDeleteTasks(block.name);
+                                                        confirmDeleteTasks(block.block_id);
                                                     }
                                                 }}
-                                                disabled={!selectedTasks[block.name]?.length}
+                                                disabled={!selectedTasks[block.block_id]?.length}
                                             />
                                             <Button
                                                 icon="pi pi-book"
                                                 tooltip="Show task logs"
                                                 className="p-button-sm p-button-info ml-2"
                                                 onClick={() => {
-                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
+                                                    const selectedTaskIndices = selectedTasks[block.block_id] || [];
                                                     if (selectedTaskIndices.length === 1) {
-                                                        showTaskLog(block.name, selectedTaskIndices[0]);
+                                                        showTaskLog(block.block_id, selectedTaskIndices[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',
@@ -1952,16 +1972,16 @@ const BlocksView = () => {
                                                         });
                                                     }
                                                 }}
-                                                disabled={!selectedTasks[block.name]?.length || selectedTasks[block.name]?.length !== 1}
+                                                disabled={!selectedTasks[block.block_id]?.length || selectedTasks[block.block_id]?.length !== 1}
                                             />
                                             <Button
                                                 icon="pi pi-code"
                                                 tooltip="Show task diff"
                                                 className="p-button-sm p-button-code ml-2"
                                                 onClick={() => {
-                                                    const selectedTaskIndices = selectedTasks[block.name] || [];
+                                                    const selectedTaskIndices = selectedTasks[block.block_id] || [];
                                                     if (selectedTaskIndices.length === 1) {
-                                                        showTaskDiff(block.name, selectedTaskIndices[0]);
+                                                        showTaskDiff(block.block_id, selectedTaskIndices[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',
@@ -1971,12 +1991,12 @@ const BlocksView = () => {
                                                         });
                                                     }
                                                 }}
-                                                disabled={!selectedTasks[block.name]?.length || selectedTasks[block.name]?.length !== 1}
+                                                disabled={!selectedTasks[block.block_id]?.length || selectedTasks[block.block_id]?.length !== 1}
                                             />
                                             <Button
                                                 icon="pi pi-file-import"
                                                 className="p-button-sm p-button-help ml-2"
-                                                onClick={() => handleFileSelect(block.name)}
+                                                onClick={() => handleFileSelect(block.block_id)}
                                                 tooltip="Import tasks from markdown file"
                                                 tooltipOptions={{position: 'top'}}
                                             />
@@ -1991,13 +2011,13 @@ const BlocksView = () => {
                                     </div>
 
                                     {/* New Task Input */}
-                                    {newTaskText[block.name] !== undefined && (
+                                    {newTaskText[block.block_id] !== undefined && (
                                         <div className="new-task-input mb-3 flex gap-2">
                                             <InputText
-                                                value={newTaskText[block.name]}
+                                                value={newTaskText[block.block_id]}
                                                 onChange={(e) => setNewTaskText({
                                                     ...newTaskText,
-                                                    [block.name]: e.target.value
+                                                    [block.block_id]: e.target.value
                                                 })}
                                                 placeholder="Enter new task"
                                                 className="w-full"
@@ -2005,15 +2025,15 @@ const BlocksView = () => {
                                             <Button
                                                 icon="pi pi-check"
                                                 className="p-button-sm p-button-success ml-2"
-                                                onClick={() => addNewTask(block.name)}
-                                                disabled={!newTaskText[block.name]?.trim()}
+                                                onClick={() => addNewTask(block.block_id)}
+                                                disabled={!newTaskText[block.block_id]?.trim()}
                                             />
                                             <Button
                                                 icon="pi pi-times"
                                                 className="p-button-sm p-button-danger ml-2"
                                                 onClick={() => setNewTaskText({
                                                     ...newTaskText,
-                                                    [block.name]: undefined
+                                                    [block.block_id]: undefined
                                                 })}
                                             />
                                         </div>
@@ -2030,22 +2050,22 @@ const BlocksView = () => {
                                                         header={
                                                             <div className="flex align-items-center w-full">
                                                                 <Checkbox
-                                                                    checked={isTaskSelected(block.name, todo.task_id)}
-                                                                    onChange={(e) => handleTaskSelection(block.name, todo.task_id, e.checked)}
+                                                                    checked={isTaskSelected(block.block_id, todo.task_id)}
+                                                                    onChange={(e) => handleTaskSelection(block.block_id, todo.task_id, e.checked)}
                                                                     className="mr-2"
-                                                                    disabled={isTaskRunning(block.name, todo.task_id)}
+                                                                    disabled={isTaskRunning(block.block_id, todo.task_id)}
                                                                 />
-                                                                {editingTask.blockName === block.name && editingTask.taskId === todo.task_id ? (
+                                                                {editingTask.block_id === block.block_id && editingTask.taskId === todo.task_id ? (
                                                                     <div className="flex flex-column w-full">
                                                                         <InputTextarea
-                                                                            value={editingTaskText[`${block.name}-${todo.task_id}`]}
-                                                                            onChange={(e) => handleTaskTextChange(block.name, todo.task_id, e.target.value)}
+                                                                            value={editingTaskText[`${block.block_id}-${todo.task_id}`]}
+                                                                            onChange={(e) => handleTaskTextChange(block.block_id, todo.task_id, e.target.value)}
                                                                             className="task-edit-textarea"
                                                                             autoFocus
                                                                             rows={3}
                                                                             onKeyDown={(e) => {
                                                                                 if (e.key === 'Enter' && e.ctrlKey) {
-                                                                                    saveEditedTask(block.name, todo.task_id);
+                                                                                    saveEditedTask(block.block_id, todo.task_id);
                                                                                     e.preventDefault();
                                                                                 } else if (e.key === 'Escape') {
                                                                                     cancelEditingTask();
@@ -2056,8 +2076,8 @@ const BlocksView = () => {
                                                                             <Button
                                                                                 icon="pi pi-check"
                                                                                 className="p-button-sm p-button-success ml-2"
-                                                                                onClick={() => saveEditedTask(block.name, todo.task_id)}
-                                                                                disabled={!editingTaskText[`${block.name}-${todo.task_id}`]?.trim()}
+                                                                                onClick={() => saveEditedTask(block.block_id, todo.task_id)}
+                                                                                disabled={!editingTaskText[`${block.block_id}-${todo.task_id}`]?.trim()}
                                                                             />
                                                                             <Button
                                                                                 icon="pi pi-times"
@@ -2068,11 +2088,11 @@ const BlocksView = () => {
                                                                     </div>
                                                                 ) : (
                                                                     <span
-                                                                        className={isTaskRunning(block.name, todo.task_id) ? 'task-running' : 'task-text'}
-                                                                        onDoubleClick={() => !isTaskRunning(block.name, todo.task_id) && startEditingTask(block.name, todo.task_id, todo.description)}
+                                                                        className={isTaskRunning(block.block_id, todo.task_id) ? 'task-running' : 'task-text'}
+                                                                        onDoubleClick={() => !isTaskRunning(block.block_id, todo.task_id) && startEditingTask(block.block_id, todo.task_id, todo.description)}
                                                                         title={`Task ID: ${todo.task_id}`}
                                                                     >
-                                                                        {isTaskRunning(block.name, todo.task_id) && (
+                                                                        {isTaskRunning(block.block_id, todo.task_id) && (
                                                                             <span className="sandclock"></span>
                                                                         )}
                                                                         <span className="task-id">[{todo.task_id}]</span> {todo.task_name || todo.description}
@@ -2148,6 +2168,26 @@ const BlocksView = () => {
                                                                     </ul>
                                                                 </div>
                                                             )}
+
+                                                            {todo.commit_id && todo.commit_id.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <div className="mb-3">
+                                                                        <h4 className="m-0 mb-2">Commit Id</h4>
+                                                                        <p className="m-0">{todo.commit_id}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {todo.status && todo.status.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <div className="mb-3">
+                                                                        <h4 className="m-0 mb-2">Status</h4>
+                                                                        <p className="m-0">{todo.status}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+
                                                         </div>
                                                     </AccordionTab>
                                                 ))}

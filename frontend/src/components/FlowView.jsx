@@ -44,11 +44,11 @@ const FlowView = () => {
             const posY = Math.floor(index / 3) * 200 + 50;
 
             return {
-                id: block.name,
+                id: block.block_id,
                 data: {
                     label: (
                         <div>
-                            <div className="flow-node-title">{block.name}</div>
+                            <div className="flow-node-title">{block.block_id}</div>
                             <div className="flow-node-io">
                                 <div>Inputs: {block.inputs.map(input => input.name).join(', ')}</div>
                                 <div>Outputs: {block.outputs.map(output => output.name).join(', ')}</div>
@@ -76,8 +76,8 @@ const FlowView = () => {
             // Process output connections
             block.connections.output_connections.forEach(conn => {
                 flowEdges.push({
-                    id: `${block.name}-${conn.to_module}-${conn.unique_id}`,
-                    source: block.name,
+                    id: `${block.block_id}-${conn.to_module}-${conn.unique_id}`,
+                    source: block.block_id,
                     target: conn.to_module,
                     label: conn.input_type,
                     type: 'default',
