@@ -553,10 +553,12 @@ pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option
     let json_end = content.rfind(']').map(|i| i + 1).unwrap_or(content.len());
     let json_str = &content[json_start..json_end];
 
-    //println!("{}",json_str);
+    println!("{}",json_str);
     // Parse the JSON into a list of GeneratedBlock objects
-    let blocks: Vec<GeneratedBlock> = serde_json::from_str(json_str)
-        .map_err(|e| format!("Failed to parse generated blocks: {}", e))?;
+    let blocks: Vec<GeneratedBlock> = serde_json::from_str(json_str).map_err(|e| {
+        println!("Failed to parse generated blocks: {}", e);
+        format!("Failed to parse generated blocks: {}", e)
+    })?;
 
     Ok(blocks)
 }

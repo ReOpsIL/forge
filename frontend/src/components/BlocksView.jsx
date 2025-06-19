@@ -41,6 +41,7 @@ const BlocksView = () => {
     const [isAutoCompleteLoading, setIsAutoCompleteLoading] = useState(false);
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
     const [currentImportBlock, setCurrentImportBlock] = useState(null);
+    const [resolveDependencies, setResolveDependencies] = useState(false);
     const fileInputRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const [newBlock, setNewBlock] = useState({
@@ -783,7 +784,6 @@ const BlocksView = () => {
         }));
 
         try {
-
             // Call the API to execute the task with Git integration
             const response = await fetch('/api/git/execute-task', {
                 method: 'POST',
@@ -793,7 +793,8 @@ const BlocksView = () => {
                 body: JSON.stringify({
                     block_id: block_id,
                     task_id: task.task_id,
-                    task_description: task.description
+                    task_description: task.description,
+                    resolve_dependencies: resolveDependencies
                 }),
             });
 
@@ -978,7 +979,7 @@ const BlocksView = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    block_id: bloc_id,
+                    block_id: block_id,
                     task_id: task.task_id
                 }),
             });
@@ -1906,14 +1907,26 @@ const BlocksView = () => {
                                                 tooltip="Run Tasks"
                                                 tooltipOptions={{position: 'top'}}
                                             />
-                                            <Button
-                                                icon="pi pi-github"
-                                                className="p-button-sm p-button-info ml-2"
-                                                onClick={() => executeSelectedGitTasks(block.block_id)}
-                                                disabled={areTasksRunning(block.block_id)}
-                                                tooltip="Run Tasks with Git Integration"
-                                                tooltipOptions={{position: 'top'}}
-                                            />
+                                            <div className="flex align-items-center">
+                                                <Button
+                                                    icon="pi pi-github"
+                                                    className="p-button-sm p-button-info ml-2"
+                                                    onClick={() => executeSelectedGitTasks(block.block_id)}
+                                                    disabled={areTasksRunning(block.block_id)}
+                                                    tooltip="Run Tasks with Git Integration"
+                                                    tooltipOptions={{position: 'top'}}
+                                                />
+                                                <div className="ml-2 flex align-items-center">
+                                                    <Checkbox
+                                                        inputId="resolve-dependencies"
+                                                        checked={resolveDependencies}
+                                                        onChange={e => setResolveDependencies(e.checked)}
+                                                        tooltip="Resolve dependency"
+                                                        tooltipOptions={{position: 'top'}}
+                                                    />
+                                                    <label htmlFor="resolve-dependencies" className="ml-1 text-sm">Dep</label>
+                                                </div>
+                                            </div>
                                             <Button
                                                 icon="pi pi-exclamation-triangle"
                                                 tooltip="Stop tasks execution"

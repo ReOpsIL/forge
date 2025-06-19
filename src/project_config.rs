@@ -116,11 +116,13 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the followi
 - Inputs/outputs should specify data types and formats
 - Include error handling and validation requirements
 - Ensure naming follows consistent conventions
+- Block ID: block_id should be a random alpha numeric string of 6 characters.
 
 **JSON Schema:**
 ```json
 {
   \"name\": \"CamelCaseBlockName\",
+  \"block_id\": \"sg3gf6\",
   \"description\": \"Detailed implementation description with technical specifics\",
   \"inputs\": [
     {\"name\": \"inputName\", \"ctype\": \"dataType\", \"description\": \"purpose and format\"}
@@ -128,9 +130,7 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the followi
   \"outputs\": [
     {\"name\": \"outputName\", \"ctype\": \"dataType\", \"description\": \"expected result format\"}
   ],
-  \"dependencies\": [\"RequiredComponent1\", \"RequiredComponent2\"],
-  \"complexity\": \"Low|Medium|High\",
-  \"estimated_hours\": \"number\"
+  \"dependencies\": [\"RequiredComponent1\", \"RequiredComponent2\"]
 }
 ```
 
@@ -142,8 +142,7 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the followi
 
 Specification document:
 {}
-
-Structured blocks (JSON):";
+";
 
 // Additional helper prompts for common scenarios
 pub const DEFAULT_CODE_REVIEW_SYSTEM_PROMPT: &str = "You are a senior code reviewer with expertise in software quality, security, and maintainability. Provide constructive feedback focused on improvements that enhance code reliability and developer productivity.";

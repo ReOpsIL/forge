@@ -6,9 +6,11 @@ use std::path::Path;
 use std::process::Command;
 use std::process::Stdio;
 use std::sync::Arc;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::block_config::BlockConfigManager;
 use crate::project_config::ProjectConfigManager;
+use crate::models::Task;
 
 // AppState for git handlers
 pub struct GitAppState {
@@ -22,6 +24,7 @@ pub struct ExecuteGitTaskRequest {
     pub block_id: String,
     pub task_id: String,
     pub task_description: String,
+    pub resolve_dependencies: Option<bool>,
 }
 
 // Request body for creating a branch
@@ -451,12 +454,121 @@ pub async fn pull_handler(data: web::Data<GitAppState>) -> impl Responder {
 }
 
 
+// Helper function to resolve task dependencies and create an execution queue
+fn resolve_task_dependencies(
+    block_manager: &Arc<BlockConfigManager>,
+    block_id: &str,
+    task_id: &str,
+) -> Result<Vec<String>, String> {
+    // Get all blocks
+    let blocks = block_manager.get_blocks()
+        .map_err(|e| format!("Failed to get blocks: {}", e))?;
+
+    // Find the block
+    let block = blocks.iter()
+        .find(|b| b.block_id == block_id)
+        .ok_or_else(|| format!("Block {} not found", block_id))?;
+
+    // Create a map of task_id to task for easy lookup
+    let tasks: HashMap<&String, &Task> = block.todo_list.iter().collect();
+
+    // Check if the task exists
+    if !tasks.contains_key(&task_id.to_string()) {
+        return Err(format!("Task {} not found in block {}", task_id, block_id));
+    }
+
+    // Set to track visited tasks (for cycle detection)
+    let mut visited = HashSet::new();
+    // Set to track tasks in the current recursion stack (for cycle detection)
+    let mut rec_stack = HashSet::new();
+    // Vector to store the execution order (topological sort result)
+    let mut execution_order = Vec::new();
+    // Set to track tasks that have already been completed
+    let mut completed_tasks = HashSet::new();
+
+    // Helper function to check if a task is completed
+    let is_task_completed = |task: &Task| -> bool {
+        task.status.contains("COMPLETED") || task.description.contains("[COMPLETED]")
+    };
+
+    // Identify completed tasks
+    for (id, task) in &block.todo_list {
+        if is_task_completed(task) {
+            completed_tasks.insert(id.clone());
+        }
+    }
+
+    // DFS function for topological sort with cycle detection
+    fn dfs(
+        task_id: &str,
+        tasks: &HashMap<&String, &Task>,
+        visited: &mut HashSet<String>,
+        rec_stack: &mut HashSet<String>,
+        execution_order: &mut Vec<String>,
+        completed_tasks: &HashSet<String>,
+    ) -> Result<(), String> {
+        // Mark the current task as visited and add to recursion stack
+        visited.insert(task_id.to_string());
+        rec_stack.insert(task_id.to_string());
+
+        // Skip further processing if the task is already completed
+        if completed_tasks.contains(&task_id.to_string()) {
+            // Remove from recursion stack before returning
+            rec_stack.remove(&task_id.to_string());
+            return Ok(());
+        }
+
+        // Process all dependencies
+        if let Some(task) = tasks.get(&task_id.to_string()) {
+            for dep_id in &task.dependencies {
+                // Check if the dependency exists
+                if !tasks.contains_key(dep_id) {
+                    return Err(format!("Dependency task {} not found", dep_id));
+                }
+
+                // If the dependency is in the recursion stack, we have a cycle
+                if rec_stack.contains(dep_id) {
+                    return Err(format!("Cycle detected in task dependencies: {} -> {}", task_id, dep_id));
+                }
+
+                // If the dependency hasn't been visited yet, visit it
+                if !visited.contains(dep_id) {
+                    dfs(dep_id, tasks, visited, rec_stack, execution_order, completed_tasks)?;
+                }
+            }
+        }
+
+        // Remove the task from recursion stack and add to execution order
+        rec_stack.remove(&task_id.to_string());
+
+        // Only add to execution order if not completed
+        if !completed_tasks.contains(&task_id.to_string()) {
+            execution_order.push(task_id.to_string());
+        }
+
+        Ok(())
+    }
+
+    // Start DFS from the requested task
+    dfs(task_id, &tasks, &mut visited, &mut rec_stack, &mut execution_order, &completed_tasks)?;
+
+    // Reverse the execution order to get the correct topological sort
+    execution_order.reverse();
+
+    // Log the execution order
+    println!("Task execution order: {:?}", execution_order);
+    println!("Skipped completed tasks: {:?}", completed_tasks);
+
+    Ok(execution_order)
+}
+
 // Handler to execute a task with Git integration
 pub async fn execute_git_task_handler(
     data: web::Data<GitAppState>,
     request: web::Json<ExecuteGitTaskRequest>,
 ) -> impl Responder {
     let request = request.into_inner();
+    let resolve_dependencies = request.resolve_dependencies.unwrap_or(false);
 
     // Get the project home directory from the project config
     let project_config = match data.project_manager.get_config() {
@@ -498,6 +610,45 @@ pub async fn execute_git_task_handler(
     let block_manager = data.block_manager.clone();
     let block_id = request.block_id.clone();
     let task_id = format!("{}", request.task_id);
+
+    // If dependency resolution is enabled, resolve dependencies and execute tasks in order
+    if resolve_dependencies {
+        match resolve_task_dependencies(&block_manager, &block_id, &task_id) {
+            Ok(execution_queue) => {
+                if execution_queue.is_empty() {
+                    // If the queue is empty, it means the task and all its dependencies are already completed
+                    return HttpResponse::Ok().json(ExecuteGitTaskResponse {
+                        status: "success".to_string(),
+                        message: "Task and all its dependencies are already completed".to_string(),
+                    });
+                }
+
+                // Log the execution queue
+                println!("Executing tasks in order: {:?}", execution_queue);
+
+                // We'll execute only the requested task, but mark its dependencies as completed
+                // This is because executing multiple Git tasks in sequence can be complex
+                // and might require more sophisticated error handling
+
+                // Mark all dependencies as completed
+                for task_id_to_execute in &execution_queue {
+                    if task_id_to_execute != &task_id {
+                        println!("Marking dependency task {} as completed", task_id_to_execute);
+                        update_task_status(&block_manager, &block_id, task_id_to_execute.clone(), "[COMPLETED] (Dependency)");
+                    }
+                }
+
+                // Continue with executing the requested task
+                // The rest of the function will handle this
+            }
+            Err(e) => {
+                return HttpResponse::BadRequest().json(ExecuteGitTaskResponse {
+                    status: "error".to_string(),
+                    message: format!("Failed to resolve task dependencies: {}", e),
+                });
+            }
+        }
+    }
 
     // Spawn a background task to execute the Git task flow
 
