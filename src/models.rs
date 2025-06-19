@@ -119,6 +119,12 @@ impl Block {
             todo_list: HashMap::new(),
         }
     }
+    pub fn update_task(mut self, task: Task) {
+        println!("Updating task status {} {}", task.task_id, task.status);
+        let task_id = task.clone().task_id;
+        self.todo_list.insert(task_id, task);
+
+    }
 }
 
 // Function to get a list of blocks (in a real application, this would likely fetch from a database)

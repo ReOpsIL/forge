@@ -497,7 +497,7 @@ pub async fn execute_git_task_handler(
     // Clone the data for use in the background task
     let block_manager = data.block_manager.clone();
     let block_id = request.block_id.clone();
-    let task_id = format!("task_{}", request.task_id);
+    let task_id = format!("{}", request.task_id);
 
     // Spawn a background task to execute the Git task flow
 
@@ -762,32 +762,61 @@ fn update_task_status_with_log_and_commit_id(
     log: &str,
     commit_id: Option<String>,
 ) {
-    if let Ok(mut blocks) = block_manager.get_blocks() {
-        if let Some(block) = blocks.iter_mut().find(|b| b.block_id == block_id) {
-            if let Some(task) = block.todo_list.get_mut(&task_id) {
-                // Append a status marker to the task description
+    fn update_task_and_save(
+        block_manager: &BlockConfigManager,
+        block_id: &str,
+        task_id: &str,
+        status: &str,
+        log: &str,
+        commit_id: Option<String>,
+    ) -> Result<(), String> {
+        let mut blocks = block_manager.get_blocks()
+            .map_err(|e| format!("Failed to get blocks: {}", e))?;
 
-                task.description = format!("{} {}", task.description, status);
+        let block = blocks.iter_mut()
+            .find(|b| b.block_id == block_id)
+            .ok_or("Block not found")?;
 
-                // Store the output in the task's log field
-                task.log = log.to_string();
+        // Get the task, clone it, and update the clone
+        let task_opt = block.todo_list.get(task_id);
+        if let Some(task_original) = task_opt {
+            // Clone the task
+            let mut task_updated = task_original.clone();
 
-                // Store the commit ID in the task's commit_id field
-                if let Some(id) = commit_id {
-                    task.commit_id = id;
-                }
+            // Update task fields
+            task_updated.status = status.to_string();
+            task_updated.description = format!("{} {}", task_updated.description, status);
+            task_updated.log = log.to_string();
+            if let Some(id) = commit_id {
+                task_updated.commit_id = id;
+            }
 
-                // Update the block in the database
-                if let Err(e) = block_manager.update_block(block.clone()) {
-                    println!("Failed to update block: {}", e);
-                } else {
-                    // Save the updated blocks to the file
-                    if let Err(e) = block_manager.save_blocks_to_file() {
-                        println!("Failed to save blocks to file: {}", e);
-                    }
-                }
+            // Update the task in the block's todo_list
+            block.todo_list.insert(task_id.to_string(), task_updated);
+        } else {
+            return Err("Task not found".to_string());
+        }
+
+        match block_manager.update_block(block.clone()) {
+            Ok(_) => {
+                // Save the updated blocks to the file
+                block_manager.save_blocks_to_file().map_err(|e| format!("Failed to save blocks to file: {}", e))?;
+            },
+            Err(e) => {
+                println!("Failed to update block: {}", e);
+                return Err( format!(
+                    "Failed to update block: {}",
+                    e
+                ));
             }
         }
+
+        Ok(())
+    }
+
+    // Usage (replaces the original code):
+    if let Err(e) = update_task_and_save(&block_manager, &block_id, &task_id, &status, &log, commit_id) {
+        println!("Failed to update task: {}", e);
     }
 }
 
@@ -1067,4 +1096,3 @@ echo "Build completed successfully!"
         }
     }
 }
-

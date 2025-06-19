@@ -22,7 +22,7 @@ impl BlockConfigManager {
             config_file: config_file.to_string(),
         }
     }
-
+    
     // Load blocks from a JSON file
     pub fn load_blocks_from_file(&self) -> Result<Vec<Block>, String> {
         let path = Path::new(&self.config_file);
@@ -328,11 +328,8 @@ pub fn load_blocks_from_file(filename: &str) -> Vec<Block> {
     };
 
     // Parse the JSON
-    match serde_json::from_str(&file_content) {
-        Ok(blocks) => blocks,
-        Err(e) => {
-            eprintln!("Failed to parse JSON: {}", e);
-            Vec::new()
-        }
-    }
+    serde_json::from_str(&file_content).unwrap_or_else(|e| {
+        eprintln!("Failed to parse JSON: {}", e);
+        Vec::new()
+    })
 }
