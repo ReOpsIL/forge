@@ -2,7 +2,7 @@ use std::env;
 use std::sync::Arc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use crate::project_config::{
     ProjectConfigManager, PROJECT_CONFIG_FILE,
     DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT,
@@ -382,9 +382,30 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
     }
 }
 
-// Function to generate tasks for a block based on its description
-pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
-    let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
+// Define the structure for task response from LLM
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TaskItem {
+    pub task_id: String,
+    pub task_name: String,
+    pub description: String,
+    pub acceptance_criteria: Vec<String>,
+    pub dependencies: Vec<String>,
+    pub estimated_effort: String,
+    pub files_affected: Vec<String>,
+    pub function_signatures: Vec<String>,
+    pub testing_requirements: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct TaskResponse {
+    pub component_name: String,
+    pub total_tasks: u32,
+    pub tasks: Vec<TaskItem>,
+}
+
+// Function to get the full task response from LLM
+pub async fn get_task_response(description: &str, provider_type: &Option<LLMProvider>) -> Result<TaskResponse, String> {
+    let provider = LLMProviderImpl::new(provider_type.clone().unwrap_or_default());
 
     // Load project configuration to get custom prompts
     let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
@@ -399,7 +420,6 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
     // Create the user prompt by formatting the template with the description
     let user_prompt = user_prompt_template.replace("{}", description);
 
-
     // Send the prompt and get the response
     let content = match provider.provider_type {
         LLMProvider::OpenRouter => {
@@ -413,33 +433,38 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
         },
     };
 
-    // Parse the content into a list of tasks
-    // Simple parsing: split by newlines and filter out empty lines and list markers
-    let tasks: Vec<String> = content
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            // Remove list markers like "1.", "- ", "* ", etc.
-            if line.starts_with(|c: char| c.is_numeric() || c == '-' || c == '*') {
-                let mut chars = line.chars();
-                chars.next(); // Skip the first character
+    println!("{}",content);
 
-                // Skip any following characters that are not letters (like ".", ")", " ")
-                let mut result = chars.as_str();
-                while !result.is_empty() && !result.chars().next().unwrap().is_alphabetic() {
-                    result = &result[1..];
-                }
+    // Extract the JSON part from the response
+    let json_start = content.find('{').unwrap_or(0);
+    let json_end = content.rfind('}').map(|i| i + 1).unwrap_or(content.len());
+    let json_str = &content[json_start..json_end];
 
-                result.trim().to_string()
-            } else {
-                line.to_string()
-            }
-        })
-        .filter(|line| !line.is_empty())
-        .collect();
+    // Parse the content as JSON
+    serde_json::from_str::<TaskResponse>(&json_str)
+        .map_err(|e| format!("Failed to parse JSON response: {}", e))
+}
 
-    Ok(tasks)
+// Function to generate tasks for a block based on its description
+pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
+    // Try to get the structured task response
+    match get_task_response(description, &provider_type).await {
+        Ok(task_response) => {
+            // Extract task names from the structured response
+            let tasks: Vec<String> = task_response.tasks
+                .into_iter()
+                .map(|task| task.task_name)
+                .collect();
+
+            Ok(tasks)
+        },
+        Err(json_err) => {
+            println!("Failed to parse JSON response: {}", json_err);
+            println!("Falling back to text parsing");
+            let tasks: Vec<String> = vec!["Error creating tasks".to_string()];
+            Ok(tasks)
+        }
+    }
 }
 
 // // Function to process a markdown file and generate tasks

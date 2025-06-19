@@ -1,15 +1,14 @@
 use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::process::Command;
-use std::path::Path;
 use std::fs;
 use std::io::Write;
+use std::path::Path;
+use std::process::Command;
 use std::process::Stdio;
-use tokio::task;
+use std::sync::Arc;
 
-use crate::project_config::ProjectConfigManager;
 use crate::block_config::BlockConfigManager;
+use crate::project_config::ProjectConfigManager;
 
 // AppState for git handlers
 pub struct GitAppState {
@@ -452,7 +451,6 @@ pub async fn pull_handler(data: web::Data<GitAppState>) -> impl Responder {
 }
 
 
-
 // Handler to execute a task with Git integration
 pub async fn execute_git_task_handler(
     data: web::Data<GitAppState>,
@@ -502,193 +500,235 @@ pub async fn execute_git_task_handler(
     let task_id = format!("task_{}", request.task_id);
 
     // Spawn a background task to execute the Git task flow
-    task::spawn(async move {
-        // Step 1: Pull latest main branch
-        println!("Step 1: Pulling latest main branch");
-        let pull_output = Command::new("git")
-            .arg("checkout")
-            .arg("main")
-            .current_dir(&project_dir)
-            .output();
 
-        if let Err(e) = pull_output {
-            println!("Failed to checkout main branch: {}", e);
-            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git checkout main failed");
-            return;
+    // Step 1: Pull latest main branch
+    println!("Step 1: Pulling latest main branch");
+    let pull_output = Command::new("git")
+        .arg("checkout")
+        .arg("main")
+        .current_dir(&project_dir)
+        .output();
+
+    if let Err(e) = pull_output {
+        let task_id = task_id.clone();
+        println!("Failed to checkout main branch: {}", e);
+        update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git checkout main failed");
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Failed to checkout main branch: {}", e),
+        });
+    }
+
+    let pull_output = Command::new("git")
+        .arg("pull")
+        .current_dir(&project_dir)
+        .output();
+
+    if let Err(e) = pull_output {
+        let task_id = task_id.clone();
+        println!("Failed to pull latest changes: {}", e);
+        update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git pull failed");
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Git pull failed: {}", e),
+        });
+    }
+
+    // Step 2: Create a task-specific branch
+    println!("Step 2: Creating task-specific branch using task ID: {}", task_id);
+    let branch_output = Command::new("git")
+        .arg("checkout")
+        .arg("-b")
+        .arg(&task_id)
+        .current_dir(&project_dir)
+        .output();
+
+    if let Err(e) = branch_output {
+        let task_id = task_id.clone();
+        println!("Failed to create task branch: {}", e);
+        update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git branch creation failed");
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Failed to create task branch: {}", e),
+        });
+    }
+
+    // Step 3: Execute the task using Claude CLI
+    println!("Step 3: Executing task");
+    let result = Command::new("claude")
+        .arg("--dangerously-skip-permissions")
+        .current_dir(&project_dir)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn();
+
+    let mut child = match result {
+        Ok(child) => child,
+        Err(e) => {
+            println!("Failed to execute Claude CLI: {}", e);
+            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed");
+            return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+                status: "error".to_string(),
+                message: format!("Failed to execute Claude CLI: {}", e),
+            });
         }
+    };
 
-        let pull_output = Command::new("git")
-            .arg("pull")
-            .current_dir(&project_dir)
-            .output();
-
-        if let Err(e) = pull_output {
-            println!("Failed to pull latest changes: {}", e);
-            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git pull failed");
-            return;
+    // Write the task description to the command's stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        if let Err(e) = stdin.write_all(task_description.as_bytes()) {
+            println!("Failed to write to Claude CLI stdin: {}", e);
+            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude input failed");
+            return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+                status: "error".to_string(),
+                message: format!("Failed to write to Claude CLI stdin: {}", e),
+            });
         }
+    }
 
-        // Step 2: Create a task-specific branch
-        println!("Step 2: Creating task-specific branch using task ID: {}", task_id);
-        let branch_output = Command::new("git")
-            .arg("checkout")
-            .arg("-b")
-            .arg(&task_id)
-            .current_dir(&project_dir)
-            .output();
-
-        if let Err(e) = branch_output {
-            println!("Failed to create task branch: {}", e);
-            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Git branch creation failed");
-            return;
+    // Wait for the command to complete
+    let output = match child.wait_with_output() {
+        Ok(output) => output,
+        Err(e) => {
+            println!("Failed to wait for Claude CLI command: {}", e);
+            update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed");
+            return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+                status: "error".to_string(),
+                message: format!("Failed to wait for Claude CLI command: {}", e),
+            });
         }
+    };
 
-        // Step 3: Execute the task using Claude CLI
-        println!("Step 3: Executing task");
-        let result = Command::new("claude")
-            .arg("--dangerously-skip-permissions")
-            .current_dir(&project_dir)
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn();
+    let task_success = output.status.success();
+    let log_output = String::from_utf8_lossy(&output.stdout).to_string();
 
-        let mut child = match result {
-            Ok(child) => child,
-            Err(e) => {
-                println!("Failed to execute Claude CLI: {}", e);
-                update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed");
-                return;
+    if !task_success {
+        println!("Claude CLI command failed with exit code: {:?}", output.status.code());
+        println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
+        update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed", &log_output);
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Claude CLI command failed with exit code: {:?}", output.status.code()),
+        });
+    }
+
+    println!("Claude CLI command completed successfully");
+    println!("Claude output:\n-----------------\n{}", log_output);
+
+    // Step 4: Commit changes
+    println!("Step 4: Committing changes");
+    let add_output = Command::new("git")
+        .arg("add")
+        .arg(".")
+        .current_dir(&project_dir)
+        .output();
+
+    if let Err(e) = add_output {
+        println!("Failed to stage changes: {}", e);
+        update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Git add failed", &log_output);
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Failed to stage changes: {}", e),
+        });
+    }
+
+    // Use task description as commit message
+    let commit_message = task_description.lines().next().unwrap_or("Task execution").to_string();
+    let commit_output = Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg(&commit_message)
+        .current_dir(&project_dir)
+        .output();
+
+    if let Err(e) = commit_output {
+        println!("Failed to commit changes: {}", e);
+        update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Git commit failed", &log_output);
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Failed to commit changes: {}", e),
+        });
+    }
+
+    // Get the commit ID
+    let commit_id_output = Command::new("git")
+        .arg("rev-parse")
+        .arg("HEAD")
+        .current_dir(&project_dir)
+        .output();
+
+    let commit_id = match commit_id_output {
+        Ok(output) => {
+            if output.status.success() {
+                Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+            } else {
+                println!("Failed to get commit ID: {}", String::from_utf8_lossy(&output.stderr));
+                return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+                    status: "error".to_string(),
+                    message: format!("Failed to commit changes: {}", String::from_utf8_lossy(&output.stderr)),
+                });
             }
-        };
-
-        // Write the task description to the command's stdin
-        if let Some(mut stdin) = child.stdin.take() {
-            if let Err(e) = stdin.write_all(task_description.as_bytes()) {
-                println!("Failed to write to Claude CLI stdin: {}", e);
-                update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude input failed");
-                return;
-            }
         }
-
-        // Wait for the command to complete
-        let output = match child.wait_with_output() {
-            Ok(output) => output,
-            Err(e) => {
-                println!("Failed to wait for Claude CLI command: {}", e);
-                update_task_status(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed");
-                return;
-            }
-        };
-
-        let task_success = output.status.success();
-        let log_output = String::from_utf8_lossy(&output.stdout).to_string();
-
-        if !task_success {
-            println!("Claude CLI command failed with exit code: {:?}", output.status.code());
-            println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
-            update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Claude execution failed", &log_output);
-            return;
+        Err(e) => {
+            println!("Failed to execute git rev-parse command: {}", e);
+            return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+                status: "error".to_string(),
+                message: format!("Failed to execute git rev-parse command: {}", e),
+            });
         }
+    };
 
-        println!("Claude CLI command completed successfully");
-        println!("Claude output:\n-----------------\n{}", log_output);
+    // Step 5: Merge back to main
+    println!("Step 5: Merging back to main");
+    let checkout_output = Command::new("git")
+        .arg("checkout")
+        .arg("main")
+        .current_dir(&project_dir)
+        .output();
 
-        // Step 4: Commit changes
-        println!("Step 4: Committing changes");
-        let add_output = Command::new("git")
-            .arg("add")
-            .arg(".")
-            .current_dir(&project_dir)
-            .output();
+    if let Err(e) = checkout_output {
+        println!("Failed to checkout main branch: {}", e);
+        update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[FAILED] Git checkout main failed", &log_output, commit_id);
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Failed to checkout main branch: {}", e),
+        });
+    }
 
-        if let Err(e) = add_output {
-            println!("Failed to stage changes: {}", e);
-            update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Git add failed", &log_output);
-            return;
-        }
+    let merge_output = Command::new("git")
+        .arg("merge")
+        .arg("--ff-only")
+        .arg(&task_id)
+        .current_dir(&project_dir)
+        .output();
 
-        // Use task description as commit message
-        let commit_message = task_description.lines().next().unwrap_or("Task execution").to_string();
-        let commit_output = Command::new("git")
-            .arg("commit")
-            .arg("-m")
-            .arg(&commit_message)
-            .current_dir(&project_dir)
-            .output();
+    if let Err(e) = merge_output {
+        println!("Failed to merge task branch: {}", e);
+        update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[FAILED] Git merge failed", &log_output, commit_id);
+        return HttpResponse::InternalServerError().json(ExecuteGitTaskResponse {
+            status: "error".to_string(),
+            message: format!("Failed to merge task branch: {}", e),
+        });
+    }
 
-        if let Err(e) = commit_output {
-            println!("Failed to commit changes: {}", e);
-            update_task_status_with_log(&block_manager, &block_name, task_id, "[FAILED] Git commit failed", &log_output);
-            return;
-        }
+    // Step 6: Clean up (delete the task branch)
+    println!("Step 6: Cleaning up");
+    let delete_output = Command::new("git")
+        .arg("branch")
+        .arg("-d")
+        .arg(&task_id)
+        .current_dir(&project_dir)
+        .output();
 
-        // Get the commit ID
-        let commit_id_output = Command::new("git")
-            .arg("rev-parse")
-            .arg("HEAD")
-            .current_dir(&project_dir)
-            .output();
+    if let Err(e) = delete_output {
+        println!("Failed to delete task branch: {}", e);
+        // This is not a critical error, so we continue
+    }
 
-        let commit_id = match commit_id_output {
-            Ok(output) => {
-                if output.status.success() {
-                    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
-                } else {
-                    println!("Failed to get commit ID: {}", String::from_utf8_lossy(&output.stderr));
-                    None
-                }
-            }
-            Err(e) => {
-                println!("Failed to execute git rev-parse command: {}", e);
-                None
-            }
-        };
+    // Update the task status, log, and commit ID in the block config
+    update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[COMPLETED]", &log_output, commit_id);
 
-        // Step 5: Merge back to main
-        println!("Step 5: Merging back to main");
-        let checkout_output = Command::new("git")
-            .arg("checkout")
-            .arg("main")
-            .current_dir(&project_dir)
-            .output();
-
-        if let Err(e) = checkout_output {
-            println!("Failed to checkout main branch: {}", e);
-            update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[FAILED] Git checkout main failed", &log_output, commit_id);
-            return;
-        }
-
-        let merge_output = Command::new("git")
-            .arg("merge")
-            .arg("--ff-only")
-            .arg(&task_id)
-            .current_dir(&project_dir)
-            .output();
-
-        if let Err(e) = merge_output {
-            println!("Failed to merge task branch: {}", e);
-            update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[FAILED] Git merge failed", &log_output, commit_id);
-            return;
-        }
-
-        // Step 6: Clean up (delete the task branch)
-        println!("Step 6: Cleaning up");
-        let delete_output = Command::new("git")
-            .arg("branch")
-            .arg("-d")
-            .arg(&task_id)
-            .current_dir(&project_dir)
-            .output();
-
-        if let Err(e) = delete_output {
-            println!("Failed to delete task branch: {}", e);
-            // This is not a critical error, so we continue
-        }
-
-        // Update the task status, log, and commit ID in the block config
-        update_task_status_with_log_and_commit_id(&block_manager, &block_name, task_id, "[COMPLETED]", &log_output, commit_id);
-    });
 
     // Return a response indicating the task has been started
     let response = ExecuteGitTaskResponse {
@@ -749,7 +789,8 @@ fn update_task_status_with_log_and_commit_id(
         }
     }
 }
-// Handler to get a task's diff
+
+    // Handler to get a task's diff
 pub async fn get_task_diff_handler(
     data: web::Data<GitAppState>,
     request: web::Json<GetTaskDiffRequest>,
@@ -847,7 +888,7 @@ pub async fn get_task_diff_handler(
 
 
     // Check if all commands were successful
-    match (files_output ) {
+    match (files_output) {
         (Ok(files)) => {
             if files.status.success() {
 
@@ -895,7 +936,7 @@ pub async fn get_task_diff_handler(
                                 original_content: file_original_content,
                                 modified_content: file_modified_content,
                             });
-                        },
+                        }
                         _ => {
                             // If we can't get the content for this file, skip it
                             continue;
@@ -967,7 +1008,6 @@ echo "Building project..."
 # Add your build commands here
 echo "Build completed successfully!"
 "#;
-
         match fs::write(&build_script_path, build_script_content) {
             Ok(_) => {
                 // Make the script executable
@@ -1026,3 +1066,4 @@ echo "Build completed successfully!"
         }
     }
 }
+

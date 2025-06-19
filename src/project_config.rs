@@ -48,26 +48,60 @@ Enhanced specification:";
 
 pub const DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT: &str = "You are a senior software developer and project manager expert at breaking down software components into granular, executable development tasks. Focus on creating tasks that are specific, measurable, and can be directly implemented by developers.";
 
-pub const DEFAULT_GENERATE_TASKS_USER_PROMPT: &str = "Based on the software component description below, generate a prioritized list of concrete implementation tasks. Each task should be:
+pub const DEFAULT_GENERATE_TASKS_USER_PROMPT: &str = "
+# JSON Task Generation Prompt
+**IMPORTANT: You must respond with valid JSON only. No additional text, explanations, or markdown formatting.**
+Based on the software component description below, generate a prioritized list of concrete implementation tasks
+
+**JSON Schema:**
+```json
+{
+  \"component_name\": \"string\",
+  \"total_tasks\": number,
+  \"tasks\": [
+    {
+      \"task_id\": string,
+      \"task_name\": \"string\",
+      \"description\": \"string\", 
+      \"acceptance_criteria\": [
+        \"string\"
+      ],
+      \"dependencies\": [
+        \"string or task_id\"
+      ],
+      \"estimated_effort\": \"S|M|L\",
+      \"files_affected\": [
+        \"string\"
+      ],
+      \"function_signatures\": [
+        \"string\"
+      ],
+      \"testing_requirements\": [
+        \"string\"
+      ]
+    }
+  ]
+}
+```
 
 **Task Requirements:**
 - Specific and actionable (avoid vague terms)
 - Estimable in scope (typically 1-8 hours of work)
 - Include relevant file names, function signatures, or code locations
 - Specify testing requirements where applicable
-- Indicate dependencies between tasks
+- Indicate dependencies between tasks using task IDs or descriptive names
+- Use effort indicators: S (Simple, 1-3 hours), M (Medium, 3-6 hours), L (Large, 6-8 hours)
+- Task ID: task_id should be a random alpha numeric string of 6 characters.
 
-**Format each task as:**
-- **Task Name**: Brief descriptive title
-- **Description**: What needs to be implemented
-- **Acceptance Criteria**: How to verify completion
-- **Dependencies**: Prerequisites or related tasks
-- **Estimated Effort**: S/M/L complexity indicator
-
-Component description:
+**Component Description:**
 {}
 
-Implementation tasks:";
+**Output Requirements:**
+- Return ONLY valid JSON
+- No explanatory text before or after the JSON
+- Ensure all JSON syntax is correct
+- Include 5-15 prioritized tasks
+- Tasks should be ordered by implementation priority";
 
 pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT: &str = "You are a software architecture analyst expert at parsing technical specifications and extracting structured implementation components. Your output must be valid JSON that can be directly consumed by automated development tools.";
 
