@@ -1113,7 +1113,7 @@ const BlocksView = () => {
 
     // Function to convert tasks to markdown format
     const convertTasksToMarkdown = (block) => {
-        let markdown = `# ${block.block_id} Tasks (ID: ${block.block_id})\n\n`;
+        let markdown = `# ${block.name} Tasks (ID: ${block.block_id})\n\n`;
 
         const tasks = Object.values(block.todo_list);
         if (tasks.length === 0) {

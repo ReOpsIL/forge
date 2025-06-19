@@ -88,8 +88,8 @@ pub struct Connections {
 // Define the structure for a software module
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Block {
-    pub block_id: String,
     pub name: String,
+    pub block_id: String,
     pub description: String,
     pub inputs: Vec<BlockConnection>,
     pub outputs: Vec<BlockConnection>,

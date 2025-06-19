@@ -376,7 +376,7 @@ pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: 
 
                 // Store the name for error reporting
                 let block_id = generated_block.block_id.clone();
-                let block_name = generated_block.block_id.clone();
+                let block_name = generated_block.name.clone();
                 println!("Generated block {}: {}",block_id, block_name);
 
                 // Create a new Block from the GeneratedBlock
@@ -491,12 +491,20 @@ pub async fn execute_task_handler(
         // Wait for the command to complete
         match child.wait_with_output() {
             Ok(output) => {
+                let stdout_str = String::from_utf8_lossy(&output.stdout);
+                let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+                // Always log stderr if it exists, even on success
+                if !stderr_str.is_empty() {
+                    println!("Claude stderr:\n-----------------\n{}", stderr_str);
+                }
+
                 if output.status.success() {
                     println!("Claude CLI command completed successfully");
-                    println!("Claude output:\n-----------------\n{}", String::from_utf8_lossy(&output.stdout));
+                    println!("Claude output:\n-----------------\n{}", stdout_str);
                 } else {
                     println!("Claude CLI command failed with exit code: {:?}", output.status.code());
-                    println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
+                    println!("Claude stdout:\n-----------------\n{}", stdout_str);
                 }
 
                 // Update the task status and log in the block config

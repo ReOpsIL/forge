@@ -560,5 +560,7 @@ pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option
         format!("Failed to parse generated blocks: {}", e)
     })?;
 
+    //println!("{:?}",blocks[0]);
+
     Ok(blocks)
 }
