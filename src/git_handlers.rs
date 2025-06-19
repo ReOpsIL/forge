@@ -488,7 +488,7 @@ fn resolve_task_dependencies(
 
     // Helper function to check if a task is completed
     let is_task_completed = |task: &Task| -> bool {
-        task.status.contains("COMPLETED") || task.description.contains("[COMPLETED]")
+        task.status.contains("[COMPLETED]")
     };
 
     // Identify completed tasks
@@ -631,12 +631,12 @@ pub async fn execute_git_task_handler(
                 // and might require more sophisticated error handling
 
                 // Mark all dependencies as completed
-                for task_id_to_execute in &execution_queue {
-                    if task_id_to_execute != &task_id {
-                        println!("Marking dependency task {} as completed", task_id_to_execute);
-                        update_task_status(&block_manager, &block_id, task_id_to_execute.clone(), "[COMPLETED] (Dependency)");
-                    }
-                }
+                // for task_id_to_execute in &execution_queue {
+                //     if task_id_to_execute != &task_id {
+                //         println!("Marking dependency task {} as completed", task_id_to_execute);
+                //         update_task_status(&block_manager, &block_id, task_id_to_execute.clone(), "[COMPLETED]");
+                //     }
+                // }
 
                 // Continue with executing the requested task
                 // The rest of the function will handle this

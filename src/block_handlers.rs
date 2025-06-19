@@ -14,6 +14,19 @@ use crate::models::{Block, Task};
 use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec};
 use crate::project_config::ProjectConfigManager;
 
+// Define a response type for block dependencies
+#[derive(Serialize)]
+pub struct BlockDependenciesResponse {
+    pub tasks: Vec<TaskDependency>,
+}
+
+#[derive(Serialize)]
+pub struct TaskDependency {
+    pub task_id: String,
+    pub description: String,
+    pub dependencies: Vec<String>,
+}
+
 // Define a response type for auto-complete suggestions
 #[derive(Serialize)]
 pub struct AutoCompleteResponse {
@@ -199,6 +212,38 @@ pub async fn update_block_handler(block: web::Json<Block>, data: web::Data<AppSt
         },
         Err(e) => HttpResponse::BadRequest().body(e),
     }
+}
+
+// API endpoint to get block dependencies
+pub async fn get_block_dependencies_handler(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
+    let block_id = path.into_inner();
+
+    // Get all blocks
+    let blocks = match data.block_manager.get_blocks() {
+        Ok(blocks) => blocks,
+        Err(e) => return HttpResponse::InternalServerError().body(e),
+    };
+
+    // Find the block with the matching ID
+    let block = match blocks.iter().find(|b| b.block_id == block_id) {
+        Some(block) => block,
+        None => return HttpResponse::NotFound().body(format!("Block with ID {} not found", block_id)),
+    };
+
+    // Extract tasks and their dependencies from the block's todo_list
+    let tasks: Vec<TaskDependency> = block.todo_list.values()
+        .map(|task| TaskDependency {
+            task_id: task.task_id.clone(),
+            description: task.description.clone(),
+            dependencies: task.dependencies.clone(),
+        })
+        .collect();
+
+    // Create the response
+    let response = BlockDependenciesResponse { tasks };
+
+    // Return the response as JSON
+    HttpResponse::Ok().json(response)
 }
 
 // API endpoint to delete a block

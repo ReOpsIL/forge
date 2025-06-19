@@ -13,6 +13,7 @@ import {Toast} from 'primereact/toast';
 import {Accordion, AccordionTab} from 'primereact/accordion';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
+import DependencyTreeView from './DependencyTreeView';
 import './BlocksView.css';
 
 const BlocksView = () => {
@@ -42,6 +43,8 @@ const BlocksView = () => {
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
     const [currentImportBlock, setCurrentImportBlock] = useState(null);
     const [resolveDependencies, setResolveDependencies] = useState(false);
+    const [showDependencyTreeDialog, setShowDependencyTreeDialog] = useState(false);
+    const [currentDependencyBlock, setCurrentDependencyBlock] = useState(null);
     const fileInputRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const [newBlock, setNewBlock] = useState({
@@ -1602,6 +1605,13 @@ const BlocksView = () => {
                 />
             </div>
 
+            {/* Dependency Tree Dialog */}
+            <DependencyTreeView
+                blockId={currentDependencyBlock}
+                visible={showDependencyTreeDialog}
+                onHide={() => setShowDependencyTreeDialog(false)}
+            />
+
             {/* New Block Dialog */}
             <Dialog
                 header="Create New Block"
@@ -1928,6 +1938,16 @@ const BlocksView = () => {
                                                 </div>
                                             </div>
                                             <Button
+                                                icon="pi pi-sitemap"
+                                                className="p-button-sm p-button-info ml-2"
+                                                onClick={() => {
+                                                    setCurrentDependencyBlock(block.block_id);
+                                                    setShowDependencyTreeDialog(true);
+                                                }}
+                                                tooltip="View dependency tree"
+                                                tooltipOptions={{position: 'top'}}
+                                            />
+                                            <Button
                                                 icon="pi pi-exclamation-triangle"
                                                 tooltip="Stop tasks execution"
                                                 className="p-button-sm p-button-warning ml-2"
@@ -2020,7 +2040,6 @@ const BlocksView = () => {
                                                 tooltip="Export tasks to markdown file"
                                                 tooltipOptions={{position: 'top'}}
                                             />
-
                                     </div>
 
                                     {/* New Task Input */}
