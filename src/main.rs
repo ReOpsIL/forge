@@ -15,6 +15,7 @@ mod git_handlers;
 pub mod task_executor;
 mod task_executor_wrapper;
 mod task_queue;
+mod log_stream;
 use block_config::{BlockConfigManager, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
@@ -32,13 +33,16 @@ use git_handlers::{
 };
 use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
 use crate::git_handlers::pull_handler;
+
 use crate::task_executor::TaskExecutor;
 use crate::task_executor_wrapper::initialize as init_task_executor;
+use crate::log_stream::{stream_logs, get_task_ids};
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
     fs::NamedFile::open_async("./frontend/dist/index.html").await
 }
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -160,6 +164,9 @@ async fn main() -> std::io::Result<()> {
                     .route("/git/build", web::post().to(build_handler))
                     .route("/git/execute-task", web::post().to(execute_git_task_handler))
                     .route("/git/task-diff", web::post().to(get_task_diff_handler))
+                    // Log streaming routes
+                    .route("/logs/stream/{task_id}", web::get().to(stream_logs))
+                    .route("/logs/tasks", web::get().to(get_task_ids))
             )
 
             // Serve static files from the frontend/dist directory

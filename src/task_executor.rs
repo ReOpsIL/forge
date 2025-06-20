@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
+use crate::log_stream;
 use crate::project_config::ProjectConfigManager;
 use crate::block_config::BlockConfigManager;
 use crate::models::Task;
@@ -27,13 +28,13 @@ impl TaskExecutor {
             project_manager,
             block_manager,
         });
-        
+
         // Start the background thread for processing the queue
         TaskExecutor::start_background_thread(executor.clone());
-        
+
         executor
     }
-    
+
     // Start a background thread to process the task queue
     fn start_background_thread(executor: Arc<TaskExecutor>) {
         thread::spawn(move || {
@@ -130,6 +131,16 @@ impl TaskExecutor {
 
         // Step 3: Execute the task using Claude CLI
         println!("Step 3: Executing task");
+
+        // Create a unique task ID for logging
+        let log_task_id = format!("{}:{}", block_id, task_id);
+
+        // Clear any existing logs for this task
+        log_stream::clear_logs(&log_task_id);
+
+        // Log the start of the task
+        log_stream::add_log(&log_task_id, "Starting Claude execution...".to_string());
+
         let result = Command::new("claude")
             .arg("--dangerously-skip-permissions")
             .current_dir(&project_dir)
@@ -140,35 +151,86 @@ impl TaskExecutor {
 
         let mut child = match result {
             Ok(child) => child,
-            Err(e) => return Err(format!("Failed to execute Claude CLI: {}", e))
+            Err(e) => {
+                let error_msg = format!("Failed to execute Claude CLI: {}", e);
+                log_stream::add_log(&log_task_id, error_msg.clone());
+                return Err(error_msg);
+            }
         };
 
         // Write the task description to the command's stdin
         if let Some(mut stdin) = child.stdin.take() {
             if let Err(e) = stdin.write_all(task_description.as_bytes()) {
-                return Err(format!("Failed to write to Claude CLI stdin: {}", e));
+                let error_msg = format!("Failed to write to Claude CLI stdin: {}", e);
+                log_stream::add_log(&log_task_id, error_msg.clone());
+                return Err(error_msg);
             }
+        }
+
+        // Create a buffer for the complete log output
+        let mut log_output = String::new();
+
+        // Stream stdout in real-time
+        if let Some(stdout) = child.stdout.take() {
+            let reader = BufReader::new(stdout);
+            let log_task_id_clone = log_task_id.clone();
+
+            // Spawn a thread to read stdout line by line
+            thread::spawn(move || {
+                for line in reader.lines() {
+                    if let Ok(line) = line {
+                        // Add the line to the log storage
+                        log_stream::add_log(&log_task_id_clone, line.clone());
+                        println!("Claude: {}", line);
+                    }
+                }
+            });
+        }
+
+        // Stream stderr in real-time
+        if let Some(stderr) = child.stderr.take() {
+            let reader = BufReader::new(stderr);
+            let log_task_id_clone = log_task_id.clone();
+
+            // Spawn a thread to read stderr line by line
+            thread::spawn(move || {
+                for line in reader.lines() {
+                    if let Ok(line) = line {
+                        // Add the line to the log storage with an error prefix
+                        log_stream::add_log(&log_task_id_clone, format!("ERROR: {}", line));
+                        println!("Claude ERROR: {}", line);
+                    }
+                }
+            });
         }
 
         // Wait for the command to complete
-        let output = match child.wait_with_output() {
-            Ok(output) => output,
+        let status = match child.wait() {
+            Ok(status) => status,
             Err(e) => {
-                return Err(format!("Failed to wait for Claude CLI command: {}", e));
+                let error_msg = format!("Failed to wait for Claude CLI command: {}", e);
+                log_stream::add_log(&log_task_id, error_msg.clone());
+                return Err(error_msg);
             }
         };
 
-        let task_success = output.status.success();
-        let log_output = String::from_utf8_lossy(&output.stdout).to_string();
+        let task_success = status.success();
+
+        // Get all logs for this task to use as the log output
+        let logs = log_stream::get_log_storage().get_logs(&log_task_id);
+        for log in &logs {
+            log_output.push_str(&log.content);
+            log_output.push('\n');
+        }
 
         if !task_success {
-            println!("Claude CLI command failed with exit code: {:?}", output.status.code());
-            println!("Claude stderr:\n-----------------\n{}", String::from_utf8_lossy(&output.stderr));
+            let error_msg = format!("Claude CLI command failed with exit code: {:?}", status.code());
+            log_stream::add_log(&log_task_id, error_msg.clone());
             return Err(format!("Claude CLI command failed: {}", log_output));
         }
 
+        log_stream::add_log(&log_task_id, "Claude CLI command completed successfully".to_string());
         println!("Claude CLI command completed successfully");
-        println!("Claude output:\n-----------------\n{}", log_output);
 
         // Step 4: Commit changes
         println!("Step 4: Committing changes");
@@ -265,7 +327,7 @@ impl TaskExecutor {
             None
         }
     }
-    
+
     // Execute a task
     fn execute_task(&self, task: QueuedTask) {
         // This is a placeholder for the actual task execution logic
@@ -353,7 +415,7 @@ impl TaskExecutor {
             if let Some(block) = blocks.iter_mut().find(|b| b.block_id == block_id) {
                 if let Some(task) = block.todo_list.get_mut(task_id) {
                     task.status = status.to_string();
-                    
+
                     // Update the block in the database
                     if let Err(e) = self.block_manager.update_block(block.clone()) {
                         println!("Failed to update block: {}", e);
@@ -367,27 +429,27 @@ impl TaskExecutor {
             }
         }
     }
-    
+
     // Add a task to the queue, optionally resolving dependencies
     pub fn enqueue_task(&self, block_id: &str, task_id: &str, task_description: &str, resolve_dependencies: bool) -> Result<String, String> {
         let task_unique_id = format!("{}:{}", block_id, task_id);
-        
+
         // Check if the task is already in the queue
         if let Ok(in_progress) = self.in_progress.read() {
             if in_progress.contains(&task_unique_id) {
                 return Ok(format!("Task {}:{} is already in the queue", block_id, task_id));
             }
         }
-        
+
         // If dependency resolution is enabled, resolve dependencies and add them to the queue
         if resolve_dependencies {
             let execution_order = self.resolve_task_dependencies(block_id, task_id)?;
-            
+
             // If the execution order is empty, all tasks are already completed
             if execution_order.is_empty() {
                 return Ok(format!("Task {}:{} and all its dependencies are already completed", block_id, task_id));
             }
-            
+
             // Add all tasks in the execution order to the queue
             for task_id_to_execute in execution_order {
                 // Get the task description
@@ -395,24 +457,24 @@ impl TaskExecutor {
                     Ok(desc) => desc,
                     Err(e) => return Err(e),
                 };
-                
+
                 // Create a new queued task
                 let queued_task = QueuedTask::new(
                     block_id.to_string(),
                     task_id_to_execute.clone(),
                     task_description,
                 );
-                
+
                 // Add the task to the queue and mark it as in progress
                 if let Ok(mut queue) = self.queue.lock() {
                     queue.push_back(queued_task);
-                    
+
                     if let Ok(mut in_progress) = self.in_progress.write() {
                         in_progress.insert(format!("{}:{}", block_id, task_id_to_execute));
                     }
                 }
             }
-            
+
             Ok(format!("Added task {}:{} and its dependencies to the queue", block_id, task_id))
         } else {
             // Just add the requested task to the queue
@@ -421,57 +483,57 @@ impl TaskExecutor {
                 task_id.to_string(),
                 task_description.to_string(),
             );
-            
+
             // Add the task to the queue and mark it as in progress
             if let Ok(mut queue) = self.queue.lock() {
                 queue.push_back(queued_task);
-                
+
                 if let Ok(mut in_progress) = self.in_progress.write() {
                     in_progress.insert(task_unique_id);
                 }
             }
-            
+
             Ok(format!("Added task {}:{} to the queue", block_id, task_id))
         }
     }
-    
+
     // Get the description of a task
     fn get_task_description(&self, block_id: &str, task_id: &str) -> Result<String, String> {
         // Get all blocks
         let blocks = self.block_manager.get_blocks()
             .map_err(|e| format!("Failed to get blocks: {}", e))?;
-        
+
         // Find the block
         let block = blocks.iter()
             .find(|b| b.block_id == block_id)
             .ok_or_else(|| format!("Block {} not found", block_id))?;
-        
+
         // Find the task
         let task = block.todo_list.get(task_id)
             .ok_or_else(|| format!("Task {} not found in block {}", task_id, block_id))?;
-        
+
         Ok(task.description.clone())
     }
-    
+
     // Resolve task dependencies and create an execution queue
     fn resolve_task_dependencies(&self, block_id: &str, task_id: &str) -> Result<Vec<String>, String> {
         // Get all blocks
         let blocks = self.block_manager.get_blocks()
             .map_err(|e| format!("Failed to get blocks: {}", e))?;
-        
+
         // Find the block
         let block = blocks.iter()
             .find(|b| b.block_id == block_id)
             .ok_or_else(|| format!("Block {} not found", block_id))?;
-        
+
         // Create a map of task_id to task for easy lookup
         let tasks: HashMap<&String, &Task> = block.todo_list.iter().collect();
-        
+
         // Check if the task exists
         if !tasks.contains_key(&task_id.to_string()) {
             return Err(format!("Task {} not found in block {}", task_id, block_id));
         }
-        
+
         // Set to track visited tasks (for cycle detection)
         let mut visited = HashSet::new();
         // Set to track tasks in the current recursion stack (for cycle detection)
@@ -480,19 +542,19 @@ impl TaskExecutor {
         let mut execution_order = Vec::new();
         // Set to track tasks that have already been completed
         let mut completed_tasks = HashSet::new();
-        
+
         // Helper function to check if a task is completed
         let is_task_completed = |task: &Task| -> bool {
             task.status.contains("[COMPLETED]")
         };
-        
+
         // Identify completed tasks
         for (id, task) in &block.todo_list {
             if is_task_completed(task) {
                 completed_tasks.insert(id.clone());
             }
         }
-        
+
         // DFS function for topological sort with cycle detection
         fn dfs(
             task_id: &str,
@@ -505,14 +567,14 @@ impl TaskExecutor {
             // Mark the current task as visited and add to recursion stack
             visited.insert(task_id.to_string());
             rec_stack.insert(task_id.to_string());
-            
+
             // Skip further processing if the task is already completed
             if completed_tasks.contains(&task_id.to_string()) {
                 // Remove from recursion stack before returning
                 rec_stack.remove(&task_id.to_string());
                 return Ok(());
             }
-            
+
             // Process all dependencies
             if let Some(task) = tasks.get(&task_id.to_string()) {
                 for dep_id in &task.dependencies {
@@ -520,40 +582,40 @@ impl TaskExecutor {
                     if !tasks.contains_key(dep_id) {
                         return Err(format!("Dependency task {} not found", dep_id));
                     }
-                    
+
                     // If the dependency is in the recursion stack, we have a cycle
                     if rec_stack.contains(dep_id) {
                         return Err(format!("Cycle detected in task dependencies: {} -> {}", task_id, dep_id));
                     }
-                    
+
                     // If the dependency hasn't been visited yet, visit it
                     if !visited.contains(dep_id) {
                         dfs(dep_id, tasks, visited, rec_stack, execution_order, completed_tasks)?;
                     }
                 }
             }
-            
+
             // Remove the task from recursion stack and add to execution order
             rec_stack.remove(&task_id.to_string());
-            
+
             // Only add to execution order if not completed
             if !completed_tasks.contains(&task_id.to_string()) {
                 execution_order.push(task_id.to_string());
             }
-            
+
             Ok(())
         }
-        
+
         // Start DFS from the requested task
         dfs(task_id, &tasks, &mut visited, &mut rec_stack, &mut execution_order, &completed_tasks)?;
-        
+
         // Reverse the execution order to get the correct topological sort
         execution_order.reverse();
-        
+
         // Log the execution order
         println!("Task execution order: {:?}", execution_order);
         println!("Skipped completed tasks: {:?}", completed_tasks);
-        
+
         Ok(execution_order)
     }
 }

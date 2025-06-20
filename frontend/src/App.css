@@ -15,6 +15,39 @@
     color: #a9b7c6; /* Light grey text */
 }
 
+.welcome-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #3c3f41;
+    background-image: url('../forge.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-blend-mode: overlay;
+    color: #a9b7c6;
+    position: relative;
+}
+
+.welcome-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(60, 63, 65, 0.7);
+    z-index: 1;
+}
+
+.welcome-content > * {
+    position: relative;
+    z-index: 2;
+}
+
 /* PrimeReact Menubar customization - RustRover Dark Theme style */
 .p-menubar {
     border-radius: 0;

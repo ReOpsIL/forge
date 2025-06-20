@@ -8,6 +8,7 @@ import BlocksView from './components/BlocksView'
 import FlowView from './components/FlowView'
 import ProjectView from './components/ProjectView'
 import PromptSettingsView from './components/PromptSettingsView'
+import LoggerView from './components/LoggerView'
 import useGit from './Git'
 import './App.css'
 
@@ -79,6 +80,18 @@ function App() {
                 }
             }
         },
+        {
+            label: 'Logger',
+            icon: 'pi pi-fw pi-list',
+            disabled: !projectConfigured,
+            command: () => {
+                if (projectConfigured) {
+                    setActiveView('logger')
+                } else {
+                    setShowConfigDialog(true)
+                }
+            }
+        },
         git.getBuildMenuItem(),
         git.getImportSpecMenuItem(),
         git.getGitMenuItems()
@@ -94,6 +107,8 @@ function App() {
                 return <ProjectView setActiveView={setActiveView}/>
             case 'promptSettings':
                 return <PromptSettingsView setActiveView={setActiveView}/>
+            case 'logger':
+                return <LoggerView/>
             case 'help':
                 return (
                     <div className="content">
@@ -103,7 +118,7 @@ function App() {
                 )
             default:
                 return (
-                    <div className="content">
+                    <div className="welcome-content">
                         <h1>Welcome to Forge</h1>
                         <p>Select an option from the menu above to get started.</p>
                     </div>

@@ -7,3 +7,4 @@ pub mod llm_handler;
 pub mod project_config;
 pub mod task_executor;
 pub mod task_queue;
+pub mod log_stream;
