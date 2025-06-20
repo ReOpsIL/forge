@@ -14,10 +14,10 @@ mod git_handlers;
 pub mod task_executor;
 mod task_executor_wrapper;
 mod task_queue;
-use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_config};
+use block_config::{BlockConfigManager, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
-    delete_block_handler, add_todo_handler, remove_todo_handler, generate_sample_config_handler, enhance_block_handler,
+    delete_block_handler, add_task_handler, remove_task_handler, generate_sample_config_handler, enhance_block_handler,
     auto_complete_handler, execute_task_handler, process_markdown_handler, get_block_dependencies_handler
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
@@ -80,7 +80,7 @@ async fn main() -> std::io::Result<()> {
 
     // Create a BlockConfigManager instance
     let block_manager = Arc::new(BlockConfigManager::new(&blocks_config_path));
-    
+
     // Initialize the task executor
     println!("Initializing task executor");
     let _task_executor = init_task_executor(project_manager.clone(), block_manager.clone());
@@ -132,11 +132,11 @@ async fn main() -> std::io::Result<()> {
                     .route("/blocks", web::get().to(get_blocks_handler))
                     .route("/blocks", web::post().to(add_block_handler))
                     .route("/blocks", web::put().to(update_block_handler))
-                    .route("/blocks/{name}", web::delete().to(delete_block_handler))
-                    .route("/blocks/{name}/todo", web::post().to(add_todo_handler))
-                    .route("/blocks/{name}/todo/{index}", web::delete().to(remove_todo_handler))
-                    .route("/blocks/{name}/enhance", web::put().to(enhance_block_handler))
-                    .route("/blocks/{name}/generate-tasks", web::put().to(generate_tasks_block_handler))
+                    .route("/blocks/{block_id}", web::delete().to(delete_block_handler))
+                    .route("/blocks/{block_id}/task", web::post().to(add_task_handler))
+                    .route("/blocks/{block_id}/delete/{task_id}", web::delete().to(remove_task_handler))
+                    .route("/blocks/{block_id}/enhance", web::put().to(enhance_block_handler))
+                    .route("/blocks/{block_id}/generate-tasks", web::put().to(generate_tasks_block_handler))
                     .route("/blocks/auto-complete", web::post().to(auto_complete_handler))
                     .route("/blocks/execute-task", web::post().to(execute_task_handler))
                     .route("/blocks/process-markdown", web::post().to(process_markdown_handler))

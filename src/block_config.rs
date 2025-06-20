@@ -153,7 +153,7 @@ impl BlockConfigManager {
     }
 
     // Add a todo item to a block
-    pub fn add_todo_item(&self, block_id: &str, todo_item: &str) -> Result<(), String> {
+    pub fn add_task_item(&self, block_id: &str, todo_item: &str) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
@@ -173,7 +173,7 @@ impl BlockConfigManager {
     }
 
     // Remove a todo item from a block
-    pub fn remove_todo_item(&self, block_id: &str, task_id: String) -> Result<(), String> {
+    pub fn remove_task_item(&self, block_id: &str, task_id: String) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return Err("Failed to acquire lock on blocks".to_string()),

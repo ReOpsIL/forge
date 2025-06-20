@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use actix_web::{web, Responder, HttpResponse};
 use std::sync::{Arc, Mutex};
 use serde::{Serialize, Deserialize};
+use serde_json::json;
 use std::process::{Command, Stdio};
 use std::io::Write;
 use std::path::Path;
@@ -265,25 +266,93 @@ pub async fn delete_block_handler(path: web::Path<String>, data: web::Data<AppSt
     }
 }
 
-// API endpoint to add a todo item to a block
-pub async fn add_todo_handler(path: web::Path<String>, todo: web::Json<String>, data: web::Data<AppState>) -> impl Responder {
+// Structure for the task request
+#[derive(Deserialize)]
+pub struct TaskItemRequest {
+    pub task_id: String,
+    pub task_name: String,
+    pub description: String,
+    #[serde(default)]
+    pub acceptance_criteria: Vec<String>,
+    #[serde(default)]
+    pub dependencies: Vec<String>,
+    #[serde(default)]
+    pub estimated_effort: String,
+    #[serde(default)]
+    pub files_affected: Vec<String>,
+    #[serde(default)]
+    pub function_signatures: Vec<String>,
+    #[serde(default)]
+    pub testing_requirements: Vec<String>,
+    #[serde(default)]
+    pub log: String,
+    #[serde(default)]
+    pub commit_id: String,
+    #[serde(default)]
+    pub status: String,
+}
+
+// API endpoint to add a task to a block
+pub async fn add_task_handler(path: web::Path<String>, task_request: web::Json<TaskItemRequest>, data: web::Data<AppState>) -> impl Responder {
     let block_id = path.into_inner();
-    match data.block_manager.add_todo_item(&block_id, &todo.into_inner()) {
+    let task_request = task_request.into_inner();
+
+    // Find the block to update
+    let mut blocks = match data.block_manager.get_blocks() {
+        Ok(blocks) => blocks,
+        Err(e) => return HttpResponse::InternalServerError().body(e),
+    };
+
+    let block_index = blocks.iter().position(|b| b.block_id == block_id);
+    if block_index.is_none() {
+        return HttpResponse::BadRequest().body(format!("Block '{}' not found", block_id));
+    }
+
+    // Create a new task with all the provided fields
+    let mut task = Task::new(task_request.description.clone());
+
+    // Update the task with the provided fields
+    task.task_id = task_request.task_id;
+    task.task_name = task_request.task_name;
+    task.acceptance_criteria = task_request.acceptance_criteria;
+    task.dependencies = task_request.dependencies;
+    task.estimated_effort = task_request.estimated_effort;
+    task.files_affected = task_request.files_affected;
+    task.function_signatures = task_request.function_signatures;
+    task.testing_requirements = task_request.testing_requirements;
+
+    // Only set these fields if they are provided (they should be read-only during creation)
+    if !task_request.log.is_empty() {
+        task.log = task_request.log;
+    }
+    if !task_request.commit_id.is_empty() {
+        task.commit_id = task_request.commit_id;
+    }
+    if !task_request.status.is_empty() {
+        task.status = task_request.status;
+    }
+
+    // Add the task to the block
+    let task_id = task.task_id.clone();
+    blocks[block_index.unwrap()].todo_list.insert(task_id.clone(), task);
+
+    // Update the block in the database
+    match data.block_manager.update_block(blocks[block_index.unwrap()].clone()) {
         Ok(_) => {
             // Save the updated blocks to the file
             if let Err(e) = data.block_manager.save_blocks_to_file() {
                 return HttpResponse::InternalServerError().body(e);
             }
-            HttpResponse::Ok().body("Todo item added successfully")
+            HttpResponse::Ok().json(json!({ "task_id": task_id }))
         },
         Err(e) => HttpResponse::BadRequest().body(e),
     }
 }
 
 // API endpoint to remove a todo item from a block
-pub async fn remove_todo_handler(path: web::Path<(String, String)>, data: web::Data<AppState>) -> impl Responder {
-    let (block_id, todo_id) = path.into_inner();
-    match data.block_manager.remove_todo_item(&block_id, todo_id) {
+pub async fn remove_task_handler(path: web::Path<(String, String)>, data: web::Data<AppState>) -> impl Responder {
+    let (block_id, task_id) = path.into_inner();
+    match data.block_manager.remove_task_item(&block_id, task_id) {
         Ok(_) => {
             // Save the updated blocks to the file
             if let Err(e) = data.block_manager.save_blocks_to_file() {

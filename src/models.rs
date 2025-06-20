@@ -32,7 +32,7 @@ impl Task {
         Self {
             task_id: unique_id,
             task_name: "".to_string(),
-            description: description,
+            description,
             acceptance_criteria: Vec::new(),
             dependencies: Vec::new(),
             estimated_effort: "".to_string(),

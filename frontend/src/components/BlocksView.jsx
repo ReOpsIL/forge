@@ -14,6 +14,7 @@ import {Accordion, AccordionTab} from 'primereact/accordion';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import DependencyTreeView from './DependencyTreeView';
+import TaskDialog from './TaskDialog';
 import './BlocksView.css';
 
 const BlocksView = () => {
@@ -32,6 +33,9 @@ const BlocksView = () => {
     const [showAutoCompleteDialog, setShowAutoCompleteDialog] = useState(false);
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [showDiffDialog, setShowDiffDialog] = useState(false);
+    const [showTaskDialog, setShowTaskDialog] = useState(false);
+    const [currentTaskData, setCurrentTaskData] = useState(null);
+    const [currentTaskBlockId, setCurrentTaskBlockId] = useState(null);
     const [currentTaskLog, setCurrentTaskLog] = useState('');
     const [currentDiff, setCurrentDiff] = useState({ original: '', modified: '' });
     const [currentCommitId, setCurrentCommitId] = useState('');
@@ -463,12 +467,12 @@ const BlocksView = () => {
         if (!blockToUpdate) return;
 
         try {
-            const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/todo`, {
+            const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/task`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newTaskText[block_id]),
+                body: JSON.stringify({ description: newTaskText[block_id] }),
             });
 
             if (!response.ok) {
@@ -517,7 +521,7 @@ const BlocksView = () => {
 
         for (const taskId of taskIdsToDelete) {
             try {
-                const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/todo/${taskId}`, {
+                const response = await fetch(`/api/blocks/${blockToUpdate.block_id}/delete/${taskId}`, {
                     method: 'DELETE',
                 });
 
@@ -637,6 +641,70 @@ const BlocksView = () => {
     // Cancel task editing
     const cancelEditingTask = () => {
         setEditingTask({});
+    };
+
+    // Open task dialog for creating a new task
+    const openCreateTaskDialog = (block_id) => {
+        setCurrentTaskBlockId(block_id);
+        setCurrentTaskData(null);
+        setShowTaskDialog(true);
+    };
+
+    // Open task dialog for editing an existing task
+    const openEditTaskDialog = (block_id, task) => {
+        setCurrentTaskBlockId(block_id);
+        setCurrentTaskData(task);
+        setShowTaskDialog(true);
+    };
+
+    // Handle saving a task (create or update)
+    const handleSaveTask = async (block_id, taskData) => {
+        try {
+            // Find the block to update
+            const blockToUpdate = blocks.find(block => block.block_id === block_id);
+            if (!blockToUpdate) return;
+
+            // Create a copy of the block with the updated task
+            const updatedBlock = {
+                ...blockToUpdate,
+                todo_list: {...blockToUpdate.todo_list}
+            };
+
+            // Add or update the task in the todo_list
+            updatedBlock.todo_list[taskData.task_id] = taskData;
+
+            // Send the updated block to the server
+            const response = await fetch('/api/blocks', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedBlock),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save task');
+            }
+
+            // Reload blocks to ensure we have the latest data
+            await fetchBlocks();
+
+            // Show success message
+            toastRef.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Task saved successfully',
+                life: 3000
+            });
+        } catch (error) {
+            console.error('Error saving task:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to save task',
+                life: 3000
+            });
+        }
     };
 
     // Confirm deletion of multiple tasks
@@ -1612,6 +1680,15 @@ const BlocksView = () => {
                 onHide={() => setShowDependencyTreeDialog(false)}
             />
 
+            {/* Task Dialog */}
+            <TaskDialog
+                visible={showTaskDialog}
+                onHide={() => setShowTaskDialog(false)}
+                task={currentTaskData}
+                blockId={currentTaskBlockId}
+                onSave={handleSaveTask}
+            />
+
             {/* New Block Dialog */}
             <Dialog
                 header="Create New Block"
@@ -1902,12 +1979,9 @@ const BlocksView = () => {
                                             <Button
                                                 icon="pi pi-plus"
                                                 className="p-button-sm ml-2"
-                                                onClick={() => {
-                                                    setNewTaskText({
-                                                        ...newTaskText,
-                                                        [block.block_id]: newTaskText[block.name] || ''
-                                                    });
-                                                }}
+                                                onClick={() => openCreateTaskDialog(block.block_id)}
+                                                tooltip="Create new task"
+                                                tooltipOptions={{position: 'top'}}
                                             />
                                             <Button
                                                 icon="pi pi-play"
@@ -2119,16 +2193,30 @@ const BlocksView = () => {
                                                                         </div>
                                                                     </div>
                                                                 ) : (
-                                                                    <span
-                                                                        className={isTaskRunning(block.block_id, todo.task_id) ? 'task-running' : 'task-text'}
-                                                                        onDoubleClick={() => !isTaskRunning(block.block_id, todo.task_id) && startEditingTask(block.block_id, todo.task_id, todo.description)}
-                                                                        title={`Task ID: ${todo.task_id}`}
-                                                                    >
-                                                                        {isTaskRunning(block.block_id, todo.task_id) && (
-                                                                            <span className="sandclock"></span>
-                                                                        )}
-                                                                        <span className="task-id">[{todo.task_id}]</span> {todo.task_name || todo.description}
-                                                                    </span>
+                                                                    <div className="flex align-items-center justify-content-between w-full">
+                                                                        <span
+                                                                            className={isTaskRunning(block.block_id, todo.task_id) ? 'task-running' : 'task-text'}
+                                                                            title={`Task ID: ${todo.task_id}`}
+                                                                        >
+                                                                            {isTaskRunning(block.block_id, todo.task_id) && (
+                                                                                <span className="sandclock"></span>
+                                                                            )}
+                                                                            <span className="task-id">[{todo.task_id}]</span> {todo.task_name || todo.description}
+                                                                        </span>
+                                                                        <div className="task-actions">
+                                                                            <Button
+                                                                                icon="pi pi-pencil"
+                                                                                className="p-button-sm p-button-text"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    openEditTaskDialog(block.block_id, todo);
+                                                                                }}
+                                                                                tooltip="Edit task"
+                                                                                tooltipOptions={{ position: 'left' }}
+                                                                                disabled={isTaskRunning(block.block_id, todo.task_id)}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         }
