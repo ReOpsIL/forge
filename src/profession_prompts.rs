@@ -12,6 +12,7 @@ pub enum ProfessionCategory {
     InfrastructureIT,
     BusinessMarketingTech,
     OtherSpecializedRoles,
+    Custom,
 }
 
 impl ProfessionCategory {
@@ -26,6 +27,7 @@ impl ProfessionCategory {
             ProfessionCategory::InfrastructureIT => "Infrastructure & IT",
             ProfessionCategory::BusinessMarketingTech => "Business & Marketing Tech",
             ProfessionCategory::OtherSpecializedRoles => "Other Specialized Roles",
+            ProfessionCategory::Custom => "Custom Roles",
         }
     }
 
@@ -40,6 +42,7 @@ impl ProfessionCategory {
             ProfessionCategory::InfrastructureIT,
             ProfessionCategory::BusinessMarketingTech,
             ProfessionCategory::OtherSpecializedRoles,
+            ProfessionCategory::Custom,
         ]
     }
 }
@@ -187,6 +190,40 @@ pub fn get_all_professions() -> Vec<Profession> {
             name: "Technical Writer".to_string(),
             category: ProfessionCategory::OtherSpecializedRoles,
             prompts: create_technical_writer_prompts(),
+        },
+
+        // Custom Roles
+        Profession {
+            id: "custom_role_1".to_string(),
+            name: "Custom Role 1".to_string(),
+            category: ProfessionCategory::Custom,
+            prompts: create_custom_prompts(),
+        },
+
+        Profession {
+            id: "custom_role_2".to_string(),
+            name: "Custom Role 2".to_string(),
+            category: ProfessionCategory::Custom,
+            prompts: create_custom_prompts(),
+        },
+
+        Profession {
+            id: "custom_role_3".to_string(),
+            name: "Custom Role 3".to_string(),
+            category: ProfessionCategory::Custom,
+            prompts: create_custom_prompts(),
+        },
+        Profession {
+            id: "custom_role_4".to_string(),
+            name: "Custom Role 4".to_string(),
+            category: ProfessionCategory::Custom,
+            prompts: create_custom_prompts(),
+        },
+        Profession {
+            id: "custom_role_5".to_string(),
+            name: "Custom Role 5".to_string(),
+            category: ProfessionCategory::Custom,
+            prompts: create_custom_prompts(),
         },
     ]
 }
@@ -1127,6 +1164,51 @@ Original description:
         process_markdown_spec_user_prompt: crate::project_config::DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string(),
     }
 }
+fn create_custom_prompts() -> ProfessionPrompts {
+    // Default prompts with technical writing focus
+    ProfessionPrompts {
+        auto_complete_system_prompt: "You are a senior _______ specializing in ______, ______, and ______. Your role is to ______.".to_string(),
+        auto_complete_user_prompt: "Complete the following partial ______  description by adding 2-3 sentences that:
+1. Clarify the ______ approach or ______
+2. Specify key ______ elements, ______, or ______
+3. Highlight any important considerations for clarity, completeness, or ______ accuracy
+
+Maintain the original intent and ______ ______. Be specific about ______ types, tools, or ______ when relevant.
+
+Partial description:
+{}
+
+".to_string(),
+        enhance_description_system_prompt: "You are a ______ expert specializing in ______ ______ for ______ ______. Transform brief ______ descriptions into comprehensive, ______ ready ______ that ______ can directly use.".to_string(),
+        enhance_description_user_prompt: "Transform the following ______ description into a detailed, professional ______ that includes:
+
+**Required elements:**
+- Clear documentation purpose and target audience
+- Content structure and organization
+- Documentation types and formats
+- Technical accuracy requirements
+- Style guide and terminology standards
+- Visual elements and code examples
+- Publication and maintenance strategy
+
+**Guidelines:**
+- Use precise technical writing terminology
+- Include specific documentation tools and platforms
+- Ensure the description is actionable for technical writers
+- Maintain focus on user comprehension and information architecture
+
+Original description:
+{}
+
+".to_string(),
+        generate_tasks_system_prompt: "You are a senior ______ ______ and ______ expert at breaking down ______ projects into granular, e______ tasks. Focus on creating tasks that are specific, measurable, and can be directly implemented by ______ teams.".to_string(),
+        generate_tasks_user_prompt: crate::project_config::DEFAULT_GENERATE_TASKS_USER_PROMPT.to_string(),
+        process_markdown_spec_system_prompt: "You are a ______ ______ expert at ______ ______ ______ and extracting structured ______ requirements. Your output must be valid JSON that can be directly consumed by ______ ______ tools.".to_string(),
+        process_markdown_spec_user_prompt: crate::project_config::DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string(),
+    }
+}
+
+
 
 // Get default prompts based on profession ID
 pub fn get_default_prompts(profession_id: Option<&str>) -> ProfessionPrompts {
