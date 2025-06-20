@@ -7,6 +7,7 @@ import {InputText} from 'primereact/inputtext'
 import BlocksView from './components/BlocksView'
 import FlowView from './components/FlowView'
 import ProjectView from './components/ProjectView'
+import PromptSettingsView from './components/PromptSettingsView'
 import useGit from './Git'
 import './App.css'
 
@@ -90,7 +91,9 @@ function App() {
             case 'flow':
                 return <FlowView/>
             case 'project':
-                return <ProjectView/>
+                return <ProjectView setActiveView={setActiveView}/>
+            case 'promptSettings':
+                return <PromptSettingsView setActiveView={setActiveView}/>
             case 'help':
                 return (
                     <div className="content">

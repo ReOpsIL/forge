@@ -5,9 +5,19 @@ import {Button} from 'primereact/button';
 import {Toast} from 'primereact/toast';
 import {Editor} from '@monaco-editor/react';
 import {Dropdown} from 'primereact/dropdown';
+import {TabMenu} from 'primereact/tabmenu';
+import {Tooltip} from 'primereact/tooltip';
 import './ProjectView.css';
 
-const ProjectView = () => {
+const ProjectView = ({ setActiveView }) => {
+    const [activeTabIndex, setActiveTabIndex] = useState(0);
+
+    // Define the tabs for the project configuration
+    const projectTabs = [
+        { label: 'Project Settings', icon: 'pi pi-home' },
+        { label: 'LLM Settings', icon: 'pi pi-cog' },
+        { label: 'Prompt Settings', icon: 'pi pi-pencil', command: () => setActiveView('promptSettings') }
+    ];
     const [projectConfig, setProjectConfig] = useState({
         git_repository_url: '',
         project_home_directory: '',
@@ -213,6 +223,160 @@ const ProjectView = () => {
         return <div>Loading project configuration...</div>;
     }
 
+    // Render content based on active tab
+    const renderTabContent = () => {
+        switch (activeTabIndex) {
+            case 0: // Project Settings
+                return (
+                    <>
+                        <div className="field">
+                            <label htmlFor="git_repository_url">
+                                Git Repository URL
+                                <Tooltip target=".git-repo-help" position="right">
+                                    The URL of the Git repository associated with this project.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 git-repo-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <InputText
+                                id="git_repository_url"
+                                value={projectConfig.git_repository_url}
+                                onChange={(e) => handleInputChange('git_repository_url', e.target.value)}
+                                placeholder="https://github.com/username/repository.git"
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="field">
+                            <label htmlFor="project_home_directory">
+                                Project Home Directory
+                                <Tooltip target=".project-dir-help" position="right">
+                                    The root directory for the project on the local file system.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 project-dir-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <InputText
+                                id="project_home_directory"
+                                value={projectConfig.project_home_directory}
+                                onChange={(e) => handleInputChange('project_home_directory', e.target.value)}
+                                placeholder="/path/to/project"
+                                className="w-full"
+                            />
+                        </div>
+
+                        <div className="field">
+                            <label htmlFor="project_description">
+                                Project Description
+                                <Tooltip target=".project-desc-help" position="right">
+                                    A descriptive summary of the project. Markdown is supported.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 project-desc-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <div className="monaco-editor-container">
+                                <Editor
+                                    height="100px"
+                                    defaultLanguage="markdown"
+                                    theme="vs-dark"
+                                    value={projectConfig.project_description}
+                                    onChange={(value) => handleInputChange('project_description', value || '')}
+                                    options={{
+                                        minimap: {enabled: false},
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: 'on',
+                                        lineNumbers: 'on',
+                                        automaticLayout: true
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </>
+                );
+            case 1: // LLM Settings
+                return (
+                    <>
+                        <div className="field">
+                            <label htmlFor="llm_provider">
+                                LLM Provider
+                                <Tooltip target=".llm-provider-help" position="right">
+                                    The LLM provider to use for AI-powered features. If not selected, OpenRouter will be used by default.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 llm-provider-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <Dropdown
+                                id="llm_provider"
+                                value={projectConfig.llm_provider}
+                                options={llmProviderOptions}
+                                onChange={(e) => handleInputChange('llm_provider', e.value)}
+                                placeholder="Select an LLM Provider"
+                                className="w-full"
+                            />
+                        </div>
+
+                        {projectConfig.llm_provider === 'OpenRouter' && (
+                            <div className="field">
+                                <label htmlFor="openrouter_model">
+                                    OpenRouter Model
+                                    <Tooltip target=".openrouter-model-help" position="right">
+                                        The model to use with OpenRouter. If not selected, the default model will be used.
+                                    </Tooltip>
+                                    <i className="pi pi-question-circle ml-2 openrouter-model-help" style={{ cursor: 'pointer' }}></i>
+                                </label>
+                                <Dropdown
+                                    id="openrouter_model"
+                                    value={projectConfig.openrouter_model}
+                                    options={openrouterModelOptions}
+                                    onChange={(e) => handleInputChange('openrouter_model', e.value)}
+                                    placeholder="Select an OpenRouter Model"
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+
+                        {projectConfig.llm_provider === 'Gemini' && (
+                            <div className="field">
+                                <label htmlFor="gemini_model">
+                                    Gemini Model
+                                    <Tooltip target=".gemini-model-help" position="right">
+                                        The model to use with Gemini. If not selected, the default model will be used.
+                                    </Tooltip>
+                                    <i className="pi pi-question-circle ml-2 gemini-model-help" style={{ cursor: 'pointer' }}></i>
+                                </label>
+                                <Dropdown
+                                    id="gemini_model"
+                                    value={projectConfig.gemini_model}
+                                    options={geminiModelOptions}
+                                    onChange={(e) => handleInputChange('gemini_model', e.value)}
+                                    placeholder="Select a Gemini Model"
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+
+                        {projectConfig.llm_provider === 'Anthropic' && (
+                            <div className="field">
+                                <label htmlFor="anthropic_model">
+                                    Anthropic Model
+                                    <Tooltip target=".anthropic-model-help" position="right">
+                                        The model to use with Anthropic. If not selected, the default model will be used.
+                                    </Tooltip>
+                                    <i className="pi pi-question-circle ml-2 anthropic-model-help" style={{ cursor: 'pointer' }}></i>
+                                </label>
+                                <Dropdown
+                                    id="anthropic_model"
+                                    value={projectConfig.anthropic_model}
+                                    options={anthropicModelOptions}
+                                    onChange={(e) => handleInputChange('anthropic_model', e.value)}
+                                    placeholder="Select an Anthropic Model"
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                    </>
+                );
+            default:
+                return null;
+        }
+    };
+
     return (
         <div className="project-container">
             <Toast ref={toastRef}/>
@@ -220,14 +384,16 @@ const ProjectView = () => {
             <div className="flex justify-content-between align-items-center mb-3">
                 <h2>Project Configuration</h2>
                 <div className="flex gap-2">
-                    <Button
-                        label="Test Git Connection"
-                        icon="pi pi-github"
-                        className="p-button-info"
-                        onClick={testGitConnection}
-                        loading={testingConnection}
-                        disabled={!projectConfig.git_repository_url || saving}
-                    />
+                    {activeTabIndex === 0 && (
+                        <Button
+                            label="Test Git Connection"
+                            icon="pi pi-github"
+                            className="p-button-info"
+                            onClick={testGitConnection}
+                            loading={testingConnection}
+                            disabled={!projectConfig.git_repository_url || saving}
+                        />
+                    )}
                     <Button
                         label="Save"
                         icon="pi pi-save"
@@ -238,284 +404,16 @@ const ProjectView = () => {
                 </div>
             </div>
 
+            <TabMenu 
+                model={projectTabs} 
+                activeIndex={activeTabIndex} 
+                onTabChange={(e) => setActiveTabIndex(e.index)} 
+                className="mb-3"
+            />
+
             <Card className="project-card">
                 <div className="p-fluid">
-                    <div className="field">
-                        <label htmlFor="git_repository_url">Git Repository URL</label>
-                        <InputText
-                            id="git_repository_url"
-                            value={projectConfig.git_repository_url}
-                            onChange={(e) => handleInputChange('git_repository_url', e.target.value)}
-                            placeholder="https://github.com/username/repository.git"
-                            className="w-full"
-                        />
-                        <small className="text-muted">The URL of the Git repository associated with this
-                            project.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="project_home_directory">Project Home Directory</label>
-                        <InputText
-                            id="project_home_directory"
-                            value={projectConfig.project_home_directory}
-                            onChange={(e) => handleInputChange('project_home_directory', e.target.value)}
-                            placeholder="/path/to/project"
-                            className="w-full"
-                        />
-                        <small className="text-muted">The root directory for the project on the local file
-                            system.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="project_description">Project Description</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.project_description}
-                                onChange={(value) => handleInputChange('project_description', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">A descriptive summary of the project. Markdown is
-                            supported.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="llm_provider">LLM Provider</label>
-                        <Dropdown
-                            id="llm_provider"
-                            value={projectConfig.llm_provider}
-                            options={llmProviderOptions}
-                            onChange={(e) => handleInputChange('llm_provider', e.value)}
-                            placeholder="Select an LLM Provider"
-                            className="w-full"
-                        />
-                        <small className="text-muted">The LLM provider to use for AI-powered features. If not selected, OpenRouter will be used by default.</small>
-                    </div>
-
-                    {projectConfig.llm_provider === 'OpenRouter' && (
-                        <div className="field">
-                            <label htmlFor="openrouter_model">OpenRouter Model</label>
-                            <Dropdown
-                                id="openrouter_model"
-                                value={projectConfig.openrouter_model}
-                                options={openrouterModelOptions}
-                                onChange={(e) => handleInputChange('openrouter_model', e.value)}
-                                placeholder="Select an OpenRouter Model"
-                                className="w-full"
-                            />
-                            <small className="text-muted">The model to use with OpenRouter. If not selected, the default model will be used.</small>
-                        </div>
-                    )}
-
-                    {projectConfig.llm_provider === 'Gemini' && (
-                        <div className="field">
-                            <label htmlFor="gemini_model">Gemini Model</label>
-                            <Dropdown
-                                id="gemini_model"
-                                value={projectConfig.gemini_model}
-                                options={geminiModelOptions}
-                                onChange={(e) => handleInputChange('gemini_model', e.value)}
-                                placeholder="Select a Gemini Model"
-                                className="w-full"
-                            />
-                            <small className="text-muted">The model to use with Gemini. If not selected, the default model will be used.</small>
-                        </div>
-                    )}
-
-                    {projectConfig.llm_provider === 'Anthropic' && (
-                        <div className="field">
-                            <label htmlFor="anthropic_model">Gemini Model</label>
-                            <Dropdown
-                                id="anthropic_model"
-                                value={projectConfig.anthropic_model}
-                                options={anthropicModelOptions}
-                                onChange={(e) => handleInputChange('anthropic_model', e.value)}
-                                placeholder="Select a Anthropic Model"
-                                className="w-full"
-                            />
-                            <small className="text-muted">The model to use with Anthropic. If not selected, the default model will be used.</small>
-                        </div>
-                    )}
-
-                    <h3>LLM Prompts Configuration</h3>
-                    <p className="text-muted">Configure the prompts used by the LLM for various features. Leave empty to use default prompts.</p>
-
-                    <div className="field">
-                        <label htmlFor="auto_complete_system_prompt">Auto Complete System Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.auto_complete_system_prompt}
-                                onChange={(value) => handleInputChange('auto_complete_system_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">System prompt for auto-completing block descriptions.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="auto_complete_user_prompt">Auto Complete User Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.auto_complete_user_prompt}
-                                onChange={(value) => handleInputChange('auto_complete_user_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">User prompt template for auto-completing block descriptions. Use {} as a placeholder for the description.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="enhance_description_system_prompt">Enhance Description System Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.enhance_description_system_prompt}
-                                onChange={(value) => handleInputChange('enhance_description_system_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">System prompt for enhancing block descriptions.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="enhance_description_user_prompt">Enhance Description User Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.enhance_description_user_prompt}
-                                onChange={(value) => handleInputChange('enhance_description_user_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">User prompt template for enhancing block descriptions. Use {} as a placeholder for the description.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="generate_tasks_system_prompt">Generate Tasks System Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.generate_tasks_system_prompt}
-                                onChange={(value) => handleInputChange('generate_tasks_system_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">System prompt for generating tasks from block descriptions.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="generate_tasks_user_prompt">Generate Tasks User Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.generate_tasks_user_prompt}
-                                onChange={(value) => handleInputChange('generate_tasks_user_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">User prompt template for generating tasks from block descriptions. Use {} as a placeholder for the description.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="process_markdown_spec_system_prompt">Process Markdown Spec System Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.process_markdown_spec_system_prompt}
-                                onChange={(value) => handleInputChange('process_markdown_spec_system_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">System prompt for processing markdown specifications.</small>
-                    </div>
-
-                    <div className="field">
-                        <label htmlFor="process_markdown_spec_user_prompt">Process Markdown Spec User Prompt</label>
-                        <div className="monaco-editor-container">
-                            <Editor
-                                height="100px"
-                                defaultLanguage="markdown"
-                                theme="vs-dark"
-                                value={projectConfig.process_markdown_spec_user_prompt}
-                                onChange={(value) => handleInputChange('process_markdown_spec_user_prompt', value || '')}
-                                options={{
-                                    minimap: {enabled: false},
-                                    scrollBeyondLastLine: false,
-                                    wordWrap: 'on',
-                                    lineNumbers: 'on',
-                                    automaticLayout: true
-                                }}
-                            />
-                        </div>
-                        <small className="text-muted">User prompt template for processing markdown specifications. Use {} as a placeholder for the markdown content.</small>
-                    </div>
+                    {renderTabContent()}
                 </div>
             </Card>
         </div>
