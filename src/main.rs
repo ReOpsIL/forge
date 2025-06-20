@@ -11,6 +11,9 @@ mod llm_handler;
 mod project_config;
 mod project_handlers;
 mod git_handlers;
+pub mod task_executor;
+mod task_executor_wrapper;
+mod task_queue;
 use block_config::{BlockConfigManager, load_blocks_from_file, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
@@ -28,6 +31,8 @@ use git_handlers::{
 };
 use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
 use crate::git_handlers::pull_handler;
+use crate::task_executor::TaskExecutor;
+use crate::task_executor_wrapper::initialize as init_task_executor;
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
@@ -75,6 +80,10 @@ async fn main() -> std::io::Result<()> {
 
     // Create a BlockConfigManager instance
     let block_manager = Arc::new(BlockConfigManager::new(&blocks_config_path));
+    
+    // Initialize the task executor
+    println!("Initializing task executor");
+    let _task_executor = init_task_executor(project_manager.clone(), block_manager.clone());
 
     // Load blocks from the config file
     match block_manager.load_blocks_from_file() {

@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use actix_web::{web, Responder, HttpResponse};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use serde::{Serialize, Deserialize};
 use std::process::{Command, Stdio};
 use std::io::Write;
@@ -8,11 +8,13 @@ use std::path::Path;
 use std::time::Duration;
 use serde::de::Unexpected::Option;
 use tokio::task;
+use std::thread;
 
 use crate::block_config::{BlockConfigManager, generate_sample_config};
 use crate::models::{Block, Task};
 use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec};
 use crate::project_config::ProjectConfigManager;
+use crate::task_executor::TaskExecutor;
 
 // Define a response type for block dependencies
 #[derive(Serialize)]
@@ -39,6 +41,8 @@ pub struct ExecuteTaskRequest {
     pub block_id: String,
     pub task_id: String,
     pub task_description: String,
+    #[serde(default)]
+    pub resolve_dependencies: bool,
 }
 
 #[derive(Serialize)]
@@ -499,6 +503,64 @@ pub async fn execute_task_handler(
     let task_description = request.task_description.clone();
     if task_description.is_empty() {
         return HttpResponse::BadRequest().body("Task description cannot be empty");
+    }
+
+    // Check if we need to resolve dependencies
+    if request.resolve_dependencies {
+        // Get the block to check dependencies
+        let blocks = match data.block_manager.get_blocks() {
+            Ok(blocks) => blocks,
+            Err(e) => {
+                return HttpResponse::InternalServerError().body(
+                    format!("Failed to get blocks: {}", e)
+                );
+            }
+        };
+
+        // Find the block
+        let block = match blocks.iter().find(|b| b.block_id == request.block_id) {
+            Some(block) => block,
+            None => {
+                return HttpResponse::BadRequest().body(
+                    format!("Block {} not found", request.block_id)
+                );
+            }
+        };
+
+        // Find the task
+        let task = match block.todo_list.get(&request.task_id) {
+            Some(task) => task,
+            None => {
+                return HttpResponse::BadRequest().body(
+                    format!("Task {} not found in block {}", request.task_id, request.block_id)
+                );
+            }
+        };
+
+        // Check if the task has dependencies
+        if !task.dependencies.is_empty() {
+            // Check if all dependencies are completed
+            let mut incomplete_dependencies = Vec::new();
+            for dep_id in &task.dependencies {
+                if let Some(dep_task) = block.todo_list.get(dep_id) {
+                    if !dep_task.status.contains("[COMPLETED]") && !dep_task.status.contains("[DONE]") {
+                        incomplete_dependencies.push(dep_id.clone());
+                    }
+                } else {
+                    return HttpResponse::BadRequest().body(
+                        format!("Dependency task {} not found in block {}", dep_id, request.block_id)
+                    );
+                }
+            }
+
+            // If there are incomplete dependencies, return an error
+            if !incomplete_dependencies.is_empty() {
+                return HttpResponse::BadRequest().json(ExecuteTaskResponse {
+                    status: "error".to_string(),
+                    message: format!("Task has incomplete dependencies: {:?}", incomplete_dependencies),
+                });
+            }
+        }
     }
 
     // Clone the data for use in the background task
