@@ -29,7 +29,7 @@ use project_handlers::{
 };
 use git_handlers::{
     GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler,
-    execute_git_task_handler, get_task_diff_handler
+    execute_git_task_handler, get_task_diff_handler, get_branches_handler
 };
 use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
 use crate::git_handlers::pull_handler;
@@ -164,6 +164,7 @@ async fn main() -> std::io::Result<()> {
                     .route("/git/build", web::post().to(build_handler))
                     .route("/git/execute-task", web::post().to(execute_git_task_handler))
                     .route("/git/task-diff", web::post().to(get_task_diff_handler))
+                    .route("/git/branches", web::get().to(get_branches_handler))
                     // Log streaming routes
                     .route("/logs/stream/{task_id}", web::get().to(stream_logs))
                     .route("/logs/tasks", web::get().to(get_task_ids))

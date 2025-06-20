@@ -71,6 +71,14 @@ pub struct BuildResponse {
     pub output: String,
 }
 
+// Response for getting local branches
+#[derive(Debug, Serialize)]
+pub struct BranchesResponse {
+    pub success: bool,
+    pub message: String,
+    pub branches: Vec<String>,
+}
+
 // Request body for getting a task's diff
 #[derive(Debug, Deserialize)]
 pub struct GetTaskDiffRequest {
@@ -752,6 +760,79 @@ echo "Build completed successfully!"
                 success: false,
                 message: error_message.clone(),
                 output: error_message,
+            })
+        }
+    }
+}
+
+// Handler to get local Git branches
+pub async fn get_branches_handler(data: web::Data<GitAppState>) -> impl Responder {
+    // Get the project home directory
+    let project_config = match data.project_manager.get_config() {
+        Ok(config) => config,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(BranchesResponse {
+                success: false,
+                message: format!("Failed to get project configuration: {}", e),
+                branches: Vec::new(),
+            });
+        }
+    };
+
+    let project_dir = project_config.project_home_directory.clone();
+    if project_dir.is_empty() {
+        return HttpResponse::BadRequest().json(BranchesResponse {
+            success: false,
+            message: "Project home directory is not set".to_string(),
+            branches: Vec::new(),
+        });
+    }
+
+    // Check if the project directory exists
+    if !Path::new(&project_dir).exists() {
+        return HttpResponse::BadRequest().json(BranchesResponse {
+            success: false,
+            message: format!("Project home directory does not exist: {}", project_dir),
+            branches: Vec::new(),
+        });
+    }
+
+    // Get local branches using git branch command
+    let output = Command::new("git")
+        .arg("branch")
+        .arg("--format=%(refname:short)")
+        .current_dir(&project_dir)
+        .output();
+
+    match output {
+        Ok(output) => {
+            if output.status.success() {
+                let branches_string = String::from_utf8_lossy(&output.stdout);
+                let branches: Vec<String> = branches_string
+                    .lines()
+                    .map(|line| line.trim().to_string())
+                    .filter(|line| !line.is_empty())
+                    .collect();
+
+                HttpResponse::Ok().json(BranchesResponse {
+                    success: true,
+                    message: "Branches retrieved successfully".to_string(),
+                    branches,
+                })
+            } else {
+                let error_message = String::from_utf8_lossy(&output.stderr).to_string();
+                HttpResponse::BadRequest().json(BranchesResponse {
+                    success: false,
+                    message: format!("Failed to get branches: {}", error_message),
+                    branches: Vec::new(),
+                })
+            }
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(BranchesResponse {
+                success: false,
+                message: format!("Failed to execute git command: {}", e),
+                branches: Vec::new(),
             })
         }
     }

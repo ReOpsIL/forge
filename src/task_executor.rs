@@ -65,7 +65,9 @@ impl TaskExecutor {
             Ok(config) => config,
             Err(_) => return Err("Failed to get project configuration".to_string()),
         };
-
+        
+        let main_branch = &project_config.main_branch.unwrap_or("main".to_string());
+        
         let project_dir = project_config.project_home_directory.clone();
         if project_dir.is_empty() {
             return Err("Project home directory is not set. Please configure it in the project settings.".to_string());
@@ -96,13 +98,13 @@ impl TaskExecutor {
         println!("Step 1: Pulling latest main branch");
         let pull_output = Command::new("git")
             .arg("checkout")
-            .arg("main")
+            .arg(main_branch)
             .current_dir(&project_dir)
             .output();
 
         if let Err(e) = pull_output {
             let task_id = task_id.clone();
-            return Err(format!("Failed to checkout main branch: {}", e));
+            return Err(format!("Failed to checkout {} branch: {}", main_branch, e));
         }
 
         let pull_output = Command::new("git")
@@ -283,12 +285,12 @@ impl TaskExecutor {
         println!("Step 5: Merging back to main");
         let checkout_output = Command::new("git")
             .arg("checkout")
-            .arg("main")
+            .arg(main_branch)
             .current_dir(&project_dir)
             .output();
 
         if let Err(e) = checkout_output {
-            return Err(format!("Failed to checkout main branch: {}", e));
+            return Err(format!("Failed to checkout {} branch: {}", main_branch, e));
         }
 
         let merge_output = Command::new("git")

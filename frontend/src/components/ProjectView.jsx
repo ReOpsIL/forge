@@ -22,6 +22,7 @@ const ProjectView = ({ setActiveView }) => {
         git_repository_url: '',
         project_home_directory: '',
         project_description: '',
+        main_branch: '',
         llm_provider: '',
         openrouter_model: '',
         gemini_model: '',
@@ -40,6 +41,8 @@ const ProjectView = ({ setActiveView }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testingConnection, setTestingConnection] = useState(false);
+    const [branches, setBranches] = useState([]);
+    const [loadingBranches, setLoadingBranches] = useState(false);
 
     // LLM provider options
     const llmProviderOptions = [
@@ -94,6 +97,7 @@ const ProjectView = ({ setActiveView }) => {
                     git_repository_url: '',
                     project_home_directory: '',
                     project_description: '',
+                    main_branch: '',
                     llm_provider: '',
                     openrouter_model: '',
                     gemini_model: '',
@@ -163,6 +167,52 @@ const ProjectView = ({ setActiveView }) => {
             });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const fetchBranches = async () => {
+        if (!projectConfig.project_home_directory) {
+            toastRef.current.show({
+                severity: 'warn',
+                summary: 'Warning',
+                detail: 'Please set project home directory first',
+                life: 3000
+            });
+            return;
+        }
+
+        try {
+            setLoadingBranches(true);
+            const response = await fetch('/api/git/branches');
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch branches');
+            }
+
+            const data = await response.json();
+            
+            if (data.success) {
+                setBranches(data.branches.map(branch => ({ label: branch, value: branch })));
+                toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: `Found ${data.branches.length} branches`,
+                    life: 3000
+                });
+            } else {
+                throw new Error(data.message || 'Failed to fetch branches');
+            }
+        } catch (error) {
+            console.error('Error fetching branches:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to fetch Git branches. Make sure the project directory contains a Git repository.',
+                life: 5000
+            });
+            setBranches([]);
+        } finally {
+            setLoadingBranches(false);
         }
     };
 
@@ -285,6 +335,35 @@ const ProjectView = ({ setActiveView }) => {
                                         lineNumbers: 'on',
                                         automaticLayout: true
                                     }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="field">
+                            <label htmlFor="main_branch">
+                                Main Branch
+                                <Tooltip target=".main-branch-help" position="right">
+                                    The main branch used for Git operations. Usually 'main' or 'master'.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 main-branch-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <div className="flex">
+                                <Dropdown
+                                    id="main_branch"
+                                    value={projectConfig.main_branch}
+                                    options={branches}
+                                    onChange={(e) => handleInputChange('main_branch', e.value)}
+                                    placeholder="Select main branch"
+                                    className="flex-grow-1 mr-2"
+                                    disabled={branches.length === 0}
+                                />
+                                <Button
+                                    icon="pi pi-refresh"
+                                    onClick={fetchBranches}
+                                    className="p-button-info"
+                                    loading={loadingBranches}
+                                    tooltip="Refresh branches"
+                                    disabled={!projectConfig.project_home_directory}
                                 />
                             </div>
                         </div>
