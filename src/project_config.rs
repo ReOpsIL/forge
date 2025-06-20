@@ -194,6 +194,9 @@ pub struct ProjectConfig {
     pub gemini_model: Option<String>,
     pub anthropic_model: Option<String>,
 
+    // Selected profession for prompts
+    pub selected_profession_id: Option<String>,
+
     // User-configurable prompts
     pub auto_complete_system_prompt: Option<String>,
     pub auto_complete_user_prompt: Option<String>,
@@ -215,6 +218,9 @@ impl Default for ProjectConfig {
             openrouter_model: None,
             gemini_model: None,
             anthropic_model: None,
+
+            // Default profession is software architect
+            selected_profession_id: Some("software_architect".to_string()),
 
             // Default values for user-configurable prompts
             auto_complete_system_prompt: Some(DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT.to_string()),

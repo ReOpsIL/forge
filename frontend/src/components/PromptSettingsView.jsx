@@ -5,11 +5,13 @@ import { Toast } from 'primereact/toast';
 import { TabMenu } from 'primereact/tabmenu';
 import { Editor } from '@monaco-editor/react';
 import { Tooltip } from 'primereact/tooltip';
+import { Dropdown } from 'primereact/dropdown';
 import './ProjectView.css';
 
 const PromptSettingsView = ({ setActiveView }) => {
     const [projectConfig, setProjectConfig] = useState({
         // User-configurable prompts
+        selected_profession_id: '',
         auto_complete_system_prompt: '',
         auto_complete_user_prompt: '',
         enhance_description_system_prompt: '',
@@ -22,6 +24,9 @@ const PromptSettingsView = ({ setActiveView }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [activePromptIndex, setActivePromptIndex] = useState(0);
+    const [professions, setProfessions] = useState([]);
+    const [professionCategories, setProfessionCategories] = useState([]);
+    const [loadingProfessions, setLoadingProfessions] = useState(false);
 
     // Create a ref for the toast
     const toastRef = useRef(null);
@@ -36,7 +41,53 @@ const PromptSettingsView = ({ setActiveView }) => {
 
     useEffect(() => {
         fetchProjectConfig();
+        fetchProfessions();
     }, []);
+
+    const fetchProfessions = async () => {
+        try {
+            setLoadingProfessions(true);
+            const response = await fetch('/api/project/professions');
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch professions');
+            }
+
+            const data = await response.json();
+
+            // Process the professions data
+            const allProfessions = [];
+            const categories = [];
+
+            data.categories.forEach(category => {
+                categories.push({
+                    name: category.name,
+                    code: category.name
+                });
+
+                category.professions.forEach(profession => {
+                    allProfessions.push({
+                        id: profession.id,
+                        name: profession.name,
+                        category: category.name
+                    });
+                });
+            });
+
+            setProfessions(allProfessions);
+            setProfessionCategories(categories);
+        } catch (error) {
+            console.error('Error fetching professions:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to load professions',
+                life: 3000
+            });
+        } finally {
+            setLoadingProfessions(false);
+        }
+    };
 
     const fetchProjectConfig = async () => {
         try {
@@ -117,6 +168,59 @@ const PromptSettingsView = ({ setActiveView }) => {
             ...projectConfig,
             [field]: value
         });
+    };
+
+    const handleProfessionChange = async (e) => {
+        const selectedProfessionId = e.value;
+
+        // Update the selected profession in the project config
+        setProjectConfig({
+            ...projectConfig,
+            selected_profession_id: selectedProfessionId
+        });
+
+        try {
+            // Make a request to get the profession-specific prompts
+            const response = await fetch(`/api/project/professions/${selectedProfessionId}/prompts`);
+
+            if (!response.ok) {
+                // If the endpoint doesn't exist yet, we'll just save the selected profession
+                // and use the existing prompts
+                console.warn('Profession-specific prompts endpoint not available');
+                return;
+            }
+
+            const data = await response.json();
+
+            // Update the prompts with the profession-specific ones
+            setProjectConfig(prevConfig => ({
+                ...prevConfig,
+                selected_profession_id: selectedProfessionId,
+                auto_complete_system_prompt: data.auto_complete_system_prompt,
+                auto_complete_user_prompt: data.auto_complete_user_prompt,
+                enhance_description_system_prompt: data.enhance_description_system_prompt,
+                enhance_description_user_prompt: data.enhance_description_user_prompt,
+                generate_tasks_system_prompt: data.generate_tasks_system_prompt,
+                generate_tasks_user_prompt: data.generate_tasks_user_prompt,
+                process_markdown_spec_system_prompt: data.process_markdown_spec_system_prompt,
+                process_markdown_spec_user_prompt: data.process_markdown_spec_user_prompt
+            }));
+
+            toastRef.current.show({
+                severity: 'success',
+                summary: 'Success',
+                detail: `Loaded prompts for ${professions.find(p => p.id === selectedProfessionId)?.name}`,
+                life: 3000
+            });
+        } catch (error) {
+            console.error('Error loading profession-specific prompts:', error);
+            toastRef.current.show({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to load profession-specific prompts',
+                life: 3000
+            });
+        }
     };
 
     const renderPromptEditor = () => {
@@ -374,12 +478,31 @@ const PromptSettingsView = ({ setActiveView }) => {
                 />
             </div>
 
-            <TabMenu 
-                model={promptTabs} 
-                activeIndex={activePromptIndex} 
-                onTabChange={(e) => setActivePromptIndex(e.index)} 
-                className="mb-3"
-            />
+            <div className="flex flex-column mb-3">
+                <div className="p-field mb-3">
+                    <label htmlFor="profession" className="font-bold mb-2 block">Profession</label>
+                    <Dropdown
+                        id="profession"
+                        value={projectConfig.selected_profession_id}
+                        options={professions}
+                        onChange={handleProfessionChange}
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select a profession"
+                        className="w-full"
+                        filter
+                        showClear
+                        loading={loadingProfessions}
+                    />
+                    <small className="text-muted">Select a profession to load profession-specific prompts</small>
+                </div>
+
+                <TabMenu
+                    model={promptTabs}
+                    activeIndex={activePromptIndex}
+                    onTabChange={(e) => setActivePromptIndex(e.index)}
+                />
+            </div>
 
             <Card className="project-card">
                 <div className="p-fluid">

@@ -164,14 +164,7 @@ const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
                 {/* Task ID - Read-only when editing */}
                 <div className="field">
                     <label htmlFor="task_id">Task ID</label>
-                    <InputText
-                        id="task_id"
-                        name="task_id"
-                        value={taskData.task_id}
-                        readOnly={!!task}
-                        disabled={!!task}
-                        className={classNames({'p-invalid': submitted && !taskData.task_id})}
-                    />
+                    id="task_id"
                     {submitted && !taskData.task_id && <small className="p-error">Task ID is required.</small>}
                 </div>
 

@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse, Responder, Error};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use crate::project_config::{ProjectConfig, ProjectConfigManager, test_git_connection};
+use crate::profession_prompts::{self, Profession, ProfessionCategory};
 
 // AppState for project handlers
 pub struct ProjectAppState {
@@ -25,6 +26,40 @@ pub struct TestGitConnectionResponse {
 pub struct ProjectConfigStatusResponse {
     pub configured: bool,
     pub message: String,
+}
+
+// Response for getting all professions
+#[derive(Debug, Serialize)]
+pub struct ProfessionResponse {
+    pub id: String,
+    pub name: String,
+    pub category: String,
+}
+
+// Response for getting all profession categories
+#[derive(Debug, Serialize)]
+pub struct ProfessionCategoryResponse {
+    pub name: String,
+    pub professions: Vec<ProfessionResponse>,
+}
+
+// Response for getting all professions grouped by category
+#[derive(Debug, Serialize)]
+pub struct AllProfessionsResponse {
+    pub categories: Vec<ProfessionCategoryResponse>,
+}
+
+// Response for getting profession-specific prompts
+#[derive(Debug, Serialize)]
+pub struct ProfessionPromptsResponse {
+    pub auto_complete_system_prompt: String,
+    pub auto_complete_user_prompt: String,
+    pub enhance_description_system_prompt: String,
+    pub enhance_description_user_prompt: String,
+    pub generate_tasks_system_prompt: String,
+    pub generate_tasks_user_prompt: String,
+    pub process_markdown_spec_system_prompt: String,
+    pub process_markdown_spec_user_prompt: String,
 }
 
 // Handler to get project configuration
@@ -115,5 +150,64 @@ pub async fn check_project_config_handler(data: web::Data<ProjectAppState>) -> i
                 message: format!("Error checking project config: {}", e),
             })
         }
+    }
+}
+
+// Handler to get all available professions
+pub async fn get_professions_handler() -> impl Responder {
+    // Get all professions
+    let all_professions = profession_prompts::get_all_professions();
+
+    // Group professions by category
+    let mut categories_map: std::collections::HashMap<ProfessionCategory, Vec<ProfessionResponse>> = std::collections::HashMap::new();
+
+    // Process each profession
+    for profession in all_professions {
+        let profession_response = ProfessionResponse {
+            id: profession.id,
+            name: profession.name,
+            category: profession.category.display_name().to_string(),
+        };
+
+        categories_map.entry(profession.category)
+            .or_insert_with(Vec::new)
+            .push(profession_response);
+    }
+
+    // Convert the map to a vector of category responses
+    let mut categories = Vec::new();
+    for category in ProfessionCategory::all_categories() {
+        let professions = categories_map.remove(&category).unwrap_or_default();
+        categories.push(ProfessionCategoryResponse {
+            name: category.display_name().to_string(),
+            professions,
+        });
+    }
+
+    // Return the response
+    HttpResponse::Ok().json(AllProfessionsResponse { categories })
+}
+
+// Handler to get profession-specific prompts
+pub async fn get_profession_prompts_handler(path: web::Path<String>) -> impl Responder {
+    let profession_id = path.into_inner();
+
+    // Get the profession by ID
+    if let Some(profession) = profession_prompts::get_profession_by_id(&profession_id) {
+        // Convert the prompts to a response
+        let prompts_response = ProfessionPromptsResponse {
+            auto_complete_system_prompt: profession.prompts.auto_complete_system_prompt,
+            auto_complete_user_prompt: profession.prompts.auto_complete_user_prompt,
+            enhance_description_system_prompt: profession.prompts.enhance_description_system_prompt,
+            enhance_description_user_prompt: profession.prompts.enhance_description_user_prompt,
+            generate_tasks_system_prompt: profession.prompts.generate_tasks_system_prompt,
+            generate_tasks_user_prompt: profession.prompts.generate_tasks_user_prompt,
+            process_markdown_spec_system_prompt: profession.prompts.process_markdown_spec_system_prompt,
+            process_markdown_spec_user_prompt: profession.prompts.process_markdown_spec_user_prompt,
+        };
+
+        HttpResponse::Ok().json(prompts_response)
+    } else {
+        HttpResponse::NotFound().body(format!("Profession with ID '{}' not found", profession_id))
     }
 }

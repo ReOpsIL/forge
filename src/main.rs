@@ -8,6 +8,7 @@ mod models;
 mod block_config;
 mod block_handlers;
 mod llm_handler;
+mod profession_prompts;
 mod project_config;
 mod project_handlers;
 mod git_handlers;
@@ -23,7 +24,7 @@ use block_handlers::{
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
     ProjectAppState, get_project_config_handler, update_project_config_handler, test_git_connection_handler,
-    check_project_config_handler
+    check_project_config_handler, get_professions_handler, get_profession_prompts_handler
 };
 use git_handlers::{
     GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler,
@@ -148,6 +149,8 @@ async fn main() -> std::io::Result<()> {
                     .route("/project", web::put().to(update_project_config_handler))
                     .route("/project/test-git-connection", web::post().to(test_git_connection_handler))
                     .route("/project/check-config", web::get().to(check_project_config_handler))
+                    .route("/project/professions", web::get().to(get_professions_handler))
+                    .route("/project/professions/{profession_id}/prompts", web::get().to(get_profession_prompts_handler))
                     // Git routes
                     .route("/git/branch", web::post().to(create_branch_handler))
                     .route("/git/commit", web::post().to(commit_handler))
