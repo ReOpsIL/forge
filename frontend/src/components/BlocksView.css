@@ -1,0 +1,337 @@
+.blocks-container {
+    padding: 0.5rem;
+    background-color: #2D2D2D;
+    color: #fff;
+    height: calc(100vh - 70px);
+}
+
+.block-card {
+    background-color: #1e1e1e;
+    height: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.block-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.p-card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.p-card-subtitle {
+    margin-bottom: 1rem;
+}
+
+.p-panel-content {
+    padding: 0.5rem;
+}
+
+.p-panel .p-panel-header {
+    padding: 0.375rem 0.5rem;
+}
+
+.p-panel .p-panel-content {
+    padding: 0.5rem;
+    border: 1px solid var(--surface-border);
+    border-top: 0;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.p-panel + .p-panel {
+    margin-top: 1rem;
+}
+
+.p-chip {
+    background-color: var(--primary-color);
+    color: var(--primary-color-text);
+}
+
+/* Task List Styles */
+.task-list-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.task-list-controls {
+    margin-bottom: 0.75rem;
+}
+
+.task-list-scrollable {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.task-item {
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.task-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.task-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+
+.task-running {
+    color: var(--blue-400);
+    font-weight: 500;
+}
+
+.task-id {
+    color: var(--gray-400);
+    font-size: 0.85em;
+    margin-right: 0.5rem;
+    font-weight: 500;
+}
+
+/* Sandclock (hourglass) animation */
+.sandclock {
+    display: inline-block;
+    position: relative;
+    width: 1em;
+    height: 1.5em;
+    margin-right: 0.5rem;
+    background-color: transparent;
+    border: 2px solid var(--blue-400);
+    border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+    border-bottom: none;
+    transform-origin: bottom center;
+    animation: flip 2s infinite linear;
+}
+
+.sandclock::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    border: 2px solid var(--blue-400);
+    border-radius: 0 0 50% 50% / 0 0 30% 30%;
+    border-top: none;
+}
+
+.sandclock::after {
+    content: '';
+    position: absolute;
+    top: 10%;
+    left: 20%;
+    width: 60%;
+    height: 60%;
+    background-color: var(--blue-400);
+    border-radius: 50%;
+    opacity: 0.7;
+    animation: sand 2s infinite linear;
+}
+
+@keyframes flip {
+    0% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(180deg);
+    }
+    100% {
+        transform: rotate(180deg);
+    }
+}
+
+@keyframes sand {
+    0% {
+        top: 10%;
+        border-radius: 50%;
+        height: 60%;
+    }
+    50% {
+        top: 40%;
+        border-radius: 50% 50% 0 0;
+        height: 30%;
+    }
+    100% {
+        top: 40%;
+        border-radius: 50% 50% 0 0;
+        height: 30%;
+    }
+}
+
+.new-task-input {
+    margin-bottom: 1rem;
+}
+
+/* Make buttons in task list more compact */
+.task-list-controls .p-button.p-button-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Add some spacing between task list items */
+.task-item + .task-item {
+    margin-top: 0.25rem;
+}
+
+/* Style for editable task text */
+.task-text {
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.task-text:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Make all buttons in Block cards half size */
+.block-card .p-button {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.25rem;
+    height: auto;
+    min-height: 1.5rem;
+}
+
+.block-card .p-button .p-button-icon {
+    font-size: 0.75rem;
+}
+
+.block-card .p-button-sm {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.25rem;
+    min-height: 1.25rem;
+}
+
+/* Task edit textarea styles */
+.task-edit-textarea {
+    min-height: 60px !important;
+    min-width: 100% !important;
+    flex: 1 1 auto !important;
+    resize: both !important;
+    overflow: hidden !important;
+    transition: height 0.2s !important;
+    box-sizing: border-box !important;
+}
+
+/* Block description styles */
+.block-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 4.5em;
+    line-height: 1.5em;
+}
+
+/* Override markdown styles to ensure they respect our block-description limits */
+.block-description > div {
+    overflow: hidden;
+    max-height: inherit;
+}
+
+/* Ensure markdown content has proper color in dark theme */
+.block-description p,
+.block-description h1,
+.block-description h2,
+.block-description h3,
+.block-description h4,
+.block-description h5,
+.block-description h6,
+.block-description ul,
+.block-description ol,
+.block-description li {
+    color: inherit;
+    margin: 0;
+}
+
+/* Task Accordion Styles */
+.p-accordion .p-accordion-header .p-accordion-header-link {
+    background-color: #2d2d2d;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+    background-color: #3f3f3f;
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled) .p-accordion-header-link:hover {
+    background-color: #3a3a3a;
+}
+
+.p-accordion .p-accordion-content {
+    background-color: #1e1e1e;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 0;
+    padding: 0;
+}
+
+.task-accordion-header {
+    width: 100%;
+}
+
+.task-details h4 {
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.task-details p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.task-details ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.task-details code {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+/* Monaco editor container styles */
+.monaco-editor-container {
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Ensure the editor has proper contrast in dark theme */
+.monaco-editor {
+    border: 1px solid #333;
+}
+
+/* Custom styles for monaco editor */
+.monaco-editor .margin {
+    background-color: #1e1e1e;
+}
+
+.monaco-editor .monaco-editor-background {
+    background-color: #1e1e1e;
+}

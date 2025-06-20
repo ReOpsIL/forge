@@ -1,0 +1,84 @@
+.project-container {
+    padding: 0.5rem;
+    background-color: #2D2D2D;
+    color: #fff;
+    height: calc(100vh - 70px);
+}
+
+.project-card {
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.field {
+    margin-bottom: 1.5rem;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.field small {
+    display: block;
+    margin-top: 0.25rem;
+    color: #aaa;
+}
+
+.monaco-editor-container {
+    border-radius: 0px;
+    overflow: hidden;
+    margin: 0.5rem;
+    padding: 0.5rem;
+    background-color: #2e2e2e;
+}
+
+/* Ensure the editor has proper contrast in dark theme */
+.monaco-editor {
+    border: 0px;
+}
+
+/* Custom styles for monaco editor */
+.monaco-editor .margin {
+    background-color: #1e1e1e;
+}
+
+.monaco-editor .monaco-editor-background {
+    background-color: #1e1e1e;
+}
+
+/* Make buttons in project card consistent with other components */
+.project-card .p-button {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.25rem;
+    height: auto;
+    min-height: 1.5rem;
+}
+
+.project-card .p-button .p-button-icon {
+    font-size: 0.75rem;
+}
+
+.project-card .p-button-sm {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.25rem;
+    min-height: 1.25rem;
+}
+
+/* Exception for the main action buttons */
+.project-container > .flex > .flex > .p-button {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    min-height: 2.5rem;
+}
+
+.project-container > .flex > .flex > .p-button .p-button-icon {
+    font-size: 1rem;
+}

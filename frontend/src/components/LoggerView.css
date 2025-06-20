@@ -1,0 +1,73 @@
+.logger-view {
+    padding: 1rem;
+}
+
+.log-container {
+    font-family: monospace;
+    white-space: pre-wrap;
+    padding: 0.5rem;
+}
+
+.log-line {
+    padding: 2px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.connected {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.connected::before {
+    content: "•";
+    margin-right: 5px;
+    font-size: 1.5rem;
+}
+
+.disconnected {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.disconnected::before {
+    content: "•";
+    margin-right: 5px;
+    font-size: 1.5rem;
+}
+
+.custom-scrollpanel .p-scrollpanel-wrapper {
+    border-right: 9px solid #f4f4f4;
+}
+
+.custom-scrollpanel .p-scrollpanel-bar {
+    background-color: #1976d2;
+    opacity: 1;
+    transition: background-color .2s;
+}
+
+.custom-scrollpanel .p-scrollpanel-bar:hover {
+    background-color: #135ba1;
+}
+
+.executing-task {
+    color: #ff9800;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.executing-task strong {
+    color: #f57c00;
+}
+
+.live-mode-label {
+    font-weight: 500;
+    color: #2196f3;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
