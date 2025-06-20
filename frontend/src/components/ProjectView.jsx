@@ -38,6 +38,7 @@ const ProjectView = ({ setActiveView }) => {
         process_markdown_spec_system_prompt: '',
         process_markdown_spec_user_prompt: ''
     });
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [testingConnection, setTestingConnection] = useState(false);
@@ -83,7 +84,8 @@ const ProjectView = ({ setActiveView }) => {
     const toastRef = useRef(null);
 
     useEffect(() => {
-        fetchProjectConfig();
+        fetchProjectConfig().then(r => {
+        });
     }, []);
 
     const fetchProjectConfig = async () => {
@@ -123,11 +125,14 @@ const ProjectView = ({ setActiveView }) => {
 
             const data = await response.json();
             setProjectConfig(data);
-            
+
             // Refresh branches if project home directory is set
             if (data.project_home_directory) {
-                fetchBranches();
+                fetchBranches().then(r => {
+
+                });
             }
+
         } catch (error) {
             console.error('Error fetching project configuration:', error);
             toastRef.current.show({
@@ -176,15 +181,6 @@ const ProjectView = ({ setActiveView }) => {
     };
 
     const fetchBranches = async () => {
-        if (!projectConfig.project_home_directory) {
-            toastRef.current.show({
-                severity: 'warn',
-                summary: 'Warning',
-                detail: 'Please set project home directory first',
-                life: 3000
-            });
-            return;
-        }
 
         try {
             setLoadingBranches(true);
