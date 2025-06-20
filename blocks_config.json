@@ -22,6 +22,47 @@
         "testing_requirements": [],
         "log": "",
         "commit_id": "",
+        "status": "[COMPLETED]"
+      },
+      "8dlgfi": {
+        "task_id": "8dlgfi",
+        "task_name": "Do build",
+        "description": "run build.sh [FAILED]",
+        "acceptance_criteria": [],
+        "dependencies": [],
+        "estimated_effort": "",
+        "files_affected": [],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "Claude CLI command failed: Starting Claude execution...\n",
+        "commit_id": "No commit id",
+        "status": "[FAILED]"
+      }
+    }
+  },
+  {
+    "name": "ProjectSettings",
+    "block_id": "DhQYwB",
+    "description": "ProjectSettings modifications",
+    "inputs": [],
+    "outputs": [],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {
+      "6u23of": {
+        "task_id": "6u23of",
+        "task_name": "Refresh main branch",
+        "description": "when project settings load - refresh main branch select box according to project configuration",
+        "acceptance_criteria": [],
+        "dependencies": [],
+        "estimated_effort": "",
+        "files_affected": [],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
         "status": "[IN-PROGRESS]"
       }
     }

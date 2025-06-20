@@ -123,6 +123,11 @@ const ProjectView = ({ setActiveView }) => {
 
             const data = await response.json();
             setProjectConfig(data);
+            
+            // Refresh branches if project home directory is set
+            if (data.project_home_directory) {
+                fetchBranches();
+            }
         } catch (error) {
             console.error('Error fetching project configuration:', error);
             toastRef.current.show({
