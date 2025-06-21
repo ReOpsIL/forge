@@ -14,7 +14,8 @@ pub fn enqueue_task(
     task_id: &str,
     task_description: &str,
     resolve_dependencies: bool,
+    force_completed: bool
 ) -> Result<String, String> {
     let executor = get_task_executor()?;
-    executor.enqueue_task(block_id, task_id, task_description, resolve_dependencies)
+    executor.enqueue_task(block_id, task_id, task_description, resolve_dependencies, force_completed)
 }

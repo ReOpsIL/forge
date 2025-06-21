@@ -27,7 +27,8 @@ pub struct ExecuteGitTaskRequest {
     pub block_id: String,
     pub task_id: String,
     pub task_description: String,
-    pub resolve_dependencies: Option<bool>,
+    pub resolve_dependencies: bool,
+    pub force_completed: bool,
 }
 
 // Request body for creating a branch
@@ -470,8 +471,10 @@ pub async fn execute_git_task_handler(
     request: web::Json<ExecuteGitTaskRequest>,
 ) -> impl Responder {
     let request = request.into_inner();
-    let resolve_dependencies = request.resolve_dependencies.unwrap_or(false);
-    let result= enqueue_task(&*request.block_id, &*request.task_id, &*request.task_description, resolve_dependencies);
+    let resolve_dependencies = request.resolve_dependencies;
+    let force_completed = request.force_completed;
+    
+    let result= enqueue_task(&*request.block_id, &*request.task_id, &*request.task_description, resolve_dependencies, force_completed);
     match result {
         Ok(_) => {
             HttpResponse::Ok().json(GitResponse {
@@ -740,10 +743,12 @@ echo "Build completed successfully!"
         Ok(output) => {
             if output.status.success() {
                 let output_message = String::from_utf8_lossy(&output.stdout).to_string();
+                let err_message = String::from_utf8_lossy(&output.stderr).to_string();
+
                 HttpResponse::Ok().json(BuildResponse {
                     success: true,
                     message: "Build completed successfully".to_string(),
-                    output: output_message,
+                    output: format!("Output:\n{}\n\nError:\n{}",output_message,err_message)
                 })
             } else {
                 let error_message = String::from_utf8_lossy(&output.stderr).to_string();

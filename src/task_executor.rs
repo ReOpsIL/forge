@@ -8,6 +8,7 @@ use std::time::Duration;
 use crate::log_stream;
 use crate::project_config::ProjectConfigManager;
 use crate::block_config::BlockConfigManager;
+use crate::log_stream::get_logs_str;
 use crate::models::Task;
 use crate::task_queue::QueuedTask;
 
@@ -59,15 +60,19 @@ impl TaskExecutor {
         });
     }
 
-    pub fn execute_git_task(&self, block_id: &String, task_id: &String) -> Result<(String), String> {
+    pub fn execute_git_task(&self, block_id: &String, task_id: &String) -> Result<(String, String), String> {
+
+        // Create a unique task ID for logging
+        let log_task_id = format!("{}:{}", block_id, task_id);
+
         // Get the project home directory from the project config
         let project_config = match self.project_manager.get_config() {
             Ok(config) => config,
             Err(_) => return Err("Failed to get project configuration".to_string()),
         };
-        
+
         let main_branch = &project_config.main_branch.unwrap_or("main".to_string());
-        
+
         let project_dir = project_config.project_home_directory.clone();
         if project_dir.is_empty() {
             return Err("Project home directory is not set. Please configure it in the project settings.".to_string());
@@ -93,9 +98,14 @@ impl TaskExecutor {
             return Err("Task description cannot be empty".to_string());
         }
 
+        // Clear any existing logs for this task
+        log_stream::clear_logs(&log_task_id);
 
         // Step 1: Pull latest main branch
         println!("Step 1: Pulling latest main branch");
+        let msg = format!("Step 1: Pulling latest main branch {}",  task_id);
+        log_stream::add_log(&task_id, msg.clone());
+
         let pull_output = Command::new("git")
             .arg("checkout")
             .arg(main_branch)
@@ -119,6 +129,9 @@ impl TaskExecutor {
 
         // Step 2: Create a task-specific branch
         println!("Step 2: Creating task-specific branch using task ID: {}", task_id);
+        let msg = format!("Step 2: Creating task-specific branch using task ID {}",  task_id);
+        log_stream::add_log(&task_id, msg.clone());
+
         let branch_output = Command::new("git")
             .arg("checkout")
             .arg("-b")
@@ -133,12 +146,8 @@ impl TaskExecutor {
 
         // Step 3: Execute the task using Claude CLI
         println!("Step 3: Executing task");
-
-        // Create a unique task ID for logging
-        let log_task_id = format!("{}:{}", block_id, task_id);
-
-        // Clear any existing logs for this task
-        log_stream::clear_logs(&log_task_id);
+        let msg = format!("Step 3: Executing task {}",  task_id);
+        log_stream::add_log(&task_id, msg.clone());
 
         // Log the start of the task
         log_stream::add_log(&log_task_id, "Starting Claude execution...".to_string());
@@ -167,10 +176,8 @@ impl TaskExecutor {
                 log_stream::add_log(&log_task_id, error_msg.clone());
                 return Err(error_msg);
             }
-        }
 
-        // Create a buffer for the complete log output
-        let mut log_output = String::new();
+        }
 
         // Stream stdout in real-time
         if let Some(stdout) = child.stdout.take() {
@@ -218,17 +225,11 @@ impl TaskExecutor {
 
         let task_success = status.success();
 
-        // Get all logs for this task to use as the log output
-        let logs = log_stream::get_log_storage().get_logs(&log_task_id);
-        for log in &logs {
-            log_output.push_str(&log.content);
-            log_output.push('\n');
-        }
 
         if !task_success {
             let error_msg = format!("Claude CLI command failed with exit code: {:?}", status.code());
             log_stream::add_log(&log_task_id, error_msg.clone());
-            return Err(format!("Claude CLI command failed: {}", log_output));
+            return Err(get_logs_str(task_id));
         }
 
         log_stream::add_log(&log_task_id, "Claude CLI command completed successfully".to_string());
@@ -236,6 +237,9 @@ impl TaskExecutor {
 
         // Step 4: Commit changes
         println!("Step 4: Committing changes");
+        let msg = format!("Step 4: Committing changes {}",  task_id);
+        log_stream::add_log(&log_task_id, msg.clone());
+
         let add_output = Command::new("git")
             .arg("add")
             .arg(".")
@@ -243,10 +247,12 @@ impl TaskExecutor {
             .output();
 
         if let Err(e) = add_output {
-            return Err(format!("Failed to stage changes into git (add): {}", e));
+            let error_msg = format!("Failed to stage changes into git (add): {}", e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(get_logs_str(task_id));
         }
 
-        // Use task description as commit message
+        // Use task description as a commit message
         let commit_message = task_description.lines().next().unwrap_or("Task execution").to_string();
         let commit_output = Command::new("git")
             .arg("commit")
@@ -256,7 +262,9 @@ impl TaskExecutor {
             .output();
 
         if let Err(e) = commit_output {
-            return Err( format!("Failed to commit changes into git: {}", e));
+            let error_msg = format!("Failed to commit changes into git: {}", e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(get_logs_str(task_id));
         }
 
         // Get the commit ID
@@ -271,18 +279,28 @@ impl TaskExecutor {
                 if output.status.success() {
                     Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
                 } else {
-                    return Err(format!("Failed to get commit id: {}", String::from_utf8_lossy(&output.stderr)));
+                    let error_msg = format!("Failed to get commit id: {:?}, {}", status.code(),  String::from_utf8_lossy(&output.stderr));
+                    log_stream::add_log(&log_task_id, error_msg.clone());
+                    return Err(get_logs_str(task_id));
                 }
             }
             Err(e) => {
-                return Err(format!("Failed to get commit id: {}", e));
+                let error_msg = format!("Failed to get commit id: {:?}, {}", status.code(), e);
+                log_stream::add_log(&log_task_id, error_msg.clone());
+                return Err(get_logs_str(task_id));
             }
         };
 
         let commit_id = commit_id.unwrap_or("No commit id".to_string());
+        self.update_task_commit_id(&block_id, &task_id, commit_id.as_str());
+
+        let msg = format!("Commit id: {}, {}",  task_id, commit_id);
+        log_stream::add_log(&log_task_id, msg.clone());
 
         // Step 5: Merge back to main
-        println!("Step 5: Merging back to main");
+        let msg = format!("Step 5: Merging back to main {}",  task_id);
+        log_stream::add_log(&log_task_id, msg.clone());
+
         let checkout_output = Command::new("git")
             .arg("checkout")
             .arg(main_branch)
@@ -290,7 +308,9 @@ impl TaskExecutor {
             .output();
 
         if let Err(e) = checkout_output {
-            return Err(format!("Failed to checkout {} branch: {}", main_branch, e));
+            let error_msg = format!("Failed to checkout {} branch: {}",  main_branch, e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(get_logs_str(task_id));
         }
 
         let merge_output = Command::new("git")
@@ -301,11 +321,15 @@ impl TaskExecutor {
             .output();
 
         if let Err(e) = merge_output {
-           return Err(format!("Failed to merge task branch: {}", e));
+            let error_msg = format!("Failed to merge task branch: {}",  e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(get_logs_str(task_id));
         }
 
         // Step 6: Clean up (delete the task branch)
-        println!("Step 6: Cleaning up");
+        let msg = format!("Step 6: Cleaning up {}",  task_id);
+        log_stream::add_log(&log_task_id, msg.clone());
+
         let delete_output = Command::new("git")
             .arg("branch")
             .arg("-d")
@@ -314,11 +338,14 @@ impl TaskExecutor {
             .output();
 
         if let Err(e) = delete_output {
-            println!("Failed to delete task branch: {}", e);
+            let error_msg = format!("Failed to delete task branch: {}",  e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
         }
 
-        println!("Task ended: {}", task_id);
-        Ok((commit_id))
+        let msg = format!("Task ended: {}",  task_id);
+        log_stream::add_log(&log_task_id, msg.clone());
+
+        Ok((get_logs_str(task_id), commit_id))
     }
 
     // Get the next task from the queue
@@ -338,9 +365,9 @@ impl TaskExecutor {
 
         println!("Executing task: {}:{}", task.block_id, task.task_id);
         match self.execute_git_task(&task.block_id, &task.task_id) {
-            Ok(_) => {
+            Ok((log, commit_id)) => {
                 // Update the task status in the block config
-                self.update_task_status(&task.block_id, &task.task_id, "[COMPLETED]");
+                self.update_task_status_with_log_and_commit_id(task.block_id, task.task_id, "[COMPLETED]".to_string(), log, commit_id );
             } ,
             Err(err_str) => {
                 self.update_task_status_with_log_and_commit_id(task.block_id, task.task_id, "[FAILED]".to_string(), err_str, "No commit id".to_string() );
@@ -432,8 +459,28 @@ impl TaskExecutor {
         }
     }
 
+    fn update_task_commit_id(&self, block_id: &str, task_id: &str, commit_id: &str) {
+        if let Ok(mut blocks) = self.block_manager.get_blocks() {
+            if let Some(block) = blocks.iter_mut().find(|b| b.block_id == block_id) {
+                if let Some(task) = block.todo_list.get_mut(task_id) {
+                    task.commit_id = commit_id.to_string();
+
+                    // Update the block in the database
+                    if let Err(e) = self.block_manager.update_block(block.clone()) {
+                        println!("Failed to update block: {}", e);
+                    } else {
+                        // Save the updated blocks to the file
+                        if let Err(e) = self.block_manager.save_blocks_to_file() {
+                            println!("Failed to save blocks to file: {}", e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Add a task to the queue, optionally resolving dependencies
-    pub fn enqueue_task(&self, block_id: &str, task_id: &str, task_description: &str, resolve_dependencies: bool) -> Result<String, String> {
+    pub fn enqueue_task(&self, block_id: &str, task_id: &str, task_description: &str, resolve_dependencies: bool, force_completed: bool) -> Result<String, String> {
         let task_unique_id = format!("{}:{}", block_id, task_id);
 
         // Check if the task is already in the queue
@@ -445,7 +492,7 @@ impl TaskExecutor {
 
         // If dependency resolution is enabled, resolve dependencies and add them to the queue
         if resolve_dependencies {
-            let execution_order = self.resolve_task_dependencies(block_id, task_id)?;
+            let execution_order = self.resolve_task_dependencies(block_id, task_id, force_completed)?;
 
             // If the execution order is empty, all tasks are already completed
             if execution_order.is_empty() {
@@ -518,7 +565,7 @@ impl TaskExecutor {
     }
 
     // Resolve task dependencies and create an execution queue
-    fn resolve_task_dependencies(&self, block_id: &str, task_id: &str) -> Result<Vec<String>, String> {
+    fn resolve_task_dependencies(&self, block_id: &str, task_id: &str, force_completed: bool) -> Result<Vec<String>, String> {
         // Get all blocks
         let blocks = self.block_manager.get_blocks()
             .map_err(|e| format!("Failed to get blocks: {}", e))?;
@@ -535,7 +582,7 @@ impl TaskExecutor {
         if !tasks.contains_key(&task_id.to_string()) {
             return Err(format!("Task {} not found in block {}", task_id, block_id));
         }
-
+        
         // Set to track visited tasks (for cycle detection)
         let mut visited = HashSet::new();
         // Set to track tasks in the current recursion stack (for cycle detection)
@@ -550,10 +597,12 @@ impl TaskExecutor {
             task.status.contains("[COMPLETED]")
         };
 
-        // Identify completed tasks
-        for (id, task) in &block.todo_list {
-            if is_task_completed(task) {
-                completed_tasks.insert(id.clone());
+        if !force_completed {
+            // Identify completed tasks
+            for (id, task) in &block.todo_list {
+                if is_task_completed(task) {
+                    completed_tasks.insert(id.clone());
+                }
             }
         }
 

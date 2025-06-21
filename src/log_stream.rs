@@ -8,6 +8,7 @@ use tokio::time::interval;
 use tokio_stream::wrappers::ReceiverStream;
 use actix_web::web::Bytes;
 use futures::stream::StreamExt;
+use crate::log_stream;
 
 // Structure to hold log entries for each task
 #[derive(Debug, Clone)]
@@ -139,4 +140,16 @@ pub fn add_log(task_id: &str, content: String) {
 pub fn clear_logs(task_id: &str) {
     let log_storage = get_log_storage();
     log_storage.clear_logs(task_id);
+}
+
+pub fn get_logs_str(task_id: &str) -> String {
+    let mut log_output = String::new();
+
+    let logs = get_log_storage().get_logs(&task_id);
+    for log in &logs {
+        log_output.push_str(&log.content);
+        log_output.push('\n');
+    }
+    
+    log_output
 }

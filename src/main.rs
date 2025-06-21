@@ -16,11 +16,12 @@ pub mod task_executor;
 mod task_executor_wrapper;
 mod task_queue;
 mod log_stream;
+mod chat_handlers;
 use block_config::{BlockConfigManager, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
     delete_block_handler, add_task_handler, remove_task_handler, generate_sample_config_handler, enhance_block_handler,
-    auto_complete_handler, execute_task_handler, process_markdown_handler, get_block_dependencies_handler
+    auto_complete_handler, process_markdown_handler, get_block_dependencies_handler
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
@@ -37,6 +38,7 @@ use crate::git_handlers::pull_handler;
 use crate::task_executor::TaskExecutor;
 use crate::task_executor_wrapper::initialize as init_task_executor;
 use crate::log_stream::{stream_logs, get_task_ids};
+use crate::chat_handlers::{ChatAppState, chat_websocket};
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
@@ -124,12 +126,15 @@ async fn main() -> std::io::Result<()> {
         project_manager: project_manager.clone(),
         block_manager: block_manager.clone(),
     });
+    
+    let chat_app_state = web::Data::new(ChatAppState::new());
 
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
             .app_data(project_app_state.clone())
             .app_data(git_app_state.clone())
+            .app_data(chat_app_state.clone())
             // API routes
             .service(
                 web::scope("/api")
@@ -143,7 +148,6 @@ async fn main() -> std::io::Result<()> {
                     .route("/blocks/{block_id}/enhance", web::put().to(enhance_block_handler))
                     .route("/blocks/{block_id}/generate-tasks", web::put().to(generate_tasks_block_handler))
                     .route("/blocks/auto-complete", web::post().to(auto_complete_handler))
-                    .route("/blocks/execute-task", web::post().to(execute_task_handler))
                     .route("/blocks/process-markdown", web::post().to(process_markdown_handler))
                     .route("/blocks/process-spec", web::post().to(process_spec_handler))
                     .route("/blocks/{blockId}/dependencies", web::get().to(get_block_dependencies_handler))
@@ -168,6 +172,8 @@ async fn main() -> std::io::Result<()> {
                     // Log streaming routes
                     .route("/logs/stream/{task_id}", web::get().to(stream_logs))
                     .route("/logs/tasks", web::get().to(get_task_ids))
+                    // Chat routes
+                    .route("/chat/ws", web::get().to(chat_websocket))
             )
 
             // Serve static files from the frontend/dist directory
