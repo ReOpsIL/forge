@@ -65,9 +65,9 @@ impl TaskExecutor {
             Ok(config) => config,
             Err(_) => return Err("Failed to get project configuration".to_string()),
         };
-        
+
         let main_branch = &project_config.main_branch.unwrap_or("main".to_string());
-        
+
         let project_dir = project_config.project_home_directory.clone();
         if project_dir.is_empty() {
             return Err("Project home directory is not set. Please configure it in the project settings.".to_string());
@@ -167,6 +167,7 @@ impl TaskExecutor {
                 log_stream::add_log(&log_task_id, error_msg.clone());
                 return Err(error_msg);
             }
+            
         }
 
         // Create a buffer for the complete log output

@@ -3,12 +3,12 @@
     flex-direction: column;
     height: 100vh;
     padding: 0;
-    background-color: #f8f9fa;
+    background-color: #1e1e1e;
 }
 
 .chat-header {
     padding: 16px 24px;
-    background-color: #ffffff;
+    background-color: #1e1e1e;
     border-bottom: 1px solid #dee2e6;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -29,7 +29,7 @@
 .chat-content {
     flex: 1;
     padding: 16px;
-    background-color: #f8f9fa;
+    background-color: #1e1e1e;
     overflow: hidden;
 }
 

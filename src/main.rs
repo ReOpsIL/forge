@@ -126,7 +126,7 @@ async fn main() -> std::io::Result<()> {
         project_manager: project_manager.clone(),
         block_manager: block_manager.clone(),
     });
-
+    
     let chat_app_state = web::Data::new(ChatAppState::new());
 
     HttpServer::new(move || {

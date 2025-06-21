@@ -1,13 +1,13 @@
 use actix_web::{web, HttpRequest, HttpResponse, Error, Result};
 use actix_web_actors::ws;
 use serde::{Deserialize, Serialize};
-use std::process::Stdio;
 use std::sync::{Arc, Mutex};
-use tokio::process::{Child, Command as TokioCommand};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 use std::time::{Duration, Instant};
 use actix::{Actor, StreamHandler, Handler, Message, ActorContext, AsyncContext, Addr, WrapFuture};
+use tokio::process::Command;
+use tokio::io::{AsyncReadExt, AsyncBufReadExt};
+use std::process::Stdio;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
@@ -18,84 +18,122 @@ pub struct ChatMessage {
 
 #[derive(Debug)]
 pub struct ClaudeProcess {
-    pub child: Arc<Mutex<Option<Child>>>,
-    pub stdin_tx: Option<mpsc::UnboundedSender<String>>,
+    // Channel for receiving prompt requests
+    pub prompt_tx: mpsc::UnboundedSender<(String, Addr<ChatWebSocket>)>,
+    // Store the WebSocket address
+    pub ws_addr: Arc<Mutex<Option<Addr<ChatWebSocket>>>>,
 }
 
 impl ClaudeProcess {
     pub fn new() -> Self {
-        Self {
-            child: Arc::new(Mutex::new(None)),
-            stdin_tx: None,
+        // Create a channel for receiving prompt requests
+        let (prompt_tx, mut prompt_rx) = mpsc::unbounded_channel::<(String, Addr<ChatWebSocket>)>();
+
+        // Spawn a tokio thread to handle prompt requests
+        tokio::spawn(async move {
+            while let Some((prompt, ws_addr)) = prompt_rx.recv().await {
+                // Process each prompt in a separate task
+                let ws_addr_clone = ws_addr.clone();
+                tokio::spawn(async move {
+                    eprintln!("Processing prompt: {}", prompt);
+
+                    // Execute claude as a batch process with the prompt
+                    let result = Self::execute_claude_process(&prompt, ws_addr_clone.clone()).await;
+
+                    if let Err(e) = result {
+                        eprintln!("Error executing claude process: {}", e);
+                        let error_msg = ChatMessage {
+                            message_type: "error".to_string(),
+                            content: format!("Error executing claude process: {}", e),
+                        };
+                        if let Ok(json) = serde_json::to_string(&error_msg) {
+                            let _ = ws_addr_clone.try_send(WsMessage(json));
+                        }
+                    }
+                });
+            }
+        });
+
+        Self { 
+            prompt_tx,
+            ws_addr: Arc::new(Mutex::new(None)),
         }
     }
 
-    pub async fn start(&mut self, ws_addr: Addr<ChatWebSocket>) -> Result<(), Box<dyn std::error::Error>> {
-        let mut cmd = TokioCommand::new("claude");
-        cmd.stdin(Stdio::piped())
-           .stdout(Stdio::piped())
-           .stderr(Stdio::piped());
+    // Execute the claude process as a batch with the given prompt
+    async fn execute_claude_process(prompt: &str, ws_addr: Addr<ChatWebSocket>) -> Result<(), Box<dyn std::error::Error>> {
+        // Create a new Command for the claude process
+        let mut cmd = Command::new("claude");
+        cmd.args(&["--dangerously-skip-permissions", "-c", "-p", prompt]);
 
+        // Configure the process to capture stdout
+        cmd.stdout(Stdio::piped());
+        cmd.stderr(Stdio::piped());
+
+        // Spawn the process
         let mut child = cmd.spawn()?;
-        
-        let stdin = child.stdin.take().ok_or("Failed to get stdin")?;
-        let stdout = child.stdout.take().ok_or("Failed to get stdout")?;
-        
-        let (stdin_tx, mut stdin_rx) = mpsc::unbounded_channel::<String>();
 
-        // Handle stdin
-        tokio::spawn(async move {
-            let mut stdin = stdin;
-            while let Some(input) = stdin_rx.recv().await {
-                if let Err(e) = stdin.write_all(input.as_bytes()).await {
-                    eprintln!("Failed to write to claude stdin: {}", e);
-                    break;
-                }
-                if let Err(e) = stdin.write_all(b"\n").await {
-                    eprintln!("Failed to write newline to claude stdin: {}", e);
-                    break;
-                }
-                if let Err(e) = stdin.flush().await {
-                    eprintln!("Failed to flush claude stdin: {}", e);
-                    break;
-                }
-            }
-        });
+        // Get the stdout handle
+        let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
 
-        // Handle stdout
-        tokio::spawn(async move {
-            let reader = BufReader::new(stdout);
-            let mut lines = reader.lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let msg = ChatMessage {
-                    message_type: "output".to_string(),
-                    content: line,
-                };
-                if let Ok(json) = serde_json::to_string(&msg) {
-                    let _ = ws_addr.try_send(WsMessage(json));
-                }
-            }
-        });
+        // Create a buffer reader for stdout
+        let mut reader = tokio::io::BufReader::new(stdout).lines();
 
-        *self.child.lock().unwrap() = Some(child);
-        self.stdin_tx = Some(stdin_tx);
+        let mut lines : Vec<String> = Vec::new();
+        // Read the output line by line and send it to the WebSocket
+        while let Some(line) = reader.next_line().await? {
+            lines.push(line);
+        }
+
+        let msg = ChatMessage {
+            message_type: "output".to_string(),
+            content: lines.join("\n"),
+        };
+
+        if let Ok(json) = serde_json::to_string(&msg) {
+            let _ = ws_addr.try_send(WsMessage(json));
+        }
+
+        // Wait for the process to complete
+        let status = child.wait().await?;
+
+        if !status.success() {
+            return Err(format!("Claude process exited with status: {}", status).into());
+        }
 
         Ok(())
     }
 
+    pub async fn start(&mut self, ws_addr: Addr<ChatWebSocket>) -> Result<(), Box<dyn std::error::Error>> {
+        // Store the WebSocket address
+        *self.ws_addr.lock().unwrap() = Some(ws_addr);
+        Ok(())
+    }
+
     pub fn send_input(&self, input: &str) -> Result<(), Box<dyn std::error::Error>> {
-        if let Some(ref tx) = self.stdin_tx {
-            tx.send(input.to_string()).map_err(|e| e.into())
+        eprintln!("send_input called with: {}", input);
+
+        // Get the WebSocket address from the stored value
+        if let Some(ws_addr) = self.ws_addr.lock().unwrap().clone() {
+            // Send the prompt to the processing thread
+            self.prompt_tx.send((input.to_string(), ws_addr))?;
+            eprintln!("Successfully sent prompt to processing thread: {}", input);
+            Ok(())
         } else {
-            Err("Claude process not started".into())
+            eprintln!("WebSocket not available");
+            Err("WebSocket not available".into())
         }
     }
 
+    // Always return true as we're not tracking a specific process
     pub fn is_running(&self) -> bool {
-        self.child.lock().unwrap().is_some()
+        true
     }
 }
 
+
+// --- The rest of your code (ChatWebSocket, etc.) remains the same ---
+// ... (I've omitted it for brevity, no changes are needed there)
 pub struct ChatAppState {
     pub claude_process: Arc<Mutex<ClaudeProcess>>,
 }
@@ -143,42 +181,35 @@ impl Actor for ChatWebSocket {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
-        
+
         // Start Claude process when WebSocket connects
         if !self.started {
             let claude_process = self.claude_process.clone();
             let addr = ctx.address();
-            
-            // Check if process is already running
-            let should_start = {
-                let process = claude_process.lock().unwrap();
-                !process.is_running()
-            };
-            
-            if should_start {
-                let claude_process_clone = claude_process.clone();
-                let addr_clone = addr.clone();
-                
-                ctx.spawn(
-                    async move {
-                        {
-                            let mut process = claude_process_clone.lock().unwrap();
-                            if let Err(e) = process.start(addr_clone.clone()).await {
-                                eprintln!("Failed to start Claude process: {}", e);
-                                let error_msg = ChatMessage {
-                                    message_type: "error".to_string(),
-                                    content: format!("Failed to start Claude process: {}", e),
-                                };
-                                if let Ok(json) = serde_json::to_string(&error_msg) {
-                                    let _ = addr_clone.try_send(WsMessage(json));
-                                }
+
+            // Always start the process to ensure WebSocket address is set
+            let claude_process_clone = claude_process.clone();
+            let addr_clone = addr.clone();
+
+            ctx.spawn(
+                async move {
+                    {
+                        let mut process = claude_process_clone.lock().unwrap();
+                        if let Err(e) = process.start(addr_clone.clone()).await {
+                            eprintln!("Failed to start Claude process: {}", e);
+                            let error_msg = ChatMessage {
+                                message_type: "error".to_string(),
+                                content: format!("Failed to start Claude process: {}", e),
+                            };
+                            if let Ok(json) = serde_json::to_string(&error_msg) {
+                                let _ = addr_clone.try_send(WsMessage(json));
                             }
-                        } // MutexGuard dropped here
-                    }
+                        }
+                    } // MutexGuard dropped here
+                }
                     .into_actor(self)
-                );
-            }
-            
+            );
+
             self.started = true;
         }
     }
@@ -196,7 +227,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWebSocket {
             }
             Ok(ws::Message::Text(text)) => {
                 self.hb = Instant::now();
-                
+
                 if let Ok(chat_msg) = serde_json::from_str::<ChatMessage>(&text) {
                     if chat_msg.message_type == "input" {
                         // Send processing status
@@ -217,7 +248,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatWebSocket {
                                 ctx.text(json);
                             }
                         }
-                        
+
                         // Reset processing status after a delay (Claude should respond)
                         ctx.run_later(Duration::from_secs(1), |_, ctx| {
                             let processing_msg = serde_json::json!({
