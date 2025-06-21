@@ -1,0 +1,158 @@
+.terminal-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #404040;
+}
+
+.terminal-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #dc3545;
+}
+
+.status-indicator.connected {
+    background-color: #28a745;
+}
+
+.status-text {
+    font-size: 12px;
+    color: #cccccc;
+}
+
+.terminal-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background-color: #1e1e1e;
+}
+
+.terminal-message {
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #2d2d2d;
+}
+
+.terminal-message.user-message {
+    background-color: #0d4377;
+    margin-left: 20%;
+}
+
+.terminal-message.claude-message {
+    background-color: #2d4a2d;
+    margin-right: 20%;
+}
+
+.terminal-message.system-message {
+    background-color: #404040;
+    font-style: italic;
+    color: #cccccc;
+}
+
+.terminal-message.error-message {
+    background-color: #5d2d2d;
+    color: #ffcccc;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.message-type {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.message-timestamp {
+    color: #888888;
+    font-size: 10px;
+}
+
+.message-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+.terminal-input {
+    display: flex;
+    padding: 12px 16px;
+    background-color: #2d2d2d;
+    border-top: 1px solid #404040;
+    gap: 8px;
+}
+
+.terminal-input-field {
+    flex: 1;
+    background-color: #1e1e1e !important;
+    border: 1px solid #404040 !important;
+    color: #ffffff !important;
+    font-family: 'Courier New', monospace !important;
+}
+
+.terminal-input-field:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.terminal-input-field::placeholder {
+    color: #888888 !important;
+}
+
+.terminal-send-button {
+    background-color: #007bff !important;
+    border: none !important;
+    color: white !important;
+}
+
+.terminal-send-button:hover:not(:disabled) {
+    background-color: #0056b3 !important;
+}
+
+.terminal-send-button:disabled {
+    background-color: #404040 !important;
+    color: #888888 !important;
+}
+
+/* Scrollbar styling */
+.terminal-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.terminal-messages::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.terminal-messages::-webkit-scrollbar-thumb {
+    background: #404040;
+    border-radius: 4px;
+}
+
+.terminal-messages::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+}

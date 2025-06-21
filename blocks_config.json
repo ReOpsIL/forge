@@ -1,8 +1,8 @@
 [
   {
-    "name": "Build",
-    "block_id": "zE5MaY",
-    "description": "Create build system for project",
+    "name": "Claude",
+    "block_id": "4zRHvC",
+    "description": "chat with claude",
     "inputs": [],
     "outputs": [],
     "connections": {
@@ -10,10 +10,10 @@
       "output_connections": []
     },
     "todo_list": {
-      "crc9hg": {
-        "task_id": "crc9hg",
-        "task_name": "build.sh",
-        "description": "Create build.sh with commands: npm run dev , cargo build",
+      "ugylxu": {
+        "task_id": "ugylxu",
+        "task_name": "Suggest features",
+        "description": "Ask Gemini or Claude to suggest new cool innovative features",
         "acceptance_criteria": [],
         "dependencies": [],
         "estimated_effort": "",
@@ -22,39 +22,12 @@
         "testing_requirements": [],
         "log": "",
         "commit_id": "",
-        "status": "[COMPLETED]"
+        "status": "TODO"
       },
-      "8dlgfi": {
-        "task_id": "8dlgfi",
-        "task_name": "Do build",
-        "description": "run build.sh [FAILED]",
-        "acceptance_criteria": [],
-        "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
-        "function_signatures": [],
-        "testing_requirements": [],
-        "log": "Claude CLI command failed: Starting Claude execution...\n",
-        "commit_id": "No commit id",
-        "status": "[FAILED]"
-      }
-    }
-  },
-  {
-    "name": "ProjectSettings",
-    "block_id": "DhQYwB",
-    "description": "ProjectSettings modifications",
-    "inputs": [],
-    "outputs": [],
-    "connections": {
-      "input_connections": [],
-      "output_connections": []
-    },
-    "todo_list": {
-      "6u23of": {
-        "task_id": "6u23of",
-        "task_name": "Refresh main branch",
-        "description": "when project settings load - refresh main branch select box according to project configuration",
+      "kds0or": {
+        "task_id": "kds0or",
+        "task_name": "Docs",
+        "description": "Update product docs",
         "acceptance_criteria": [],
         "dependencies": [],
         "estimated_effort": "",
@@ -63,7 +36,21 @@
         "testing_requirements": [],
         "log": "",
         "commit_id": "",
-        "status": "[COMPLETED]"
+        "status": "TODO"
+      },
+      "squ3t0": {
+        "task_id": "squ3t0",
+        "task_name": "Claude",
+        "description": "Add new \"Chat\" page. The Chat page will use a Terminal component to display and interact with \"Claude\" executable on server side. Add new backend component that starts \"Claude\" and streams / interact with \"Terminal\" component on user side. When user select \"Chat\" page for the first time - start the \"Claude\" process on server side and leave it open all the time till server goes down.",
+        "acceptance_criteria": [],
+        "dependencies": [],
+        "estimated_effort": "",
+        "files_affected": [],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "[IN-PROGRESS]"
       }
     }
   }

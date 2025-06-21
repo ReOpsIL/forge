@@ -9,6 +9,7 @@ import FlowView from './components/FlowView'
 import ProjectView from './components/ProjectView'
 import PromptSettingsView from './components/PromptSettingsView'
 import LoggerView from './components/LoggerView'
+import ChatView from './components/ChatView'
 import useGit from './Git'
 import './App.css'
 
@@ -92,6 +93,13 @@ function App() {
                 }
             }
         },
+        {
+            label: 'Chat',
+            icon: 'pi pi-fw pi-comments',
+            command: () => {
+                setActiveView('chat')
+            }
+        },
         git.getBuildMenuItem(),
         git.getImportSpecMenuItem(),
         git.getGitMenuItems()
@@ -109,6 +117,8 @@ function App() {
                 return <PromptSettingsView setActiveView={setActiveView}/>
             case 'logger':
                 return <LoggerView/>
+            case 'chat':
+                return <ChatView/>
             case 'help':
                 return (
                     <div className="content">
