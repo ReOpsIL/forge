@@ -128,10 +128,7 @@ function App() {
                 )
             default:
                 return (
-                    <div className="welcome-content">
-                        <h1>Welcome to Forge</h1>
-                        <p>Select an option from the menu above to get started.</p>
-                    </div>
+                    <div className="welcome-content"></div>
                 )
         }
     }

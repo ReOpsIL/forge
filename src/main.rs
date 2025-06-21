@@ -21,7 +21,7 @@ use block_config::{BlockConfigManager, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
     delete_block_handler, add_task_handler, remove_task_handler, generate_sample_config_handler, enhance_block_handler,
-    auto_complete_handler, execute_task_handler, process_markdown_handler, get_block_dependencies_handler
+    auto_complete_handler, process_markdown_handler, get_block_dependencies_handler
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
@@ -148,7 +148,6 @@ async fn main() -> std::io::Result<()> {
                     .route("/blocks/{block_id}/enhance", web::put().to(enhance_block_handler))
                     .route("/blocks/{block_id}/generate-tasks", web::put().to(generate_tasks_block_handler))
                     .route("/blocks/auto-complete", web::post().to(auto_complete_handler))
-                    .route("/blocks/execute-task", web::post().to(execute_task_handler))
                     .route("/blocks/process-markdown", web::post().to(process_markdown_handler))
                     .route("/blocks/process-spec", web::post().to(process_spec_handler))
                     .route("/blocks/{blockId}/dependencies", web::get().to(get_block_dependencies_handler))

@@ -47,6 +47,7 @@ const BlocksView = () => {
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
     const [currentImportBlock, setCurrentImportBlock] = useState(null);
     const [resolveDependencies, setResolveDependencies] = useState(false);
+    const [forceCompleted, setForceCompleted] = useState(false);
     const [showDependencyTreeDialog, setShowDependencyTreeDialog] = useState(false);
     const [currentDependencyBlock, setCurrentDependencyBlock] = useState(null);
     const fileInputRef = useRef(null);
@@ -721,120 +722,6 @@ const BlocksView = () => {
         });
     };
 
-    // Execute a single task
-    const executeTask = async (block_id, taskId) => {
-        // Find the block and task
-        const block = blocks.find(b => b.block_id === block_id);
-        if (!block) {
-            throw new Error(`Block ${block_id} not found`);
-        }
-
-        const task = block.todo_list[taskId];
-        if (!task) {
-            throw new Error(`Task ${taskId} not found in block ${block_id}`);
-        }
-
-        // Set the task as running
-        setRunningTasks(prev => ({
-            ...prev,
-            [`${block_id}-${task.task_id}`]: true
-        }));
-
-        try {
-            const response = await fetch('/api/git/execute-task', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    block_id: block_id,
-                    task_id: task.task_id,
-                    task_description: task.description
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Failed to execute task: ${errorText}`);
-            }
-
-            // The task is now running in the background
-            // We'll keep the running state until we refresh the blocks
-            // and see that the task has been marked as completed
-
-            // Set up a polling mechanism to check if the task has completed
-            const checkTaskStatus = async () => {
-                try {
-                    // Fetch the latest blocks
-                    const blocksResponse = await fetch('/api/blocks');
-                    if (!blocksResponse.ok) {
-                        throw new Error('Failed to fetch blocks');
-                    }
-
-                    const updatedBlocks = await blocksResponse.json();
-                    const updatedBlock = updatedBlocks.find(b => b.block_id === block_id);
-
-                    if (updatedBlock) {
-                        // Find the task by task_id
-                        const updatedTask = Object.values(updatedBlock.todo_list).find(t => t.task_id === task.task_id);
-
-                        // Check if the task has been marked as completed
-                        if (updatedTask && updatedTask.description && updatedTask.description.includes('[COMPLETED]')) {
-                            // Update the blocks state
-                            setBlocks(updatedBlocks);
-
-                            // Set the task as not running
-                            setRunningTasks(prev => ({
-                                ...prev,
-                                [`${block_id}-${task.task_id}`]: false
-                            }));
-
-                            // Show success message
-                            toastRef.current.show({
-                                severity: 'success',
-                                summary: 'Success',
-                                detail: 'Task executed successfully',
-                                life: 3000
-                            });
-
-                            return;
-                        }
-                    }
-
-                    // If the task is still running, check again after 2 seconds
-                    setTimeout(checkTaskStatus, 2000);
-                } catch (error) {
-                    console.error('Error checking task status:', error);
-
-                    // If there's an error, stop polling and set the task as not running
-                    setRunningTasks(prev => ({
-                        ...prev,
-                        [`${block_id}-${task.task_id}`]: false
-                    }));
-                }
-            };
-
-            // Start polling after 2 seconds
-            setTimeout(checkTaskStatus, 2000);
-        } catch (error) {
-            console.error('Error executing task:', error);
-
-            // Show error message
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: `Failed to execute task: ${error.message}`,
-                life: 3000
-            });
-
-            // Set the task as not running
-            setRunningTasks(prev => ({
-                ...prev,
-                [`${block_id}-${taskIndex}`]: false
-            }));
-        }
-    };
-
     // Execute a single task with Git integration
     const executeGitTask = async (block_id, taskId) => {
         // Find the block and task
@@ -865,7 +752,8 @@ const BlocksView = () => {
                     block_id: block_id,
                     task_id: task.task_id,
                     task_description: task.description,
-                    resolve_dependencies: resolveDependencies
+                    resolve_dependencies: resolveDependencies,
+                    force_completed: forceCompleted
                 }),
             });
 
@@ -951,21 +839,6 @@ const BlocksView = () => {
         }
     };
 
-    // Execute selected tasks or all tasks if none selected
-    const executeSelectedTasks = (block_id) => {
-        const block = blocks.find(b => b.block_id === block_id);
-        if (!block) return;
-
-        const tasksToExecute = selectedTasks[block_id]?.length > 0
-            ? selectedTasks[block_id].map(index => block.todo_list[index])
-            : Object.values(block.todo_list);
-
-        tasksToExecute.forEach(task => {
-            if (task) {
-                executeTask(block_id, task.task_id);
-            }
-        });
-    };
 
     // Execute selected tasks with Git integration
     const executeSelectedGitTasks = (block_id) => {
@@ -1983,21 +1856,13 @@ const BlocksView = () => {
                                                 tooltip="Create new task"
                                                 tooltipOptions={{position: 'top'}}
                                             />
-                                            <Button
-                                                icon="pi pi-play"
-                                                className="p-button-sm p-button-success ml-2"
-                                                onClick={() => executeSelectedTasks(block.block_id)}
-                                                disabled={areTasksRunning(block.block_id)}
-                                                tooltip="Run Tasks"
-                                                tooltipOptions={{position: 'top'}}
-                                            />
                                             <div className="flex align-items-center">
                                                 <Button
-                                                    icon="pi pi-github"
+                                                    icon="pi pi-hammer"
                                                     className="p-button-sm p-button-info ml-2"
                                                     onClick={() => executeSelectedGitTasks(block.block_id)}
                                                     disabled={areTasksRunning(block.block_id)}
-                                                    tooltip="Run Tasks with Git Integration"
+                                                    tooltip="Run Tasks"
                                                     tooltipOptions={{position: 'top'}}
                                                 />
                                                 <div className="ml-2 flex align-items-center">
@@ -2009,6 +1874,16 @@ const BlocksView = () => {
                                                         tooltipOptions={{position: 'top'}}
                                                     />
                                                     <label htmlFor="resolve-dependencies" className="ml-1 text-sm">Dep</label>
+                                                </div>
+                                                <div className="ml-2 flex align-items-center">
+                                                    <Checkbox
+                                                        inputId="force-complete"
+                                                        checked={forceCompleted}
+                                                        onChange={e => setForceCompleted(e.checked)}
+                                                        tooltip="Force complete"
+                                                        tooltipOptions={{position: 'top'}}
+                                                    />
+                                                    <label htmlFor="force-complete" className="ml-1 text-sm">Force</label>
                                                 </div>
                                             </div>
                                             <Button
