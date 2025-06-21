@@ -1877,13 +1877,13 @@ const BlocksView = () => {
                                                 </div>
                                                 <div className="ml-2 flex align-items-center">
                                                     <Checkbox
-                                                        inputId="force-complete"
+                                                        inputId="force-completed"
                                                         checked={forceCompleted}
                                                         onChange={e => setForceCompleted(e.checked)}
-                                                        tooltip="Force complete"
+                                                        tooltip="Force completed"
                                                         tooltipOptions={{position: 'top'}}
                                                     />
-                                                    <label htmlFor="force-complete" className="ml-1 text-sm">Force</label>
+                                                    <label htmlFor="force-completed" className="ml-1 text-sm">Force</label>
                                                 </div>
                                             </div>
                                             <Button

@@ -582,7 +582,7 @@ impl TaskExecutor {
         if !tasks.contains_key(&task_id.to_string()) {
             return Err(format!("Task {} not found in block {}", task_id, block_id));
         }
-
+        
         // Set to track visited tasks (for cycle detection)
         let mut visited = HashSet::new();
         // Set to track tasks in the current recursion stack (for cycle detection)
@@ -597,7 +597,7 @@ impl TaskExecutor {
             task.status.contains("[COMPLETED]")
         };
 
-        if force_completed == false {
+        if !force_completed {
             // Identify completed tasks
             for (id, task) in &block.todo_list {
                 if is_task_completed(task) {

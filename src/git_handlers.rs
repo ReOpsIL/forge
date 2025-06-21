@@ -473,8 +473,7 @@ pub async fn execute_git_task_handler(
     let request = request.into_inner();
     let resolve_dependencies = request.resolve_dependencies;
     let force_completed = request.force_completed;
-    println!("force_completed: {}",force_completed);
-
+    
     let result= enqueue_task(&*request.block_id, &*request.task_id, &*request.task_description, resolve_dependencies, force_completed);
     match result {
         Ok(_) => {

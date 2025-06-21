@@ -241,6 +241,7 @@ pub async fn get_block_dependencies_handler(path: web::Path<String>, data: web::
     HttpResponse::Ok().json(response)
 }
 
+
 // API endpoint to delete a block
 pub async fn delete_block_handler(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let block_id = path.into_inner();
