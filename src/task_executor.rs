@@ -92,11 +92,13 @@ impl TaskExecutor {
 
         let task_opt = block.todo_list.get(task_id).unwrap();
 
-        // Get the task description
-        let task_description = task_opt.description.clone();
-        if task_description.is_empty() {
+        if task_opt.description.is_empty() {
             return Err("Task description cannot be empty".to_string());
         }
+        
+        // Get the task prompt
+        let task_prompt = task_opt.to_prompt();
+        
 
         // Clear any existing logs for this task
         log_stream::clear_logs(&log_task_id);
@@ -168,10 +170,11 @@ impl TaskExecutor {
                 return Err(error_msg);
             }
         };
-
+        
+        
         // Write the task description to the command's stdin
         if let Some(mut stdin) = child.stdin.take() {
-            if let Err(e) = stdin.write_all(task_description.as_bytes()) {
+            if let Err(e) = stdin.write_all(task_prompt.as_bytes()) {
                 let error_msg = format!("Failed to write to Claude CLI stdin: {}", e);
                 log_stream::add_log(&log_task_id, error_msg.clone());
                 return Err(error_msg);
@@ -252,8 +255,8 @@ impl TaskExecutor {
             return Err(get_logs_str(task_id));
         }
 
-        // Use task description as a commit message
-        let commit_message = task_description.lines().next().unwrap_or("Task execution").to_string();
+        // Use the task description as a commit message
+        let commit_message = task_opt.description.lines().next().unwrap_or("Task execution").to_string();
         let commit_output = Command::new("git")
             .arg("commit")
             .arg("-m")

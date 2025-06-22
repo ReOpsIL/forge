@@ -17,6 +17,7 @@ mod task_executor_wrapper;
 mod task_queue;
 mod log_stream;
 mod chat_handlers;
+mod claude_mcp_server;
 use block_config::{BlockConfigManager, generate_sample_config};
 use block_handlers::{
     AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
@@ -39,6 +40,7 @@ use crate::task_executor::TaskExecutor;
 use crate::task_executor_wrapper::initialize as init_task_executor;
 use crate::log_stream::{stream_logs, get_task_ids};
 use crate::chat_handlers::{ChatAppState, chat_websocket};
+use crate::claude_mcp_server::{ClaudeMCPAppState, claude_chat_handler, claude_models_handler};
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
@@ -126,8 +128,10 @@ async fn main() -> std::io::Result<()> {
         project_manager: project_manager.clone(),
         block_manager: block_manager.clone(),
     });
-    
+
     let chat_app_state = web::Data::new(ChatAppState::new());
+
+    let claude_mcp_app_state = web::Data::new(ClaudeMCPAppState::new(project_manager.clone()));
 
     HttpServer::new(move || {
         App::new()
@@ -135,6 +139,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(project_app_state.clone())
             .app_data(git_app_state.clone())
             .app_data(chat_app_state.clone())
+            .app_data(claude_mcp_app_state.clone())
             // API routes
             .service(
                 web::scope("/api")
@@ -174,6 +179,9 @@ async fn main() -> std::io::Result<()> {
                     .route("/logs/tasks", web::get().to(get_task_ids))
                     // Chat routes
                     .route("/chat/ws", web::get().to(chat_websocket))
+                    // Claude MCP routes
+                    .route("/claude/chat", web::post().to(claude_chat_handler))
+                    .route("/claude/models", web::get().to(claude_models_handler))
             )
 
             // Serve static files from the frontend/dist directory
