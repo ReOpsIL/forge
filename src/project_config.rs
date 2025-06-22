@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::{env, fs};
-use std::io::{self, ErrorKind};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::io::{self};
+use std::path::Path;
+use std::sync::Mutex;
+use std::fs;
 
 pub const PROJECT_CONFIG_FILE: &str = "project_config.json";
 
@@ -237,6 +237,7 @@ impl Default for ProjectConfig {
     }
 }
 
+#[derive(Debug)]
 pub struct ProjectConfigManager {
     config_file: String,
     config: Mutex<ProjectConfig>,

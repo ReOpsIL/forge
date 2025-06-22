@@ -1,8 +1,8 @@
-use actix_web::{web, HttpResponse, Responder, Error};
+use crate::profession_prompts::{self, ProfessionCategory};
+use crate::project_config::{test_git_connection, ProjectConfig, ProjectConfigManager};
+use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use crate::project_config::{ProjectConfig, ProjectConfigManager, test_git_connection};
-use crate::profession_prompts::{self, Profession, ProfessionCategory};
 
 // AppState for project handlers
 pub struct ProjectAppState {

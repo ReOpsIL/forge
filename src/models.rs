@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use rand::{Rng, distributions::Alphanumeric};
 use crate::llm_handler::BlockConnection;
+use rand::{distributions::Alphanumeric, Rng};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // Define the structure for a task
 
@@ -136,7 +136,7 @@ impl Task {
 }
 
 // Define the structure for module connections
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InputConnection {
     pub from_module: String,
     pub output_type: String,
@@ -160,21 +160,21 @@ impl InputConnection {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct OutputConnection {
     pub to_module: String,
     pub input_type: String,
     pub output_id: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Connections {
     pub input_connections: Vec<InputConnection>,
     pub output_connections: Vec<OutputConnection>,
 }
 
 // Define the structure for a software module
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Block {
     pub name: String,
     pub block_id: String,

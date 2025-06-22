@@ -1,21 +1,12 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use actix_web::{web, Responder, HttpResponse};
-use std::sync::{Arc, Mutex};
-use serde::{Serialize, Deserialize};
+use actix_web::{web, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::process::{Command, Stdio};
-use std::io::Write;
-use std::path::Path;
-use std::time::Duration;
-use serde::de::Unexpected::Option;
-use tokio::task;
-use std::thread;
+use std::sync::Arc;
 
-use crate::block_config::{BlockConfigManager, generate_sample_config};
-use crate::models::{Block, Task};
+use crate::block_config::{generate_sample_config, BlockConfigManager};
 use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec};
+use crate::models::{Block, Task};
 use crate::project_config::ProjectConfigManager;
-use crate::task_executor::TaskExecutor;
 
 // Define a response type for block dependencies
 #[derive(Serialize)]

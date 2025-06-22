@@ -1,3 +1,9 @@
+use crate::block_config::BlockConfigManager;
+use crate::log_stream;
+use crate::log_stream::get_logs_str;
+use crate::models::Task;
+use crate::project_config::ProjectConfigManager;
+use crate::task_queue::QueuedTask;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
@@ -5,12 +11,6 @@ use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
-use crate::log_stream;
-use crate::project_config::ProjectConfigManager;
-use crate::block_config::BlockConfigManager;
-use crate::log_stream::get_logs_str;
-use crate::models::Task;
-use crate::task_queue::QueuedTask;
 
 // Singleton task executor that manages a global execution queue
 pub struct TaskExecutor {

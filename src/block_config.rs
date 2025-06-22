@@ -1,14 +1,15 @@
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
-use std::io::{self, Write};
-use serde_json;
-use rand::{Rng, distributions::Alphanumeric};
 use crate::llm_handler::BlockConnection;
 use crate::models::{Block, Connections, InputConnection, OutputConnection, Task};
+use rand::{distributions::Alphanumeric, Rng};
+use serde_json;
+use std::collections::HashMap;
+use std::fs;
+use std::io::{self, Write};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 // Struct to manage block configurations
+#[derive(Debug)]
 pub struct BlockConfigManager {
     blocks: Arc<Mutex<Vec<Block>>>,
     config_file: String,

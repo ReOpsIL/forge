@@ -1,56 +1,247 @@
 [
   {
-    "name": "Claude",
-    "block_id": "4zRHvC",
-    "description": "chat with claude",
-    "inputs": [],
-    "outputs": [],
+    "name": "GameStateManager",
+    "block_id": "oceUDc",
+    "description": "A central state management hook or store (e.g., using React Context or Zustand) that manages the entire lifecycle of a poker hand. It tracks the game stage ('pre-deal', 'hole', 'flop', 'turn', 'river', 'showdown'), the player's hole cards, the community cards, and the final evaluated hand result. It orchestrates calls to the DeckManager, HandEvaluator, and GeminiCommentaryGenerator in response to user actions.",
+    "inputs": [
+      {
+        "name": "action",
+        "ctype": "object",
+        "description": "A dispatched action object, e.g., { type: 'NEW_HAND' } or { type: 'ADVANCE_STAGE' }."
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gameState",
+        "ctype": "object",
+        "description": "The comprehensive state object including { stage: string, holeCards: Card[], communityCards: Card[], evaluatedHand: object | null, commentary: string | null, isEvaluating: boolean }."
+      }
+    ],
     "connections": {
       "input_connections": [],
       "output_connections": []
     },
     "todo_list": {
-      "ugylxu": {
-        "task_id": "ugylxu",
-        "task_name": "Suggest features",
-        "description": "Ask Gemini or Claude to suggest new cool innovative features",
-        "acceptance_criteria": [],
-        "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
-        "function_signatures": [],
-        "testing_requirements": [],
+      "dl3hdc": {
+        "task_id": "dl3hdc",
+        "task_name": "Implement 'Deal Hole Cards' Action",
+        "description": "Create an action within the store named `dealHoleCards`. This action will call a `DeckManager` to draw two cards, update the `holeCards` state, and advance the `gameStage` to 'hole'.",
+        "acceptance_criteria": [
+          "An action `dealHoleCards` is added to the store.",
+          "Calling `dealHoleCards` populates the `holeCards` array in the state with two cards.",
+          "The `gameStage` state is updated to 'hole'.",
+          "The `DeckManager.drawCards(2)` method is called."
+        ],
+        "dependencies": [
+          "hk2str",
+          "DeckManager"
+        ],
+        "estimated_effort": "M",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts"
+        ],
+        "function_signatures": [
+          "dealHoleCards: () => void;"
+        ],
+        "testing_requirements": [
+          "Mock the `DeckManager` to return a specific pair of cards.",
+          "Call the action and assert that the `holeCards` and `gameStage` state slices are updated as expected."
+        ],
         "log": "",
         "commit_id": "",
-        "status": "TODO"
+        "status": "[TODO]"
       },
-      "kds0or": {
-        "task_id": "kds0or",
-        "task_name": "Docs",
-        "description": "Update product docs",
-        "acceptance_criteria": [],
-        "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
+      "in8gmn": {
+        "task_id": "in8gmn",
+        "task_name": "Integrate Gemini Commentary Generator",
+        "description": "After a hand is evaluated (on flop, turn, river), make an asynchronous call to the `GeminiCommentaryGenerator`. The returned commentary should be stored in the state. Add state to handle loading and error status for the commentary.",
+        "acceptance_criteria": [
+          "New state properties `commentary: string`, `isCommentaryLoading: boolean`, and `commentaryError: string | null` are added to the store.",
+          "`GeminiCommentaryGenerator.getCommentary()` is called with hand data after evaluation.",
+          "`isCommentaryLoading` is true during the async call.",
+          "The `commentary` state is updated on a successful response."
+        ],
+        "dependencies": [
+          "in6evl",
+          "GeminiCommentaryGenerator"
+        ],
+        "estimated_effort": "L",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts",
+          "src/state/poker/pokerHandTypes.ts"
+        ],
         "function_signatures": [],
-        "testing_requirements": [],
+        "testing_requirements": [
+          "Mock the `GeminiCommentaryGenerator` service.",
+          "Verify that `isCommentaryLoading` is set correctly during the request.",
+          "Verify that `commentary` state is updated upon successful mock resolution."
+        ],
         "log": "",
         "commit_id": "",
-        "status": "TODO"
+        "status": "[TODO]"
       },
-      "squ3t0": {
-        "task_id": "squ3t0",
-        "task_name": "Claude",
-        "description": "Add new \"Chat\" page. The Chat page will use a Terminal component to display and interact with \"Claude\" executable on server side. Add new backend component that starts \"Claude\" and streams / interact with \"Terminal\" component on user side. When user select \"Chat\" page for the first time - start the \"Claude\" process on server side and leave it open all the time till server goes down.",
-        "acceptance_criteria": [],
+      "hk2str": {
+        "task_id": "hk2str",
+        "task_name": "Implement Basic `usePokerHand` Store Structure",
+        "description": "Set up the basic structure for the `usePokerHand` Zustand store. Initialize it with the `initialPokerHandState` and export the hook for consumption in React components. [COMPLETED] [FAILED]",
+        "acceptance_criteria": [
+          "A `pokerHandStore.ts` file is created.",
+          "The store is created using Zustand's `create` function.",
+          "The store exposes the complete state defined in `pokerHandTypes.ts`.",
+          "The `usePokerHand` hook can be imported and used in a component without errors."
+        ],
+        "dependencies": [
+          "tk1def"
+        ],
+        "estimated_effort": "S",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts"
+        ],
+        "function_signatures": [
+          "export const usePokerHand = create<PokerHandState & PokerHandActions>((set) => ({ ...initialPokerHandState, ...actions }));"
+        ],
+        "testing_requirements": [
+          "Write a basic unit test to render the hook and assert that the initial state is returned correctly."
+        ],
+        "log": "Step 1: Pulling latest main branch hk2str\nStep 2: Creating task-specific branch using task ID hk2str\nStep 3: Executing task hk2str\nStep 1: Pulling latest main branch hk2str\nStep 2: Creating task-specific branch using task ID hk2str\nStep 3: Executing task hk2str\n",
+        "commit_id": "No commit id",
+        "status": "[FAILED]"
+      },
+      "tk1def": {
+        "task_id": "tk1def",
+        "task_name": "Define Poker Hand State Shape and Types",
+        "description": "Create the TypeScript interfaces for the poker hand state, including the game stage (as a string literal union), card objects, hole cards, community cards, and the hand evaluation result. Define the initial state constant. [COMPLETED] [COMPLETED] [FAILED]",
+        "acceptance_criteria": [
+          "A `types.ts` file is created within the component's directory.",
+          "An interface `PokerHandState` is defined and exported.",
+          "An interface `Card` is defined and exported.",
+          "A type `GameStage` is defined and exported.",
+          "An `initialPokerHandState` constant is defined and exported."
+        ],
         "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
-        "function_signatures": [],
-        "testing_requirements": [],
+        "estimated_effort": "S",
+        "files_affected": [
+          "src/state/poker/pokerHandTypes.ts"
+        ],
+        "function_signatures": [
+          "export type GameStage = 'pre-deal' | 'hole' | 'flop' | 'turn' | 'river' | 'showdown';",
+          "export interface Card { suit: string; rank: string; }",
+          "export interface HandResult { name: string; value: number; }",
+          "export interface PokerHandState { gameStage: GameStage; holeCards: Card[]; communityCards: Card[]; handResult: HandResult | null; }"
+        ],
+        "testing_requirements": [
+          "No runtime tests needed; TypeScript compiler checks are sufficient."
+        ],
+        "log": "Step 1: Pulling latest main branch tk1def\nStep 2: Creating task-specific branch using task ID tk1def\nStep 3: Executing task tk1def\nStep 1: Pulling latest main branch tk1def\nStep 2: Creating task-specific branch using task ID tk1def\nStep 3: Executing task tk1def\nStep 1: Pulling latest main branch tk1def\nStep 2: Creating task-specific branch using task ID tk1def\nStep 3: Executing task tk1def\n",
+        "commit_id": "No commit id",
+        "status": "[FAILED]"
+      },
+      "rs7hnd": {
+        "task_id": "rs7hnd",
+        "task_name": "Implement 'Showdown' and 'Reset Hand' Actions",
+        "description": "Create a `showdown` action to set the `gameStage` to 'showdown'. Create a `resetHand` action that reverts the entire store to its `initialPokerHandState`, preparing it for a new hand. The reset action should also trigger a shuffle in the `DeckManager`.",
+        "acceptance_criteria": [
+          "Calling `showdown()` sets `gameStage` to 'showdown'.",
+          "Calling `resetHand()` sets all state properties back to their initial values.",
+          "`DeckManager.shuffle()` is invoked when `resetHand()` is called."
+        ],
+        "dependencies": [
+          "in6evl"
+        ],
+        "estimated_effort": "M",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts"
+        ],
+        "function_signatures": [
+          "showdown: () => void;",
+          "resetHand: () => void;"
+        ],
+        "testing_requirements": [
+          "Test that calling `resetHand` correctly clears all relevant state slices (`holeCards`, `communityCards`, etc.).",
+          "Test the `showdown` action correctly updates the game stage."
+        ],
         "log": "",
         "commit_id": "",
-        "status": "[COMPLETED]"
+        "status": "[TODO]"
+      },
+      "dl5tnr": {
+        "task_id": "dl5tnr",
+        "task_name": "Implement 'Deal Turn' and 'Deal River' Actions",
+        "description": "Create two new actions: `dealTurn` and `dealRiver`. Each will draw one card from `DeckManager`, append it to the existing `communityCards`, and update the `gameStage` accordingly.",
+        "acceptance_criteria": [
+          "Calling `dealTurn` adds one card to `communityCards` (for a total of 4) and sets `gameStage` to 'turn'.",
+          "Calling `dealRiver` adds one card to `communityCards` (for a total of 5) and sets `gameStage` to 'river'."
+        ],
+        "dependencies": [
+          "dl4flp"
+        ],
+        "estimated_effort": "M",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts"
+        ],
+        "function_signatures": [
+          "dealTurn: () => void;",
+          "dealRiver: () => void;"
+        ],
+        "testing_requirements": [
+          "Write separate tests for `dealTurn` and `dealRiver` to verify the `communityCards` array is appended to correctly.",
+          "Assert `gameStage` is updated correctly for each action."
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "[TODO]"
+      },
+      "in6evl": {
+        "task_id": "in6evl",
+        "task_name": "Integrate HandEvaluator on Card Updates",
+        "description": "Modify the `dealFlop`, `dealTurn`, and `dealRiver` actions to call the `HandEvaluator` with the current `holeCards` and `communityCards`. Store the evaluation result in the `handResult` state.",
+        "acceptance_criteria": [
+          "The `handResult` state is updated with a valid result after the flop, turn, and river are dealt.",
+          "The `HandEvaluator.evaluate()` function is called with a combined array of 5, 6, and 7 cards respectively.",
+          "`handResult` remains null before the flop."
+        ],
+        "dependencies": [
+          "dl5tnr",
+          "HandEvaluator"
+        ],
+        "estimated_effort": "M",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Mock the `HandEvaluator` to return a known result (e.g., 'Two Pair').",
+          "Verify `handResult` state is updated correctly after each relevant action is called."
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "[TODO]"
+      },
+      "dl4flp": {
+        "task_id": "dl4flp",
+        "task_name": "Implement 'Deal Flop' Action",
+        "description": "Create an action `dealFlop`. It will call `DeckManager` to draw three community cards, update the `communityCards` state, and advance the `gameStage` to 'flop'.",
+        "acceptance_criteria": [
+          "An action `dealFlop` is added to the store.",
+          "Calling `dealFlop` populates the `communityCards` array with three cards.",
+          "The `gameStage` state is updated to 'flop'."
+        ],
+        "dependencies": [
+          "dl3hdc"
+        ],
+        "estimated_effort": "S",
+        "files_affected": [
+          "src/state/poker/pokerHandStore.ts"
+        ],
+        "function_signatures": [
+          "dealFlop: () => void;"
+        ],
+        "testing_requirements": [
+          "Mock the `DeckManager`, call the action, and assert the `communityCards` array has 3 cards and the stage is 'flop'."
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "[TODO]"
       }
     }
   }

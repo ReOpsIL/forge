@@ -1,9 +1,9 @@
-use actix_web::{web, HttpResponse, Error};
-use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use std::env;
+use crate::project_config::ProjectConfigManager;
+use actix_web::{web, Error, HttpResponse};
 use reqwest::Client;
-use crate::project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
+use serde::{Deserialize, Serialize};
+use std::env;
+use std::sync::Arc;
 
 // Constants for Anthropic API
 const ANTHROPIC_API_URL: &str = "https://api.anthropic.com/v1/messages";

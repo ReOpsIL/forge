@@ -1,7 +1,7 @@
-use std::sync::Arc;
 use crate::block_config::BlockConfigManager;
 use crate::project_config::ProjectConfigManager;
-use crate::task_executor::{TaskExecutor, init_task_executor, get_task_executor};
+use crate::task_executor::{get_task_executor, init_task_executor, TaskExecutor};
+use std::sync::Arc;
 
 // Initialize the task executor
 pub fn initialize(product_manager: Arc<ProjectConfigManager>, block_manager: Arc<BlockConfigManager>) -> Arc<TaskExecutor> {

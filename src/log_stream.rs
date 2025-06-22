@@ -1,14 +1,13 @@
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
-use actix_web::{web, HttpResponse, Responder};
 use actix_web::http::header::{ContentType, CACHE_CONTROL};
+use actix_web::web::Bytes;
+use actix_web::{web, HttpResponse, Responder};
+use futures::stream::StreamExt;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio::time::interval;
 use tokio_stream::wrappers::ReceiverStream;
-use actix_web::web::Bytes;
-use futures::stream::StreamExt;
-use crate::log_stream;
 
 // Structure to hold log entries for each task
 #[derive(Debug, Clone)]

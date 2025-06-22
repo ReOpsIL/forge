@@ -1,7 +1,7 @@
-use actix_web::{web, App, HttpServer, Responder, Error};
 use actix_files as fs;
-use std::sync::Arc;
+use actix_web::{web, App, HttpServer, Responder};
 use dotenv::dotenv;
+use std::sync::Arc;
 
 // Import models from the models module
 mod models;
@@ -18,29 +18,30 @@ mod task_queue;
 mod log_stream;
 mod chat_handlers;
 mod claude_mcp_server;
-use block_config::{BlockConfigManager, generate_sample_config};
+mod mcp;
+use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
+use crate::git_handlers::pull_handler;
+use block_config::{generate_sample_config, BlockConfigManager};
 use block_handlers::{
-    AppState, BLOCK_CONFIG_FILE, get_blocks_handler, add_block_handler, update_block_handler,
-    delete_block_handler, add_task_handler, remove_task_handler, generate_sample_config_handler, enhance_block_handler,
-    auto_complete_handler, process_markdown_handler, get_block_dependencies_handler
+    add_block_handler, add_task_handler, auto_complete_handler, delete_block_handler, enhance_block_handler,
+    generate_sample_config_handler, get_block_dependencies_handler, get_blocks_handler, process_markdown_handler, remove_task_handler,
+    update_block_handler, AppState, BLOCK_CONFIG_FILE
+};
+use git_handlers::{
+    build_handler, commit_handler, create_branch_handler, execute_git_task_handler, get_branches_handler, get_task_diff_handler,
+    merge_branch_handler, push_handler, GitAppState
 };
 use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
 use project_handlers::{
-    ProjectAppState, get_project_config_handler, update_project_config_handler, test_git_connection_handler,
-    check_project_config_handler, get_professions_handler, get_profession_prompts_handler
+    check_project_config_handler, get_profession_prompts_handler, get_professions_handler, get_project_config_handler,
+    test_git_connection_handler, update_project_config_handler, ProjectAppState
 };
-use git_handlers::{
-    GitAppState, create_branch_handler, commit_handler, merge_branch_handler, push_handler, build_handler,
-    execute_git_task_handler, get_task_diff_handler, get_branches_handler
-};
-use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
-use crate::git_handlers::pull_handler;
 
-use crate::task_executor::TaskExecutor;
+use crate::chat_handlers::{chat_websocket, ChatAppState};
+use crate::claude_mcp_server::{claude_chat_handler, claude_models_handler, ClaudeMCPAppState};
+use crate::log_stream::{get_task_ids, stream_logs};
+use crate::mcp::{server::MCPServerConfig, MCPServer};
 use crate::task_executor_wrapper::initialize as init_task_executor;
-use crate::log_stream::{stream_logs, get_task_ids};
-use crate::chat_handlers::{ChatAppState, chat_websocket};
-use crate::claude_mcp_server::{ClaudeMCPAppState, claude_chat_handler, claude_models_handler};
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
@@ -132,6 +133,40 @@ async fn main() -> std::io::Result<()> {
     let chat_app_state = web::Data::new(ChatAppState::new());
 
     let claude_mcp_app_state = web::Data::new(ClaudeMCPAppState::new(project_manager.clone()));
+
+    // Initialize MCP Server
+    println!("Initializing MCP Server...");
+    let mcp_config = MCPServerConfig {
+        working_directory: std::path::PathBuf::from(&project_config.project_home_directory)
+            .canonicalize()
+            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"))),
+        max_sessions: 25,
+        session_timeout: std::time::Duration::from_secs(7200), // 2 hours
+        max_concurrent_tools: 8,
+        tool_timeout: std::time::Duration::from_secs(300), // 5 minutes
+        enable_monitoring: true,
+        enable_cleanup: true,
+        ..Default::default()
+    };
+    
+    match MCPServer::new(mcp_config, project_manager.clone(), block_manager.clone()).await {
+        Ok(mut mcp_server) => {
+            println!("MCP Server initialized successfully");
+            
+            // Start MCP server in background
+            tokio::spawn(async move {
+                if let Err(e) = mcp_server.start().await {
+                    eprintln!("MCP Server error: {}", e);
+                }
+            });
+            
+            println!("MCP Server started in background");
+        }
+        Err(e) => {
+            eprintln!("Failed to initialize MCP Server: {}", e);
+            eprintln!("Continuing without MCP Server...");
+        }
+    }
 
     HttpServer::new(move || {
         App::new()

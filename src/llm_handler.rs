@@ -1,17 +1,16 @@
-use std::collections::HashMap;
-use std::env;
-use std::sync::Arc;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 use crate::models::Task;
 use crate::project_config::{
-    ProjectConfigManager, PROJECT_CONFIG_FILE,
-    DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT,
-    DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT,
-    DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT, DEFAULT_GENERATE_TASKS_USER_PROMPT,
-    DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT
+    ProjectConfigManager, DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT,
+    DEFAULT_AUTO_COMPLETE_USER_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT,
+    DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT,
+    DEFAULT_GENERATE_TASKS_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT,
+    DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT, PROJECT_CONFIG_FILE
 };
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::env;
+use std::sync::Arc;
 
 // LLM Provider enum
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -502,7 +501,7 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
 // }
 
 // Define the structure for a block generated from a markdown specification
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockConnection {
     pub name: String,
     pub ctype: String,
