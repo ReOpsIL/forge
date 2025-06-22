@@ -408,7 +408,6 @@ impl TaskExecutor {
         if let Some(task_original) = task_opt {
             // Clone the task
             let mut task_updated = task_original.clone();
-
             // Update task fields
             task_updated.status = status.to_string();
             task_updated.description = format!("{} {}", task_updated.description, status);
@@ -582,7 +581,7 @@ impl TaskExecutor {
         if !tasks.contains_key(&task_id.to_string()) {
             return Err(format!("Task {} not found in block {}", task_id, block_id));
         }
-        
+
         // Set to track visited tasks (for cycle detection)
         let mut visited = HashSet::new();
         // Set to track tasks in the current recursion stack (for cycle detection)
