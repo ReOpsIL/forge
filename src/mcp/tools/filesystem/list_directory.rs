@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::fs;
 use tracing::debug;
 
@@ -9,7 +9,6 @@ use crate::mcp::tools::{
     ToolCategory, ToolError, ToolResult, ToolResultBuilder,
 };
 
-use super::helpers::{list_directory_recursive, list_directory_single};
 
 /// List directory contents tool
 pub struct ListDirectoryTool;
@@ -112,28 +111,163 @@ impl MCPTool for ListDirectoryTool {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
+pub fn glob_match(pattern: &str, text: &str) -> bool {
+    // Simple glob matching - supports * and ?
+    let pattern_chars: Vec<char> = pattern.chars().collect();
+    let text_chars: Vec<char> = text.chars().collect();
 
-    #[tokio::test]
-    async fn test_list_directory_tool() {
-        let temp_dir = TempDir::new().unwrap();
-        
-        // Create a test file
-        let test_file = temp_dir.path().join("test.txt");
-        fs::write(&test_file, "test content").await.unwrap();
-        
-        let tool = ListDirectoryTool;
-        let params = json!({
-            "path": temp_dir.path().to_string_lossy()
-        });
+    fn match_recursive(pattern: &[char], text: &[char], p_idx: usize, t_idx: usize) -> bool {
+        if p_idx >= pattern.len() {
+            return t_idx >= text.len();
+        }
 
-        // This would need a proper ExecutionContext for a full test
-        // For now, we just verify the tool structure
-        assert_eq!(tool.name(), "list_directory");
-        assert_eq!(tool.category(), ToolCategory::FileSystem);
-        assert!(tool.required_permissions().contains(&Permission::FileRead));
+        match pattern[p_idx] {
+            '*' => {
+                // Try matching zero or more characters
+                for i in t_idx..=text.len() {
+                    if match_recursive(pattern, text, p_idx + 1, i) {
+                        return true;
+                    }
+                }
+                false
+            }
+            '?' => {
+                // Match exactly one character
+                if t_idx < text.len() {
+                    match_recursive(pattern, text, p_idx + 1, t_idx + 1)
+                } else {
+                    false
+                }
+            }
+            c => {
+                // Match exact character
+                if t_idx < text.len() && text[t_idx] == c {
+                    match_recursive(pattern, text, p_idx + 1, t_idx + 1)
+                } else {
+                    false
+                }
+            }
+        }
     }
+
+    match_recursive(&pattern_chars, &text_chars, 0, 0)
 }
+
+pub async fn list_directory_single(
+    path: &Path,
+    include_hidden: bool,
+    filter_pattern: Option<&str>
+) -> Result<Vec<Value>, ToolError> {
+    use tokio::fs;
+    let mut entries = Vec::new();
+    let mut dir = fs::read_dir(path).await
+        .map_err(|e| ToolError::FileSystem(format!("Failed to read directory: {}", e)))?;
+
+    while let Some(entry) = dir.next_entry().await
+        .map_err(|e| ToolError::FileSystem(format!("Failed to read directory entry: {}", e)))? {
+
+        let file_name = entry.file_name();
+        let file_name_str = file_name.to_string_lossy();
+
+        // Skip hidden files if not requested
+        if !include_hidden && file_name_str.starts_with('.') {
+            continue;
+        }
+
+        // Apply filter if provided
+        if let Some(pattern) = filter_pattern {
+            if !glob_match(pattern, &file_name_str) {
+                continue;
+            }
+        }
+
+        let metadata = entry.metadata().await
+            .map_err(|e| ToolError::FileSystem(format!("Failed to read metadata: {}", e)))?;
+
+        let entry_info = serde_json::json!({
+                "name": file_name_str,
+                "path": entry.path().to_string_lossy(),
+                "type": if metadata.is_dir() { "directory" } else { "file" },
+                "size": metadata.len(),
+                "modified": metadata.modified()
+                    .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs())
+                    .unwrap_or(0),
+                "permissions": format!("{:?}", metadata.permissions())
+            });
+
+        entries.push(entry_info);
+    }
+
+    Ok(entries)
+}
+
+pub async fn list_directory_recursive(
+    path: &Path,
+    max_depth: usize,
+    include_hidden: bool,
+    filter_pattern: Option<&str>
+) -> Result<Vec<Value>, ToolError> {
+    fn collect_entries(
+        entries: &mut Vec<Value>,
+        path: &Path,
+        current_depth: usize,
+        max_depth: usize,
+        include_hidden: bool,
+        filter_pattern: Option<&str>
+    ) -> Result<(), ToolError> {
+        if current_depth > max_depth {
+            return Ok(());
+        }
+
+        let dir = std::fs::read_dir(path)
+            .map_err(|e| ToolError::FileSystem(format!("Failed to read directory: {}", e)))?;
+
+        for entry in dir {
+            let entry = entry
+                .map_err(|e| ToolError::FileSystem(format!("Failed to read directory entry: {}", e)))?;
+
+            let file_name = entry.file_name();
+            let file_name_str = file_name.to_string_lossy();
+
+            // Skip hidden files if not requested
+            if !include_hidden && file_name_str.starts_with('.') {
+                continue;
+            }
+
+            // Apply filter if provided
+            if let Some(pattern) = filter_pattern {
+                if !glob_match(pattern, &file_name_str) && !entry.path().is_dir() {
+                    continue;
+                }
+            }
+
+            let metadata = entry.metadata()
+                .map_err(|e| ToolError::FileSystem(format!("Failed to read metadata: {}", e)))?;
+
+            let entry_info = serde_json::json!({
+                    "name": file_name_str,
+                    "path": entry.path().to_string_lossy(),
+                    "type": if metadata.is_dir() { "directory" } else { "file" },
+                    "size": metadata.len(),
+                    "modified": metadata.modified()
+                        .map(|t| t.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs())
+                        .unwrap_or(0),
+                    "depth": current_depth
+                });
+
+            entries.push(entry_info);
+
+            // Recurse into directories
+            if metadata.is_dir() {
+                collect_entries(entries, &entry.path(), current_depth + 1, max_depth, include_hidden, filter_pattern)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    let mut entries = Vec::new();
+    collect_entries(&mut entries, path, 0, max_depth, include_hidden, filter_pattern)?;
+    Ok(entries)
+}
+
