@@ -1,7 +1,8 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::io::{self};
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::fs;
 
 pub const PROJECT_CONFIG_FILE: &str = "project_config.json";
@@ -237,6 +238,11 @@ impl Default for ProjectConfig {
     }
 }
 
+// Global singleton instance
+lazy_static! {
+    static ref PROJECT_MANAGER: Arc<ProjectConfigManager> = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+}
+
 #[derive(Debug)]
 pub struct ProjectConfigManager {
     config_file: String,
@@ -244,6 +250,11 @@ pub struct ProjectConfigManager {
 }
 
 impl ProjectConfigManager {
+    // Get the singleton instance
+    pub fn get_instance() -> Arc<ProjectConfigManager> {
+        PROJECT_MANAGER.clone()
+    }
+
     pub fn new(config_file: &str) -> Self {
         Self {
             config_file: config_file.to_string(),

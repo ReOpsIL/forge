@@ -115,7 +115,7 @@ pub struct LLMProviderImpl {
 
 impl LLMProviderImpl {
     pub fn new(provider_type: LLMProvider) -> Self {
-        let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+        let project_manager = ProjectConfigManager::get_instance();
 
         let config = project_manager.load_config();
         // Load project configuration
@@ -325,7 +325,7 @@ pub async fn auto_complete_description(description: &str, provider_type: Option<
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
-    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
     // Get system prompt from config or use default
@@ -356,7 +356,7 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
-    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
     // Get system prompt from config or use default
@@ -396,7 +396,7 @@ pub async fn get_task_response(description: &str, provider_type: &Option<LLMProv
     let provider = LLMProviderImpl::new(provider_type.clone().unwrap_or_default());
 
     // Load project configuration to get custom prompts
-    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
     // Get system prompt from config or use default
@@ -532,7 +532,7 @@ pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
-    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
     // Get system prompt from config or use default
