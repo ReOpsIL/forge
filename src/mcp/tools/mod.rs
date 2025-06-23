@@ -4,8 +4,8 @@
 /// tool registration, validation, execution, and result handling.
 
 pub mod registry;
-pub mod filesystem;
 pub mod blocks;
+pub mod filesystem;
 
 // Re-export core tool types
 pub use self::registry::ToolRegistry;
