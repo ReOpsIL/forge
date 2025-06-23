@@ -1,7 +1,12 @@
 use actix_files as fs;
 use actix_web::{web, App, HttpServer, Responder};
+use clap::{Arg, Command};
 use dotenv::dotenv;
 use std::sync::Arc;
+use std::thread;
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::{self, fmt, prelude::*, EnvFilter};
+use tracing_appender::{self, rolling};
 
 // Import models from the models module
 mod models;
@@ -21,7 +26,7 @@ mod claude_mcp_server;
 mod mcp;
 use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
 use crate::git_handlers::pull_handler;
-use block_config::{generate_sample_config, BlockConfigManager};
+use block_config::{generate_sample_config, BlockConfigManager, DEFAULT_BLOCK_CONFIG_FILE};
 use block_handlers::{
     add_block_handler, add_task_handler, auto_complete_handler, delete_block_handler, enhance_block_handler,
     generate_sample_config_handler, get_block_dependencies_handler, get_blocks_handler, process_markdown_handler, remove_task_handler,
@@ -41,33 +46,131 @@ use crate::chat_handlers::{chat_websocket, ChatAppState};
 use crate::claude_mcp_server::{claude_chat_handler, claude_models_handler, ClaudeMCPAppState};
 use crate::log_stream::{get_task_ids, stream_logs};
 use crate::mcp::{server::MCPServerConfig, MCPServer};
+use crate::mcp::transport::TransportFactory;
 use crate::task_executor_wrapper::initialize as init_task_executor;
+
+// Initialize the logger with file output
+fn init_logger(mode: &str) {
+    // Create a directory for logs if it doesn't exist
+    std::fs::create_dir_all("logs").unwrap_or_else(|e| {
+        eprintln!("Warning: Failed to create logs directory: {}", e);
+    });
+
+    // Set up rolling file appender - creates a new log file each day
+    let file_appender = rolling::daily("logs", format!("forge-{}", mode));
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+
+    // Store the guard in a static variable to keep it alive for the duration of the program
+    // This is important to ensure logs are properly flushed
+    lazy_static::lazy_static! {
+        static ref APPENDER_GUARD: std::sync::Mutex<Option<tracing_appender::non_blocking::WorkerGuard>> = std::sync::Mutex::new(None);
+    }
+    *APPENDER_GUARD.lock().unwrap() = Some(_guard);
+
+    // Initialize the subscriber with both console and file outputs
+    tracing_subscriber::registry()
+        .with(fmt::layer().with_writer(std::io::stdout))
+        .with(fmt::layer().with_writer(non_blocking))
+        .with(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .init();
+
+    info!("Logger initialized in {} mode", mode);
+}
 
 // Index handler to serve the frontend
 async fn index() -> impl Responder {
     fs::NamedFile::open_async("./frontend/dist/index.html").await
 }
 
+// Run MCP server in stdio mode
+async fn run_mcp_server(project_manager: Arc<ProjectConfigManager> , block_manager : Arc<BlockConfigManager>) -> std::io::Result<()> {
+    // Initialize tracing for MCP mode
 
-#[actix_web::main]
+    info!("Starting Forge MCP Server in stdio mode...");
+
+    // Load project config to get working directory
+    let project_config = project_manager.load_config().unwrap_or_default();
+
+    // Create MCP server configuration
+    let mcp_config = MCPServerConfig {
+        working_directory: if !project_config.project_home_directory.is_empty() {
+            std::path::PathBuf::from(&project_config.project_home_directory)
+                .canonicalize()
+                .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/")))
+        } else {
+            std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"))
+        },
+        max_sessions: 5, // Lower for stdio mode
+        session_timeout: std::time::Duration::from_secs(3600), // 1 hour
+        max_concurrent_tools: 4,
+        tool_timeout: std::time::Duration::from_secs(300), // 5 minutes
+        enable_monitoring: false, // Disable monitoring in stdio mode
+        enable_cleanup: true,
+        ..Default::default()
+    };
+
+    // Create MCP server
+    let mcp_server = match MCPServer::new(mcp_config, project_manager, block_manager).await {
+        Ok(server) => server,
+        Err(e) => {
+            error!("Failed to create MCP server: {}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+        }
+    };
+
+    // Create stdio transport
+    let transport = match TransportFactory::create_stdio().await {
+        Ok(transport) => transport,
+        Err(e) => {
+            error!("Failed to create stdio transport: {}", e);
+            return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+        }
+    };
+
+    info!("MCP Server ready, handling stdio connection...");
+
+    // Handle the stdio connection
+    if let Err(e) = mcp_server.handle_connection(transport, "stdio".to_string()).await {
+        error!("MCP Server connection error: {}", e);
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+    }
+
+    info!("MCP Server connection closed");
+    Ok(())
+}
+
+
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
+    // Parse command line arguments
+    let matches = Command::new("forge")
+        .version("0.1.0")
+        .about("Forge - Project Management and MCP Server")
+        .arg(
+            Arg::new("mcp")
+                .long("mcp")
+                .help("Run in MCP server mode (stdio transport)")
+                .action(clap::ArgAction::SetTrue)
+        )
+        .get_matches();
+
     // Load environment variables from .env file
     dotenv().ok();
 
-    println!("Starting server at http://127.0.0.1:8080");
+    init_logger("mcp");
 
-    // Create a ProjectConfigManager instance
-    let project_manager = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+    // Get the singleton instance of ProjectConfigManager
+    let project_manager = ProjectConfigManager::get_instance();
 
     // Load project configuration
     let project_config = match project_manager.load_config() {
         Ok(config) => {
-            println!("Project configuration loaded successfully from {}", PROJECT_CONFIG_FILE);
+            info!("Project configuration loaded successfully from {}", PROJECT_CONFIG_FILE);
             config
         },
         Err(e) => {
-            println!("Failed to load project configuration from {}: {}", PROJECT_CONFIG_FILE, e);
-            println!("A default configuration will be created when saved for the first time.");
+            warn!("Failed to load project configuration from {}: {}", PROJECT_CONFIG_FILE, e);
+            info!("A default configuration will be created when saved for the first time.");
             project_config::ProjectConfig::default()
         }
     };
@@ -77,45 +180,49 @@ async fn main() -> std::io::Result<()> {
         let project_dir = std::path::Path::new(&project_config.project_home_directory);
         if project_dir.exists() {
             let blocks_config_path = project_dir.join(BLOCK_CONFIG_FILE);
-            println!("Using blocks config path: {}", blocks_config_path.display());
+            info!("Using blocks config path: {}", blocks_config_path.display());
             blocks_config_path.to_string_lossy().to_string()
         } else {
-            println!("Project home directory does not exist, using default blocks config path");
+            warn!("Project home directory does not exist, using default blocks config path");
             BLOCK_CONFIG_FILE.to_string()
         }
     } else {
-        println!("Project home directory not set, using default blocks config path");
+        info!("Project home directory not set, using default blocks config path");
         BLOCK_CONFIG_FILE.to_string()
     };
 
-    // Create a BlockConfigManager instance
+    // Create a BlockConfigManager instance with the specific config file path
     let block_manager = Arc::new(BlockConfigManager::new(&blocks_config_path));
 
     // Initialize the task executor
-    println!("Initializing task executor");
+    info!("Initializing task executor");
     let _task_executor = init_task_executor(project_manager.clone(), block_manager.clone());
 
     // Load blocks from the config file
     match block_manager.load_blocks_from_file() {
-        Ok(_) => println!("Blocks loaded successfully from {}", blocks_config_path),
+        Ok(_) => info!("Blocks loaded successfully from {}", blocks_config_path),
         Err(e) => {
-            println!("Failed to load blocks from {}: {}", blocks_config_path, e);
-            println!("Generating a sample config file...");
+            warn!("Failed to load blocks from {}: {}", blocks_config_path, e);
+            info!("Generating a sample config file...");
             if let Err(e) = generate_sample_config(&blocks_config_path) {
-                println!("Failed to generate sample config: {}", e);
+                error!("Failed to generate sample config: {}", e);
             } else {
-                println!("Sample config generated successfully");
+                info!("Sample config generated successfully");
                 // Try loading again
                 if let Err(e) = block_manager.load_blocks_from_file() {
-                    println!("Failed to load blocks from the generated config: {}", e);
+                    error!("Failed to load blocks from the generated config: {}", e);
                 } else {
-                    println!("Blocks loaded successfully from the generated config");
+                    info!("Blocks loaded successfully from the generated config");
                 }
             }
         }
     }
 
-    // Create the app states
+    let num_blocks = block_manager.get_blocks().unwrap_or_default().len();
+    info!(">> Num blocks (init): {}",num_blocks);
+
+
+    // Run HTTP server in a new thread
     let app_state = web::Data::new(AppState {
         block_manager: block_manager.clone(),
         project_manager: project_manager.clone(),
@@ -131,43 +238,60 @@ async fn main() -> std::io::Result<()> {
     });
 
     let chat_app_state = web::Data::new(ChatAppState::new());
-
     let claude_mcp_app_state = web::Data::new(ClaudeMCPAppState::new(project_manager.clone()));
 
-    // Initialize MCP Server
-    println!("Initializing MCP Server...");
-    let mcp_config = MCPServerConfig {
-        working_directory: std::path::PathBuf::from(&project_config.project_home_directory)
-            .canonicalize()
-            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"))),
-        max_sessions: 25,
-        session_timeout: std::time::Duration::from_secs(7200), // 2 hours
-        max_concurrent_tools: 8,
-        tool_timeout: std::time::Duration::from_secs(300), // 5 minutes
-        enable_monitoring: true,
-        enable_cleanup: true,
-        ..Default::default()
-    };
-    
-    match MCPServer::new(mcp_config, project_manager.clone(), block_manager.clone()).await {
-        Ok(mut mcp_server) => {
-            println!("MCP Server initialized successfully");
-            
-            // Start MCP server in background
-            tokio::spawn(async move {
-                if let Err(e) = mcp_server.start().await {
-                    eprintln!("MCP Server error: {}", e);
+    // Create a thread for the MCP server if the flag is set
+    let mcp_server_thread = if matches.get_flag("mcp") {
+        // Clone the Arc references for the new thread
+        let project_manager_clone = project_manager.clone();
+        let block_manager_clone = block_manager.clone();
+
+        // Spawn a new thread for the MCP server
+        let handle = thread::spawn(move || {
+            // Create a new tokio runtime for the MCP server
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                if let Err(e) = run_mcp_server(project_manager_clone, block_manager_clone).await {
+                    error!("MCP server error: {}", e);
                 }
             });
-            
-            println!("MCP Server started in background");
-        }
-        Err(e) => {
-            eprintln!("Failed to initialize MCP Server: {}", e);
-            eprintln!("Continuing without MCP Server...");
+        });
+
+        Some(handle)
+    } else {
+        None
+    };
+
+    // Run the HTTP server in the main thread
+    info!("Starting HTTP server on 127.0.0.1:8080");
+    if let Err(e) = run_http_server(
+        app_state,
+        project_app_state,
+        git_app_state,
+        chat_app_state,
+        claude_mcp_app_state,
+    ).await {
+        error!("HTTP server error: {}", e);
+    }
+
+    // Wait for the MCP server thread to complete if it was started
+    if let Some(handle) = mcp_server_thread {
+        if let Err(e) = handle.join() {
+            error!("Error joining MCP server thread: {:?}", e);
         }
     }
 
+    Ok(())
+
+}
+
+async fn run_http_server(
+    app_state: web::Data<AppState>,
+    project_app_state: web::Data<ProjectAppState>,
+    git_app_state: web::Data<GitAppState>,
+    chat_app_state: web::Data<ChatAppState>,
+    claude_mcp_app_state: web::Data<ClaudeMCPAppState>,
+) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())

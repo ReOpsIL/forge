@@ -1,6 +1,6 @@
 {
-  "git_repository_url": "git@github.com:ReOpsIL/poker.git",
-  "project_home_directory": "/Users/dovcaspi/poker",
+  "git_repository_url": "git@github.com:ReOpsIL/forge.git",
+  "project_home_directory": "/Users/dovcaspi/develop/forge",
   "project_description": "",
   "main_branch": "main",
   "llm_provider": "Gemini",

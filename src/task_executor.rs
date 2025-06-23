@@ -61,9 +61,10 @@ impl TaskExecutor {
     }
 
     pub fn execute_git_task(&self, block_id: &String, task_id: &String) -> Result<(String, String), String> {
-
         // Create a unique task ID for logging
         let log_task_id = format!("{}:{}", block_id, task_id);
+        // Clear any existing logs for this task
+        log_stream::clear_logs(&log_task_id);
 
         // Get the project home directory from the project config
         let project_config = match self.project_manager.get_config() {
@@ -75,12 +76,18 @@ impl TaskExecutor {
 
         let project_dir = project_config.project_home_directory.clone();
         if project_dir.is_empty() {
-            return Err("Project home directory is not set. Please configure it in the project settings.".to_string());
+            let task_id = task_id.clone();
+            let error_msg = format!("Project home directory is not set. Please configure it in the project settings, task: {} project dir: {}", task_id, project_dir);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(error_msg)
         }
 
         // Check if the project directory exists
         if !Path::new(&project_dir).exists() {
-            return Err(format!("Project home directory does not exist: {}", project_dir));
+            let task_id = task_id.clone();
+            let error_msg = format!("Project home directory does not exist, task: {} project dir: {}", task_id, project_dir);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(error_msg)
         }
 
         let mut blocks = self.block_manager.get_blocks()
@@ -93,15 +100,14 @@ impl TaskExecutor {
         let task_opt = block.todo_list.get(task_id).unwrap();
 
         if task_opt.description.is_empty() {
-            return Err("Task description cannot be empty".to_string());
+            let task_id = task_id.clone();
+            let error_msg = format!("Task description cannot be empty, task: {}", task_id);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(error_msg)
         }
-        
+
         // Get the task prompt
         let task_prompt = task_opt.to_prompt();
-        
-
-        // Clear any existing logs for this task
-        log_stream::clear_logs(&log_task_id);
 
         // Step 1: Pull latest main branch
         println!("Step 1: Pulling latest main branch");
@@ -116,7 +122,9 @@ impl TaskExecutor {
 
         if let Err(e) = pull_output {
             let task_id = task_id.clone();
-            return Err(format!("Failed to checkout {} branch: {}", main_branch, e));
+            let error_msg = format!("Failed to checkout {} branch, task: {} error: {}", main_branch, task_id, e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(error_msg)
         }
 
         let pull_output = Command::new("git")
@@ -126,7 +134,9 @@ impl TaskExecutor {
 
         if let Err(e) = pull_output {
             let task_id = task_id.clone();
-            return Err(format!("Failed to pull latest changes from git: {}", e));
+            let error_msg = format!("Failed to pull latest changes from git. task: {}, error: {}", task_id, e);
+            log_stream::add_log(&log_task_id, error_msg.clone());
+            return Err(error_msg);
         }
 
         // Step 2: Create a task-specific branch
@@ -170,8 +180,8 @@ impl TaskExecutor {
                 return Err(error_msg);
             }
         };
-        
-        
+
+
         // Write the task description to the command's stdin
         if let Some(mut stdin) = child.stdin.take() {
             if let Err(e) = stdin.write_all(task_prompt.as_bytes()) {

@@ -1,12 +1,8 @@
 {
-  "mcpServers": {
-    "forge": {
-      "command": "./target/debug/forge",
-      "args": ["--mcp"],
-      "env": {
-        "FORGE_MCP_HOST": "127.0.0.1",
-        "FORGE_MCP_PORT": "8081"
+    "mcpServers": {
+      "forge": {
+        "command": "./target/debug/forge",
+        "args": ["--mcp"]
       }
     }
-  }
 }

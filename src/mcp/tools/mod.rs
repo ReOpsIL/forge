@@ -5,6 +5,7 @@
 
 pub mod registry;
 pub mod filesystem;
+pub mod blocks;
 
 // Re-export core tool types
 pub use self::registry::ToolRegistry;
@@ -21,41 +22,41 @@ use uuid::Uuid;
 pub trait MCPTool: Send + Sync {
     /// Get the tool name (unique identifier)
     fn name(&self) -> &str;
-    
+
     /// Get the tool description for documentation
     fn description(&self) -> &str;
-    
+
     /// Get the JSON schema for input parameters
     fn input_schema(&self) -> Value;
-    
+
     /// Execute the tool with given parameters and context
     async fn execute(&self, params: Value, context: &mut ExecutionContext) -> Result<ToolResult, ToolError>;
-    
+
     /// Get required permissions for this tool
     fn required_permissions(&self) -> Vec<Permission> {
         vec![]
     }
-    
+
     /// Get tool category for organization
     fn category(&self) -> ToolCategory {
         ToolCategory::General
     }
-    
+
     /// Get tool version
     fn version(&self) -> &str {
         "1.0.0"
     }
-    
+
     /// Whether this tool supports parallel execution
     fn supports_parallel_execution(&self) -> bool {
         true
     }
-    
+
     /// Estimated execution time (used for optimization)
     fn estimated_execution_time(&self) -> Duration {
         Duration::from_secs(5)
     }
-    
+
     /// Validate parameters before execution
     fn validate_params(&self, params: &Value) -> Result<(), ToolError> {
         // Default implementation uses JSON schema validation
@@ -69,28 +70,28 @@ pub trait MCPTool: Send + Sync {
 pub struct ExecutionContext {
     /// Unique session identifier
     pub session_id: String,
-    
+
     /// Project configuration manager
     pub project_config: std::sync::Arc<crate::project_config::ProjectConfigManager>,
-    
+
     /// Block configuration manager  
     pub block_manager: std::sync::Arc<crate::block_config::BlockConfigManager>,
-    
+
     /// Current working directory
     pub working_directory: std::path::PathBuf,
-    
+
     /// Context store for cross-tool data sharing
     pub context_store: std::sync::Arc<tokio::sync::RwLock<crate::mcp::context::ContextStore>>,
-    
+
     /// Tool execution history for this session
     pub execution_history: Vec<ToolExecution>,
-    
+
     /// User preferences and settings
     pub user_preferences: UserPreferences,
-    
+
     /// Security permissions for this session
     pub permissions: SessionPermissions,
-    
+
     /// Performance tracking
     pub performance_tracker: std::sync::Arc<tokio::sync::Mutex<PerformanceTracker>>,
 }
@@ -100,18 +101,18 @@ pub struct ExecutionContext {
 pub struct ToolResult {
     /// Whether the tool execution was successful
     pub success: bool,
-    
+
     /// Content returned by the tool
     pub content: Vec<Content>,
-    
+
     /// Optional context updates
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context_updates: Option<ContextUpdate>,
-    
+
     /// Notifications to send to client
     #[serde(default)]
     pub notifications: Vec<Notification>,
-    
+
     /// Execution metadata
     pub metadata: ExecutionMetadata,
 }
@@ -123,18 +124,18 @@ pub enum Content {
     /// Plain text content
     #[serde(rename = "text")]
     Text { text: String },
-    
+
     /// Structured data content
     #[serde(rename = "data")]
     Data { data: Value },
-    
+
     /// Binary content (base64 encoded)
     #[serde(rename = "binary")]
     Binary { 
         data: String, 
         content_type: String 
     },
-    
+
     /// Error content
     #[serde(rename = "error")]
     Error { 
@@ -142,7 +143,7 @@ pub enum Content {
         #[serde(skip_serializing_if = "Option::is_none")]
         details: Option<Value>
     },
-    
+
     /// File reference
     #[serde(rename = "file")]
     File {
@@ -152,7 +153,7 @@ pub enum Content {
         #[serde(skip_serializing_if = "Option::is_none")]
         size: Option<u64>,
     },
-    
+
     /// Progress update
     #[serde(rename = "progress")]
     Progress {
@@ -169,23 +170,23 @@ pub struct ContextUpdate {
     /// Files that were accessed or modified
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files_accessed: Option<Vec<String>>,
-    
+
     /// Files that were modified
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files_modified: Option<Vec<String>>,
-    
+
     /// Git status changes
     #[serde(skip_serializing_if = "Option::is_none")]
     pub git_status: Option<GitStatusUpdate>,
-    
+
     /// Task status changes
     #[serde(skip_serializing_if = "Option::is_none")]
     pub task_updates: Option<Vec<TaskUpdate>>,
-    
+
     /// Performance metrics
     #[serde(skip_serializing_if = "Option::is_none")]
     pub performance_metrics: Option<PerformanceMetrics>,
-    
+
     /// Custom context data
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_data: Option<HashMap<String, Value>>,
@@ -228,15 +229,15 @@ pub enum Notification {
     /// Information notification
     #[serde(rename = "info")]
     Info { message: String },
-    
+
     /// Warning notification
     #[serde(rename = "warning")]
     Warning { message: String },
-    
+
     /// Error notification
     #[serde(rename = "error")]
     Error { message: String },
-    
+
     /// Progress notification
     #[serde(rename = "progress")]
     Progress { 
@@ -244,14 +245,14 @@ pub enum Notification {
         percentage: f32,
         message: String 
     },
-    
+
     /// File change notification
     #[serde(rename = "file_changed")]
     FileChanged { 
         path: String,
         change_type: String 
     },
-    
+
     /// Custom notification
     #[serde(rename = "custom")]
     Custom { 
@@ -291,37 +292,37 @@ pub struct ToolExecution {
 pub enum ToolError {
     #[error("Tool not found: {0}")]
     NotFound(String),
-    
+
     #[error("Invalid parameters: {0}")]
     InvalidParams(String),
-    
+
     #[error("Execution failed: {0}")]
     ExecutionFailed(String),
-    
+
     #[error("Timeout: tool execution exceeded {timeout_ms}ms")]
     Timeout { timeout_ms: u64 },
-    
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
-    
+
     #[error("Resource limit exceeded: {0}")]
     ResourceLimit(String),
-    
+
     #[error("Dependency error: {0}")]
     Dependency(String),
-    
+
     #[error("File system error: {0}")]
     FileSystem(String),
-    
+
     #[error("Git operation error: {0}")]
     Git(String),
-    
+
     #[error("Network error: {0}")]
     Network(String),
-    
+
     #[error("Validation error: {0}")]
     Validation(String),
-    
+
     #[error("Internal error: {0}")]
     Internal(String),
 }
@@ -411,8 +412,11 @@ pub struct SessionPermissions {
 
 impl Default for SessionPermissions {
     fn default() -> Self {
+        let mut permissions = std::collections::HashSet::new();
+        permissions.insert(Permission::FileRead);
+
         Self {
-            granted_permissions: std::collections::HashSet::new(),
+            granted_permissions: permissions,
             restricted_paths: vec![
                 "/etc".to_string(),
                 "/usr".to_string(),
@@ -455,37 +459,37 @@ impl PerformanceTracker {
         }
         self.executions.push(execution);
     }
-    
+
     pub fn get_average_execution_time(&self) -> Duration {
         if self.executions.is_empty() {
             return Duration::from_secs(0);
         }
         self.total_time / self.executions.len() as u32
     }
-    
+
     pub fn get_tool_statistics(&self, tool_name: &str) -> ToolStatistics {
         let tool_executions: Vec<_> = self.executions
             .iter()
             .filter(|e| e.tool_name == tool_name)
             .collect();
-        
+
         let total_executions = tool_executions.len();
         let successful_executions = tool_executions
             .iter()
             .filter(|e| e.result.is_some())
             .count();
-        
+
         let total_time: Duration = tool_executions
             .iter()
             .filter_map(|e| e.duration)
             .sum();
-        
+
         let average_time = if total_executions > 0 {
             total_time / total_executions as u32
         } else {
             Duration::from_secs(0)
         };
-        
+
         ToolStatistics {
             tool_name: tool_name.to_string(),
             total_executions,
@@ -540,7 +544,7 @@ impl ToolResultBuilder for ToolResult {
             },
         }
     }
-    
+
     fn failure(error: impl Into<String>) -> ToolResult {
         ToolResult {
             success: false,
@@ -562,17 +566,17 @@ impl ToolResultBuilder for ToolResult {
             },
         }
     }
-    
+
     fn with_content(mut self, content: Content) -> ToolResult {
         self.content.push(content);
         self
     }
-    
+
     fn with_notification(mut self, notification: Notification) -> ToolResult {
         self.notifications.push(notification);
         self
     }
-    
+
     fn with_context_update(mut self, update: ContextUpdate) -> ToolResult {
         self.context_updates = Some(update);
         self

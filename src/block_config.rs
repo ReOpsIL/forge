@@ -1,5 +1,6 @@
 use crate::llm_handler::BlockConnection;
 use crate::models::{Block, Connections, InputConnection, OutputConnection, Task};
+use lazy_static::lazy_static;
 use rand::{distributions::Alphanumeric, Rng};
 use serde_json;
 use std::collections::HashMap;
@@ -8,14 +9,27 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
+// Default config file path
+pub const DEFAULT_BLOCK_CONFIG_FILE: &str = "blocks_config.json";
+
 // Struct to manage block configurations
 #[derive(Debug)]
 pub struct BlockConfigManager {
     blocks: Arc<Mutex<Vec<Block>>>,
-    config_file: String,
+    pub config_file: String,
+}
+
+// Global singleton instance
+lazy_static! {
+    static ref BLOCK_MANAGER: Arc<BlockConfigManager> = Arc::new(BlockConfigManager::new(DEFAULT_BLOCK_CONFIG_FILE));
 }
 
 impl BlockConfigManager {
+    // Get the singleton instance
+    pub fn get_instance() -> Arc<BlockConfigManager> {
+        BLOCK_MANAGER.clone()
+    }
+
     // Create a new BlockConfigManager
     pub fn new(config_file: &str) -> Self {
         BlockConfigManager {
@@ -23,7 +37,7 @@ impl BlockConfigManager {
             config_file: config_file.to_string(),
         }
     }
-    
+
     // Load blocks from a JSON file
     pub fn load_blocks_from_file(&self) -> Result<Vec<Block>, String> {
         let path = Path::new(&self.config_file);
@@ -209,10 +223,6 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
     for i in 0..10 {
         let name = block_names[i].to_string();
         let description = format!("This is the {} module", name);
-
-        // Generate random inputs and outputs
-        let num_inputs = rand::thread_rng().gen_range(1..=3);
-        let num_outputs = rand::thread_rng().gen_range(1..=3);
 
         // Generate random connections
         let mut input_connections = Vec::new();

@@ -1,5 +1,5 @@
 /// File system tools for MCP - comprehensive file operations
-/// 
+///
 /// This module provides a comprehensive set of file system tools that enable
 /// Claude Code to interact with the project file system through structured
 /// MCP calls instead of brittle CLI commands.
@@ -26,11 +26,11 @@ impl MCPTool for ReadFileTool {
     fn name(&self) -> &str {
         "read_file"
     }
-    
+
     fn description(&self) -> &str {
         "Read the contents of a file from the file system"
     }
-    
+
     fn input_schema(&self) -> Value {
         json!({
             "type": "object",
@@ -54,43 +54,43 @@ impl MCPTool for ReadFileTool {
             "required": ["path"]
         })
     }
-    
+
     fn required_permissions(&self) -> Vec<Permission> {
         vec![Permission::FileRead]
     }
-    
+
     fn category(&self) -> ToolCategory {
         ToolCategory::FileSystem
     }
-    
+
     async fn execute(&self, params: Value, context: &mut ExecutionContext) -> Result<ToolResult, ToolError> {
         let path = params["path"].as_str()
             .ok_or_else(|| ToolError::InvalidParams("Missing 'path' parameter".to_string()))?;
         let encoding = params["encoding"].as_str().unwrap_or("utf8");
         let max_size = params["max_size"].as_u64().unwrap_or(10 * 1024 * 1024); // 10MB default
-        
+
         let file_path = PathBuf::from(path);
-        
+
         // Security check: ensure path is within working directory
         let canonical_path = file_path.canonicalize()
             .map_err(|e| ToolError::FileSystem(format!("Failed to resolve path: {}", e)))?;
-        
+
         if !canonical_path.starts_with(&context.working_directory) {
             return Err(ToolError::PermissionDenied(
                 format!("Access denied: path outside working directory: {}", path)
             ));
         }
-        
+
         // Check file size
         let metadata = fs::metadata(&canonical_path).await
             .map_err(|e| ToolError::FileSystem(format!("Failed to read file metadata: {}", e)))?;
-        
+
         if metadata.len() > max_size {
             return Err(ToolError::ResourceLimit(
                 format!("File size {} exceeds maximum allowed size {}", metadata.len(), max_size)
             ));
         }
-        
+
         // Read file based on encoding
         let content = match encoding {
             "utf8" => {
@@ -120,7 +120,7 @@ impl MCPTool for ReadFileTool {
             }
             _ => return Err(ToolError::InvalidParams(format!("Unsupported encoding: {}", encoding))),
         };
-        
+
         // Create context update
         let context_update = ContextUpdate {
             files_accessed: Some(vec![canonical_path.to_string_lossy().to_string()]),
@@ -133,9 +133,9 @@ impl MCPTool for ReadFileTool {
                 ("file_type".to_string(), json!(encoding)),
             ].into_iter().collect()),
         };
-        
+
         debug!("Read file: {} ({} bytes)", path, metadata.len());
-        
+
         Ok(ToolResult::success()
             .with_content(content)
             .with_context_update(context_update))
@@ -150,11 +150,11 @@ impl MCPTool for WriteFileTool {
     fn name(&self) -> &str {
         "write_file"
     }
-    
+
     fn description(&self) -> &str {
         "Write content to a file in the file system"
     }
-    
+
     fn input_schema(&self) -> Value {
         json!({
             "type": "object",
@@ -187,15 +187,15 @@ impl MCPTool for WriteFileTool {
             "required": ["path", "content"]
         })
     }
-    
+
     fn required_permissions(&self) -> Vec<Permission> {
         vec![Permission::FileWrite]
     }
-    
+
     fn category(&self) -> ToolCategory {
         ToolCategory::FileSystem
     }
-    
+
     async fn execute(&self, params: Value, context: &mut ExecutionContext) -> Result<ToolResult, ToolError> {
         let path = params["path"].as_str()
             .ok_or_else(|| ToolError::InvalidParams("Missing 'path' parameter".to_string()))?;
@@ -204,13 +204,13 @@ impl MCPTool for WriteFileTool {
         let encoding = params["encoding"].as_str().unwrap_or("utf8");
         let create_dirs = params["create_dirs"].as_bool().unwrap_or(true);
         let backup = params["backup"].as_bool().unwrap_or(false);
-        
+
         let file_path = PathBuf::from(path);
-        
+
         // Security check: ensure path is within working directory
         let parent_dir = file_path.parent()
             .ok_or_else(|| ToolError::FileSystem("Invalid file path".to_string()))?;
-        
+
         let canonical_parent = if parent_dir.exists() {
             parent_dir.canonicalize()
                 .map_err(|e| ToolError::FileSystem(format!("Failed to resolve parent directory: {}", e)))?
@@ -219,15 +219,15 @@ impl MCPTool for WriteFileTool {
         } else {
             return Err(ToolError::FileSystem("Parent directory does not exist".to_string()));
         };
-        
+
         if !canonical_parent.starts_with(&context.working_directory) {
             return Err(ToolError::PermissionDenied(
                 format!("Access denied: path outside working directory: {}", path)
             ));
         }
-        
+
         let canonical_path = canonical_parent.join(file_path.file_name().unwrap());
-        
+
         // Create parent directories if needed
         if create_dirs {
             if let Some(parent) = canonical_path.parent() {
@@ -235,7 +235,7 @@ impl MCPTool for WriteFileTool {
                     .map_err(|e| ToolError::FileSystem(format!("Failed to create directories: {}", e)))?;
             }
         }
-        
+
         // Create backup if requested and file exists
         let mut backup_path = None;
         if backup && canonical_path.exists() {
@@ -247,7 +247,7 @@ impl MCPTool for WriteFileTool {
             fs::copy(&canonical_path, &backup_file).await
                 .map_err(|e| ToolError::FileSystem(format!("Failed to create backup: {}", e)))?;
         }
-        
+
         // Write content based on encoding
         let bytes_written = match encoding {
             "utf8" => {
@@ -265,7 +265,7 @@ impl MCPTool for WriteFileTool {
             }
             _ => return Err(ToolError::InvalidParams(format!("Unsupported encoding: {}", encoding))),
         };
-        
+
         // Create context update
         let mut context_update = ContextUpdate {
             files_accessed: None,
@@ -278,21 +278,21 @@ impl MCPTool for WriteFileTool {
                 ("encoding".to_string(), json!(encoding)),
             ].into_iter().collect()),
         };
-        
+
         if let Some(backup_path) = backup_path {
             context_update.custom_data.as_mut().unwrap().insert(
                 "backup_created".to_string(), 
                 json!(backup_path.to_string_lossy())
             );
         }
-        
+
         let notification = Notification::FileChanged {
             path: canonical_path.to_string_lossy().to_string(),
             change_type: "write".to_string(),
         };
-        
+
         info!("Wrote file: {} ({} bytes)", path, bytes_written);
-        
+
         Ok(ToolResult::success()
             .with_content(Content::Text { 
                 text: format!("Successfully wrote {} bytes to {}", bytes_written, path) 
@@ -310,11 +310,11 @@ impl MCPTool for ListDirectoryTool {
     fn name(&self) -> &str {
         "list_directory"
     }
-    
+
     fn description(&self) -> &str {
         "List the contents of a directory"
     }
-    
+
     fn input_schema(&self) -> Value {
         json!({
             "type": "object",
@@ -346,39 +346,31 @@ impl MCPTool for ListDirectoryTool {
             }
         })
     }
-    
-    fn required_permissions(&self) -> Vec<Permission> {
-        vec![Permission::FileRead]
-    }
-    
-    fn category(&self) -> ToolCategory {
-        ToolCategory::FileSystem
-    }
-    
+
     async fn execute(&self, params: Value, context: &mut ExecutionContext) -> Result<ToolResult, ToolError> {
         let path = params["path"].as_str().unwrap_or(".");
         let recursive = params["recursive"].as_bool().unwrap_or(false);
         let include_hidden = params["include_hidden"].as_bool().unwrap_or(false);
         let max_depth = params["max_depth"].as_u64().unwrap_or(5) as usize;
         let filter_pattern = params["filter"].as_str();
-        
+
         let dir_path = PathBuf::from(path);
         let canonical_path = dir_path.canonicalize()
             .map_err(|e| ToolError::FileSystem(format!("Failed to resolve directory path: {}", e)))?;
-        
+
         // Security check
         if !canonical_path.starts_with(&context.working_directory) {
             return Err(ToolError::PermissionDenied(
                 format!("Access denied: path outside working directory: {}", path)
             ));
         }
-        
+
         let entries = if recursive {
             list_directory_recursive(&canonical_path, max_depth, include_hidden, filter_pattern).await?
         } else {
             list_directory_single(&canonical_path, include_hidden, filter_pattern).await?
         };
-        
+
         let context_update = ContextUpdate {
             files_accessed: Some(vec![canonical_path.to_string_lossy().to_string()]),
             files_modified: None,
@@ -390,12 +382,24 @@ impl MCPTool for ListDirectoryTool {
                 ("recursive".to_string(), json!(recursive)),
             ].into_iter().collect()),
         };
-        
+
         debug!("Listed directory: {} ({} entries)", path, entries.len());
-        
+
+        // Convert entries to a formatted text representation
+        let formatted_entries = serde_json::to_string_pretty(&entries)
+            .map_err(|e| ToolError::Internal(format!("Failed to format directory entries: {}", e)))?;
+
         Ok(ToolResult::success()
-            .with_content(Content::Data { data: json!(entries) })
+            .with_content(Content::Text { text: formatted_entries })
             .with_context_update(context_update))
+    }
+
+    fn required_permissions(&self) -> Vec<Permission> {
+        vec![Permission::FileRead]
+    }
+
+    fn category(&self) -> ToolCategory {
+        ToolCategory::FileSystem
     }
 }
 
@@ -407,11 +411,11 @@ impl MCPTool for CreateDirectoryTool {
     fn name(&self) -> &str {
         "create_directory"
     }
-    
+
     fn description(&self) -> &str {
         "Create a new directory"
     }
-    
+
     fn input_schema(&self) -> Value {
         json!({
             "type": "object",
@@ -429,22 +433,22 @@ impl MCPTool for CreateDirectoryTool {
             "required": ["path"]
         })
     }
-    
+
     fn required_permissions(&self) -> Vec<Permission> {
         vec![Permission::FileWrite]
     }
-    
+
     fn category(&self) -> ToolCategory {
         ToolCategory::FileSystem
     }
-    
+
     async fn execute(&self, params: Value, context: &mut ExecutionContext) -> Result<ToolResult, ToolError> {
         let path = params["path"].as_str()
             .ok_or_else(|| ToolError::InvalidParams("Missing 'path' parameter".to_string()))?;
         let recursive = params["recursive"].as_bool().unwrap_or(true);
-        
+
         let dir_path = context.working_directory.join(path);
-        
+
         // Security check
         let canonical_path = if dir_path.exists() {
             dir_path.canonicalize()
@@ -452,13 +456,13 @@ impl MCPTool for CreateDirectoryTool {
         } else {
             dir_path
         };
-        
+
         if !canonical_path.starts_with(&context.working_directory) {
             return Err(ToolError::PermissionDenied(
                 format!("Access denied: path outside working directory: {}", path)
             ));
         }
-        
+
         if recursive {
             fs::create_dir_all(&canonical_path).await
                 .map_err(|e| ToolError::FileSystem(format!("Failed to create directory: {}", e)))?;
@@ -466,7 +470,7 @@ impl MCPTool for CreateDirectoryTool {
             fs::create_dir(&canonical_path).await
                 .map_err(|e| ToolError::FileSystem(format!("Failed to create directory: {}", e)))?;
         }
-        
+
         let context_update = ContextUpdate {
             files_accessed: None,
             files_modified: Some(vec![canonical_path.to_string_lossy().to_string()]),
@@ -478,9 +482,9 @@ impl MCPTool for CreateDirectoryTool {
                 ("recursive".to_string(), json!(recursive)),
             ].into_iter().collect()),
         };
-        
+
         info!("Created directory: {}", path);
-        
+
         Ok(ToolResult::success()
             .with_content(Content::Text { 
                 text: format!("Successfully created directory: {}", path) 
@@ -497,11 +501,11 @@ impl MCPTool for DeleteTool {
     fn name(&self) -> &str {
         "delete"
     }
-    
+
     fn description(&self) -> &str {
         "Delete a file or directory"
     }
-    
+
     fn input_schema(&self) -> Value {
         json!({
             "type": "object",
@@ -524,32 +528,32 @@ impl MCPTool for DeleteTool {
             "required": ["path"]
         })
     }
-    
+
     fn required_permissions(&self) -> Vec<Permission> {
         vec![Permission::FileWrite]
     }
-    
+
     fn category(&self) -> ToolCategory {
         ToolCategory::FileSystem
     }
-    
+
     async fn execute(&self, params: Value, context: &mut ExecutionContext) -> Result<ToolResult, ToolError> {
         let path = params["path"].as_str()
             .ok_or_else(|| ToolError::InvalidParams("Missing 'path' parameter".to_string()))?;
         let recursive = params["recursive"].as_bool().unwrap_or(false);
         let force = params["force"].as_bool().unwrap_or(false);
-        
+
         let file_path = PathBuf::from(path);
         let canonical_path = file_path.canonicalize()
             .map_err(|e| ToolError::FileSystem(format!("Failed to resolve path: {}", e)))?;
-        
+
         // Security check
         if !canonical_path.starts_with(&context.working_directory) {
             return Err(ToolError::PermissionDenied(
                 format!("Access denied: path outside working directory: {}", path)
             ));
         }
-        
+
         // Additional safety check for important directories
         let important_dirs = [".git", "node_modules", "target", "build", "dist"];
         if let Some(file_name) = canonical_path.file_name() {
@@ -559,13 +563,13 @@ impl MCPTool for DeleteTool {
                 ));
             }
         }
-        
+
         let metadata = fs::metadata(&canonical_path).await
             .map_err(|e| ToolError::FileSystem(format!("Failed to get file metadata: {}", e)))?;
-        
+
         let is_dir = metadata.is_dir();
         let file_size = metadata.len();
-        
+
         if is_dir {
             if recursive {
                 fs::remove_dir_all(&canonical_path).await
@@ -578,7 +582,7 @@ impl MCPTool for DeleteTool {
             fs::remove_file(&canonical_path).await
                 .map_err(|e| ToolError::FileSystem(format!("Failed to delete file: {}", e)))?;
         }
-        
+
         let context_update = ContextUpdate {
             files_accessed: None,
             files_modified: Some(vec![canonical_path.to_string_lossy().to_string()]),
@@ -591,14 +595,14 @@ impl MCPTool for DeleteTool {
                 ("recursive".to_string(), json!(recursive)),
             ].into_iter().collect()),
         };
-        
+
         let notification = Notification::FileChanged {
             path: canonical_path.to_string_lossy().to_string(),
             change_type: "delete".to_string(),
         };
-        
+
         info!("Deleted {}: {}", if is_dir { "directory" } else { "file" }, path);
-        
+
         Ok(ToolResult::success()
             .with_content(Content::Text { 
                 text: format!("Successfully deleted {}: {}", if is_dir { "directory" } else { "file" }, path)
@@ -618,28 +622,28 @@ async fn list_directory_single(
     let mut entries = Vec::new();
     let mut dir = fs::read_dir(path).await
         .map_err(|e| ToolError::FileSystem(format!("Failed to read directory: {}", e)))?;
-    
+
     while let Some(entry) = dir.next_entry().await
         .map_err(|e| ToolError::FileSystem(format!("Failed to read directory entry: {}", e)))? {
-        
+
         let file_name = entry.file_name();
         let file_name_str = file_name.to_string_lossy();
-        
+
         // Skip hidden files if not requested
         if !include_hidden && file_name_str.starts_with('.') {
             continue;
         }
-        
+
         // Apply filter if provided
         if let Some(pattern) = filter_pattern {
             if !glob_match(pattern, &file_name_str) {
                 continue;
             }
         }
-        
+
         let metadata = entry.metadata().await
             .map_err(|e| ToolError::FileSystem(format!("Failed to read metadata: {}", e)))?;
-        
+
         let entry_info = json!({
             "name": file_name_str,
             "path": entry.path().to_string_lossy(),
@@ -650,10 +654,10 @@ async fn list_directory_single(
                 .unwrap_or(0),
             "permissions": format!("{:?}", metadata.permissions())
         });
-        
+
         entries.push(entry_info);
     }
-    
+
     Ok(entries)
 }
 
@@ -674,32 +678,32 @@ async fn list_directory_recursive(
         if current_depth > max_depth {
             return Ok(());
         }
-        
+
         let dir = std::fs::read_dir(path)
             .map_err(|e| ToolError::FileSystem(format!("Failed to read directory: {}", e)))?;
-        
+
         for entry in dir {
             let entry = entry
                 .map_err(|e| ToolError::FileSystem(format!("Failed to read directory entry: {}", e)))?;
-            
+
             let file_name = entry.file_name();
             let file_name_str = file_name.to_string_lossy();
-            
+
             // Skip hidden files if not requested
             if !include_hidden && file_name_str.starts_with('.') {
                 continue;
             }
-            
+
             // Apply filter if provided
             if let Some(pattern) = filter_pattern {
                 if !glob_match(pattern, &file_name_str) && !entry.path().is_dir() {
                     continue;
                 }
             }
-            
+
             let metadata = entry.metadata()
                 .map_err(|e| ToolError::FileSystem(format!("Failed to read metadata: {}", e)))?;
-            
+
             let entry_info = json!({
                 "name": file_name_str,
                 "path": entry.path().to_string_lossy(),
@@ -710,18 +714,18 @@ async fn list_directory_recursive(
                     .unwrap_or(0),
                 "depth": current_depth
             });
-            
+
             entries.push(entry_info);
-            
+
             // Recurse into directories
             if metadata.is_dir() {
                 collect_entries(entries, &entry.path(), current_depth + 1, max_depth, include_hidden, filter_pattern)?;
             }
         }
-        
+
         Ok(())
     }
-    
+
     let mut entries = Vec::new();
     collect_entries(&mut entries, path, 0, max_depth, include_hidden, filter_pattern)?;
     Ok(entries)
@@ -731,12 +735,12 @@ fn glob_match(pattern: &str, text: &str) -> bool {
     // Simple glob matching - supports * and ?
     let pattern_chars: Vec<char> = pattern.chars().collect();
     let text_chars: Vec<char> = text.chars().collect();
-    
+
     fn match_recursive(pattern: &[char], text: &[char], p_idx: usize, t_idx: usize) -> bool {
         if p_idx >= pattern.len() {
             return t_idx >= text.len();
         }
-        
+
         match pattern[p_idx] {
             '*' => {
                 // Try matching zero or more characters
@@ -765,7 +769,7 @@ fn glob_match(pattern: &str, text: &str) -> bool {
             }
         }
     }
-    
+
     match_recursive(&pattern_chars, &text_chars, 0, 0)
 }
 
@@ -788,14 +792,14 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let file_path = temp_dir.path().join("test.txt");
         let content = "Hello, world!";
-        
+
         fs::write(&file_path, content).await.unwrap();
-        
+
         let tool = ReadFileTool;
         let params = json!({
             "path": file_path.to_string_lossy()
         });
-        
+
         // This would need a proper ExecutionContext for a full test
         // For now, we just verify the tool structure
         assert_eq!(tool.name(), "read_file");
