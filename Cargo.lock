@@ -946,6 +946,7 @@ dependencies = [
  "parking_lot",
  "portable-pty",
  "rand 0.8.5",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",

@@ -1,5 +1,5 @@
 /// MCP Tools module - Comprehensive tool registry and execution system
-/// 
+///
 /// This module provides the foundation for all MCP tools in Forge, including
 /// tool registration, validation, execution, and result handling.
 
@@ -131,17 +131,17 @@ pub enum Content {
 
     /// Binary content (base64 encoded)
     #[serde(rename = "binary")]
-    Binary { 
-        data: String, 
-        content_type: String 
+    Binary {
+        data: String,
+        content_type: String,
     },
 
     /// Error content
     #[serde(rename = "error")]
-    Error { 
+    Error {
         error: String,
         #[serde(skip_serializing_if = "Option::is_none")]
-        details: Option<Value>
+        details: Option<Value>,
     },
 
     /// File reference
@@ -240,24 +240,24 @@ pub enum Notification {
 
     /// Progress notification
     #[serde(rename = "progress")]
-    Progress { 
+    Progress {
         task_id: String,
         percentage: f32,
-        message: String 
+        message: String,
     },
 
     /// File change notification
     #[serde(rename = "file_changed")]
-    FileChanged { 
+    FileChanged {
         path: String,
-        change_type: String 
+        change_type: String,
     },
 
     /// Custom notification
     #[serde(rename = "custom")]
-    Custom { 
+    Custom {
         event: String,
-        data: Value 
+        data: Value,
     },
 }
 

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 /// MCP Server orchestrator - coordinates all MCP components
-/// 
+///
 /// This module provides the main MCP server that orchestrates transport layers,
 /// tool registry, session management, and state management to provide a unified
 /// interface for Claude Code integration.
@@ -23,13 +23,13 @@ use crate::mcp::{
     session::{ClientInfo, SessionCleanupService, SessionId, SessionManager},
     state::{StateConfig, UnifiedStateManager},
     tools::{
-        blocks::ListBlocksTool,
+        blocks::{CreateBlockTool, CreateTaskTool, ListBlocksTool},
         filesystem::{
-            read_file::ReadFileTool,
-            write_file::WriteFileTool,
-            list_directory::ListDirectoryTool,
             create_directory::CreateDirectoryTool,
             delete::DeleteTool,
+            list_directory::ListDirectoryTool,
+            read_file::ReadFileTool,
+            write_file::WriteFileTool,
         },
         ExecutionContext, MCPTool, ToolError, ToolRegistry, ToolResult,
     },
@@ -504,8 +504,10 @@ impl MCPServer {
         registry.register_tool(Box::new(CreateDirectoryTool)).await?;
         registry.register_tool(Box::new(DeleteTool)).await?;
         registry.register_tool(Box::new(ListBlocksTool)).await?;
+        registry.register_tool(Box::new(CreateBlockTool)).await?;
+        registry.register_tool(Box::new(CreateTaskTool)).await?;
 
-        info!("Registered {} built-in tools", 6);
+        info!("Registered {} built-in tools", 8);
         Ok(())
     }
 

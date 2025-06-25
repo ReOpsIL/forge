@@ -145,6 +145,85 @@ Specification document:
 {}
 ";
 
+// MCP-based prompts for processing markdown specifications using create_block and create_task tools
+pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP: &str = "You are a software architecture analyst expert at parsing technical specifications and creating structured implementation components using MCP tools. You will use the `create_block` and `create_task` MCP tools to directly create forge Blocks and their associated Tasks based on markdown specifications.
+
+**Available MCP Tools:**
+- `create_block`: Creates a new block with name, description, and optional block_id
+- `create_task`: Creates a detailed task for a block with comprehensive metadata
+
+**Your Role:**
+- Parse technical specifications and identify implementation components
+- Create blocks using the create_block tool for major components
+- Create detailed tasks using the create_task tool for each implementation requirement
+- Ensure proper relationships between blocks and tasks
+- Follow structured approach to component extraction and creation";
+
+pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP: &str = "Analyze the following technical specification markdown and create structured implementation blocks and tasks using MCP tools.
+
+**Process:**
+1. **Parse the specification** to identify major components and implementation requirements
+2. **Create blocks** using `create_block` for each major component with:
+   - Clear, descriptive names (CamelCase)
+   - Detailed implementation descriptions
+   - Technical specifics and scope
+3. **Create tasks** using `create_task` for each implementation requirement with:
+   - Specific, actionable task names
+   - Detailed descriptions of what needs to be implemented
+   - Acceptance criteria for completion
+   - Dependencies on other components
+   - Estimated effort (small/medium/large or time estimates)
+   - Files that will be affected
+   - Function signatures if applicable
+   - Testing requirements
+
+**Block Creation Guidelines:**
+- Extract only implementable components (ignore pure documentation)
+- Group related functionality into logical blocks
+- Ensure each block has a clear, focused purpose
+- Use descriptive names that reflect the component's function
+
+**Task Creation Guidelines:**
+- Break down each block into specific, actionable tasks
+- Include comprehensive acceptance criteria
+- Specify dependencies between tasks and components
+- Estimate effort realistically (1-8 hours, or small/medium/large)
+- List files that will need to be created or modified
+- Include function signatures for key interfaces
+- Define testing requirements for each task
+
+**Implementation Order:**
+1. First, create all necessary blocks
+2. Then, create tasks for each block in logical implementation order
+3. Ensure task dependencies reflect proper implementation sequence
+
+**Example MCP Tool Usage:**
+```
+create_block:
+{
+  \"name\": \"UserAuthenticationService\",
+  \"description\": \"Handles user authentication with JWT tokens, password hashing, and session management\"
+}
+
+create_task:
+{
+  \"block_id\": \"[block_id_from_create_block_response]\",
+  \"task_name\": \"Implement JWT Token Generation\",
+  \"description\": \"Create JWT token generation and validation functionality\",
+  \"acceptance_criteria\": [\"Tokens expire after 24 hours\", \"Include user ID and role in payload\", \"Use secure signing algorithm\"],
+  \"dependencies\": [\"User Model\", \"Security Configuration\"],
+  \"estimated_effort\": \"4 hours\",
+  \"files_affected\": [\"src/auth/jwt.rs\", \"src/models/user.rs\"],
+  \"function_signatures\": [\"pub fn generate_token(user_id: u64) -> Result<String, AuthError>\"],
+  \"testing_requirements\": [\"Unit tests for token generation\", \"Integration tests for auth flow\"]
+}
+```
+
+Now analyze the following specification and create the appropriate blocks and tasks:
+
+{}
+";
+
 // Additional helper prompts for common scenarios
 pub const DEFAULT_CODE_REVIEW_SYSTEM_PROMPT: &str = "You are a senior code reviewer with expertise in software quality, security, and maintainability. Provide constructive feedback focused on improvements that enhance code reliability and developer productivity.";
 
@@ -208,6 +287,8 @@ pub struct ProjectConfig {
     pub generate_tasks_user_prompt: Option<String>,
     pub process_markdown_spec_system_prompt: Option<String>,
     pub process_markdown_spec_user_prompt: Option<String>,
+    pub process_markdown_spec_system_prompt_mcp: Option<String>,
+    pub process_markdown_spec_user_prompt_mcp: Option<String>,
 }
 
 impl Default for ProjectConfig {
@@ -234,6 +315,8 @@ impl Default for ProjectConfig {
             generate_tasks_user_prompt: Some(DEFAULT_GENERATE_TASKS_USER_PROMPT.to_string()),
             process_markdown_spec_system_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT.to_string()),
             process_markdown_spec_user_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string()),
+            process_markdown_spec_system_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP.to_string()),
+            process_markdown_spec_user_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP.to_string()),
         }
     }
 }

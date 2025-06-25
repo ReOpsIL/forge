@@ -93,20 +93,20 @@ impl MCPTool for ReadFileTool {
                 let contents = fs::read(&canonical_path).await
                     .map_err(|e| ToolError::FileSystem(format!("Failed to read file: {}", e)))?;
                 let encoded = base64::encode(contents);
-                Content::Binary { 
-                    data: encoded, 
-                    content_type: "application/octet-stream".to_string() 
+                Content::Binary {
+                    data: encoded,
+                    content_type: "application/octet-stream".to_string(),
                 }
             }
             "binary" => {
                 let contents = fs::read(&canonical_path).await
                     .map_err(|e| ToolError::FileSystem(format!("Failed to read file: {}", e)))?;
                 let encoded = base64::encode(contents);
-                Content::Binary { 
-                    data: encoded, 
+                Content::Binary {
+                    data: encoded,
                     content_type: mime_guess::from_path(&canonical_path)
                         .first_or_octet_stream()
-                        .to_string()
+                        .to_string(),
                 }
             }
             _ => return Err(ToolError::InvalidParams(format!("Unsupported encoding: {}", encoding))),

@@ -21,8 +21,7 @@ pub mod task_executor;
 mod task_executor_wrapper;
 mod task_queue;
 mod log_stream;
-mod chat_handlers;
-mod claude_mcp_server;
+
 mod mcp;
 use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
 use crate::git_handlers::pull_handler;
@@ -42,8 +41,6 @@ use project_handlers::{
     test_git_connection_handler, update_project_config_handler, ProjectAppState
 };
 
-use crate::chat_handlers::{chat_websocket, ChatAppState};
-use crate::claude_mcp_server::{claude_chat_handler, claude_models_handler, ClaudeMCPAppState};
 use crate::log_stream::{get_task_ids, stream_logs};
 use crate::mcp::{server::MCPServerConfig, MCPServer};
 use crate::mcp::transport::TransportFactory;
@@ -198,6 +195,14 @@ async fn main() -> std::io::Result<()> {
     info!("Initializing task executor");
     let _task_executor = init_task_executor(project_manager.clone(), block_manager.clone());
 
+    // // Initialize ClaudePty singleton
+    // info!("Initializing ClaudePty singleton");
+    // if let Err(e) = ClaudePty::initialize() {
+    //     warn!("Failed to initialize ClaudePty: {}", e);
+    // } else {
+    //     info!("ClaudePty initialized successfully");
+    // }
+
     // Load blocks from the config file
     match block_manager.load_blocks_from_file() {
         Ok(_) => info!("Blocks loaded successfully from {}", blocks_config_path),
@@ -237,68 +242,32 @@ async fn main() -> std::io::Result<()> {
         block_manager: block_manager.clone(),
     });
 
-    let chat_app_state = web::Data::new(ChatAppState::new());
-    let claude_mcp_app_state = web::Data::new(ClaudeMCPAppState::new(project_manager.clone()));
-
     // Create a thread for the MCP server if the flag is set
-    let mcp_server_thread = if matches.get_flag("mcp") {
-        // Clone the Arc references for the new thread
-        let project_manager_clone = project_manager.clone();
-        let block_manager_clone = block_manager.clone();
-
-        // Spawn a new thread for the MCP server
-        let handle = thread::spawn(move || {
-            // Create a new tokio runtime for the MCP server
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async {
-                if let Err(e) = run_mcp_server(project_manager_clone, block_manager_clone).await {
-                    error!("MCP server error: {}", e);
-                }
-            });
-        });
-
-        Some(handle)
+    if matches.get_flag("mcp") {
+        run_mcp_server(
+            project_manager,
+            block_manager).await
     } else {
-        None
-    };
-
-    // Run the HTTP server in the main thread
-    info!("Starting HTTP server on 127.0.0.1:8080");
-    if let Err(e) = run_http_server(
-        app_state,
-        project_app_state,
-        git_app_state,
-        chat_app_state,
-        claude_mcp_app_state,
-    ).await {
-        error!("HTTP server error: {}", e);
+        // Run the HTTP server in the main thread
+        info!("Starting HTTP server on 127.0.0.1:8080");
+       run_http_server(
+            app_state,
+            project_app_state,
+            git_app_state,
+        ).await
     }
-
-    // Wait for the MCP server thread to complete if it was started
-    if let Some(handle) = mcp_server_thread {
-        if let Err(e) = handle.join() {
-            error!("Error joining MCP server thread: {:?}", e);
-        }
-    }
-
-    Ok(())
-
 }
 
 async fn run_http_server(
     app_state: web::Data<AppState>,
     project_app_state: web::Data<ProjectAppState>,
-    git_app_state: web::Data<GitAppState>,
-    chat_app_state: web::Data<ChatAppState>,
-    claude_mcp_app_state: web::Data<ClaudeMCPAppState>,
+    git_app_state: web::Data<GitAppState>
 ) -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(app_state.clone())
             .app_data(project_app_state.clone())
             .app_data(git_app_state.clone())
-            .app_data(chat_app_state.clone())
-            .app_data(claude_mcp_app_state.clone())
             // API routes
             .service(
                 web::scope("/api")
@@ -336,11 +305,6 @@ async fn run_http_server(
                     // Log streaming routes
                     .route("/logs/stream/{task_id}", web::get().to(stream_logs))
                     .route("/logs/tasks", web::get().to(get_task_ids))
-                    // Chat routes
-                    .route("/chat/ws", web::get().to(chat_websocket))
-                    // Claude MCP routes
-                    .route("/claude/chat", web::post().to(claude_chat_handler))
-                    .route("/claude/models", web::get().to(claude_models_handler))
             )
 
             // Serve static files from the frontend/dist directory

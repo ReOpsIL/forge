@@ -187,6 +187,25 @@ impl BlockConfigManager {
         }
     }
 
+    // Add a full Task object to a block
+    pub fn add_task(&self, block_id: &str, task: Task) -> Result<String, String> {
+        let mut blocks_lock = match self.blocks.lock() {
+            Ok(lock) => lock,
+            Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
+        };
+
+        // Find the block to update
+        let index = blocks_lock.iter().position(|b| b.block_id == block_id);
+        match index {
+            Some(i) => {
+                let task_id = task.task_id.clone();
+                blocks_lock[i].todo_list.insert(task_id.clone(), task);
+                Ok(task_id)
+            },
+            None => Err(format!("Block with ID {} not found", block_id)),
+        }
+    }
+
     // Remove a todo item from a block
     pub fn remove_task_item(&self, block_id: &str, task_id: String) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {

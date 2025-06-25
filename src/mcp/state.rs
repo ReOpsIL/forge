@@ -1,5 +1,5 @@
 /// Unified state management for the MCP server
-/// 
+///
 /// This module provides centralized state management that replaces the fragmented
 /// app states throughout Forge, enabling consistent state access and updates
 /// across all MCP tools and components.
@@ -22,16 +22,16 @@ use crate::models::{Block, Task};
 pub struct UnifiedStateManager {
     /// Core application state
     core_state: Arc<RwLock<CoreState>>,
-    
+
     /// Real-time state updates using DashMap for concurrent access
     live_state: Arc<DashMap<String, StateEntry>>,
-    
+
     /// State change broadcaster
     state_broadcaster: broadcast::Sender<StateChangeEvent>,
-    
+
     /// State configuration
     config: StateConfig,
-    
+
     /// State history for debugging and rollback
     state_history: Arc<RwLock<Vec<StateChangeEvent>>>,
 }
@@ -41,22 +41,22 @@ pub struct UnifiedStateManager {
 pub struct CoreState {
     /// Current projects and their configurations
     pub projects: HashMap<String, ProjectState>,
-    
+
     /// Active tasks across all projects
     pub tasks: HashMap<String, TaskState>,
-    
+
     /// Block definitions and their current state
     pub blocks: HashMap<String, BlockState>,
-    
+
     /// Active sessions and their contexts
     pub sessions: HashMap<String, SessionState>,
-    
+
     /// Global application configuration
     pub app_config: AppConfig,
-    
+
     /// Performance metrics
     pub performance_metrics: PerformanceState,
-    
+
     /// Last update timestamp
     pub last_updated: SystemTime,
 }
@@ -278,19 +278,19 @@ pub struct StateChange {
 pub struct StateConfig {
     /// Maximum number of state history entries to keep
     pub max_history_size: usize,
-    
+
     /// Whether to enable state change broadcasting
     pub enable_broadcasting: bool,
-    
+
     /// Maximum number of broadcast subscribers
     pub max_broadcast_subscribers: usize,
-    
+
     /// State persistence interval
     pub persistence_interval: Duration,
-    
+
     /// Whether to enable automatic state cleanup
     pub enable_cleanup: bool,
-    
+
     /// Cleanup interval for expired states
     pub cleanup_interval: Duration,
 }
@@ -345,11 +345,11 @@ impl UnifiedStateManager {
     pub fn new() -> Self {
         Self::with_config(StateConfig::default())
     }
-    
+
     /// Create a unified state manager with custom configuration
     pub fn with_config(config: StateConfig) -> Self {
         let (sender, _) = broadcast::channel(config.max_broadcast_subscribers);
-        
+
         Self {
             core_state: Arc::new(RwLock::new(CoreState::default())),
             live_state: Arc::new(DashMap::new()),
@@ -358,17 +358,17 @@ impl UnifiedStateManager {
             state_history: Arc::new(RwLock::new(Vec::new())),
         }
     }
-    
+
     /// Subscribe to state changes
     pub fn subscribe_to_changes(&self) -> broadcast::Receiver<StateChangeEvent> {
         self.state_broadcaster.subscribe()
     }
-    
+
     /// Get core state (read-only access)
     pub fn get_core_state(&self) -> CoreState {
         self.core_state.read().clone()
     }
-    
+
     /// Update core state
     pub fn update_core_state<F>(&self, updater: F) -> MCPResult<()>
     where
@@ -377,21 +377,21 @@ impl UnifiedStateManager {
         let mut state = self.core_state.write();
         updater(&mut state);
         state.last_updated = SystemTime::now();
-        
+
         debug!("Core state updated");
         Ok(())
     }
-    
+
     /// Create a new project
     pub fn create_project(&self, project: ProjectState, source: impl Into<String>) -> MCPResult<()> {
         let source = source.into();
         let project_id = project.id.clone();
-        
+
         // Update core state
         self.update_core_state(|state| {
             state.projects.insert(project_id.clone(), project.clone());
         })?;
-        
+
         // Broadcast change
         self.broadcast_change(StateChangeEvent {
             id: uuid::Uuid::new_v4().to_string(),
@@ -403,16 +403,16 @@ impl UnifiedStateManager {
             source,
             session_id: None,
         });
-        
+
         info!("Created project: {}", project_id);
         Ok(())
     }
-    
+
     /// Update project state
     pub fn update_project(&self, project_id: &str, updates: HashMap<String, Value>, source: impl Into<String>) -> MCPResult<()> {
         let source = source.into();
         let mut changes = HashMap::new();
-        
+
         self.update_core_state(|state| {
             if let Some(project) = state.projects.get_mut(project_id) {
                 for (field, new_value) in updates {
@@ -446,7 +446,7 @@ impl UnifiedStateManager {
                         }
                         _ => None,
                     };
-                    
+
                     changes.insert(field.clone(), StateChange {
                         field: field.clone(),
                         old_value,
@@ -456,7 +456,7 @@ impl UnifiedStateManager {
                 project.last_modified = SystemTime::now();
             }
         })?;
-        
+
         if !changes.is_empty() {
             self.broadcast_change(StateChangeEvent {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -469,19 +469,19 @@ impl UnifiedStateManager {
                 session_id: None,
             });
         }
-        
+
         Ok(())
     }
-    
+
     /// Create a new task
     pub fn create_task(&self, task: TaskState, source: impl Into<String>) -> MCPResult<()> {
         let source = source.into();
         let task_id = task.id.clone();
-        
+
         // Update core state
         self.update_core_state(|state| {
             state.tasks.insert(task_id.clone(), task.clone());
-            
+
             // Add task to project's active tasks
             if let Some(project) = state.projects.get_mut(&task.project_id) {
                 if !project.active_tasks.contains(&task_id) {
@@ -489,7 +489,7 @@ impl UnifiedStateManager {
                 }
             }
         })?;
-        
+
         // Broadcast change
         self.broadcast_change(StateChangeEvent {
             id: uuid::Uuid::new_v4().to_string(),
@@ -501,23 +501,23 @@ impl UnifiedStateManager {
             source,
             session_id: task.assigned_session,
         });
-        
+
         info!("Created task: {}", task_id);
         Ok(())
     }
-    
+
     /// Update task status
     pub fn update_task_status(&self, task_id: &str, status: TaskStatus, progress: Option<f32>, source: impl Into<String>) -> MCPResult<()> {
         let source = source.into();
         let mut changes = HashMap::new();
         let mut session_id = None;
-        
+
         self.update_core_state(|state| {
             if let Some(task) = state.tasks.get_mut(task_id) {
                 // Record old values
                 let old_status = serde_json::to_value(&task.status).unwrap();
                 let old_progress = serde_json::to_value(&task.progress).unwrap();
-                
+
                 // Update status
                 task.status = status;
                 changes.insert("status".to_string(), StateChange {
@@ -525,7 +525,7 @@ impl UnifiedStateManager {
                     old_value: Some(old_status),
                     new_value: serde_json::to_value(&status).unwrap(),
                 });
-                
+
                 // Update progress if provided
                 if let Some(progress) = progress {
                     task.progress = progress;
@@ -535,7 +535,7 @@ impl UnifiedStateManager {
                         new_value: serde_json::to_value(&progress).unwrap(),
                     });
                 }
-                
+
                 // Update timestamps based on status
                 match status {
                     TaskStatus::Running => {
@@ -545,7 +545,7 @@ impl UnifiedStateManager {
                     }
                     TaskStatus::Completed | TaskStatus::Failed | TaskStatus::Cancelled => {
                         task.completed_at = Some(SystemTime::now());
-                        
+
                         // Update performance metrics
                         state.performance_metrics.total_tasks_executed += 1;
                         if let Some(started_at) = task.started_at {
@@ -557,11 +557,11 @@ impl UnifiedStateManager {
                     }
                     _ => {}
                 }
-                
+
                 session_id = task.assigned_session.clone();
             }
         })?;
-        
+
         if !changes.is_empty() {
             self.broadcast_change(StateChangeEvent {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -574,15 +574,15 @@ impl UnifiedStateManager {
                 session_id,
             });
         }
-        
+
         Ok(())
     }
-    
+
     /// Update block state
     pub fn update_block(&self, block_id: &str, status: BlockStatus, outputs: Option<HashMap<String, Value>>, source: impl Into<String>) -> MCPResult<()> {
         let source = source.into();
         let mut changes = HashMap::new();
-        
+
         self.update_core_state(|state| {
             if let Some(block) = state.blocks.get_mut(block_id) {
                 // Update status
@@ -593,7 +593,7 @@ impl UnifiedStateManager {
                     old_value: Some(old_status),
                     new_value: serde_json::to_value(&status).unwrap(),
                 });
-                
+
                 // Update outputs if provided
                 if let Some(outputs) = outputs {
                     let old_outputs = serde_json::to_value(&block.outputs).unwrap();
@@ -604,14 +604,14 @@ impl UnifiedStateManager {
                         new_value: serde_json::to_value(&block.outputs).unwrap(),
                     });
                 }
-                
+
                 if matches!(status, BlockStatus::Executing) {
                     block.last_executed = Some(SystemTime::now());
                     block.execution_count += 1;
                 }
             }
         })?;
-        
+
         if !changes.is_empty() {
             self.broadcast_change(StateChangeEvent {
                 id: uuid::Uuid::new_v4().to_string(),
@@ -624,58 +624,58 @@ impl UnifiedStateManager {
                 session_id: None,
             });
         }
-        
+
         Ok(())
     }
-    
+
     /// Set live state value
     pub fn set_live_state(&self, key: impl Into<String>, value: Value, source: impl Into<String>) -> MCPResult<()> {
         let key = key.into();
         let source = source.into();
-        
+
         let entry = StateEntry {
             value: value.clone(),
             last_updated: SystemTime::now(),
             update_count: self.live_state.get(&key).map(|e| e.update_count + 1).unwrap_or(1),
             source,
         };
-        
+
         self.live_state.insert(key.clone(), entry);
-        
+
         debug!("Updated live state: {}", key);
         Ok(())
     }
-    
+
     /// Get live state value
     pub fn get_live_state(&self, key: &str) -> Option<Value> {
         self.live_state.get(key).map(|entry| entry.value.clone())
     }
-    
+
     /// Remove live state value
     pub fn remove_live_state(&self, key: &str) -> Option<Value> {
         self.live_state.remove(key).map(|(_, entry)| entry.value)
     }
-    
+
     /// Get project by ID
     pub fn get_project(&self, project_id: &str) -> Option<ProjectState> {
         self.core_state.read().projects.get(project_id).cloned()
     }
-    
+
     /// Get task by ID
     pub fn get_task(&self, task_id: &str) -> Option<TaskState> {
         self.core_state.read().tasks.get(task_id).cloned()
     }
-    
+
     /// Get block by ID
     pub fn get_block(&self, block_id: &str) -> Option<BlockState> {
         self.core_state.read().blocks.get(block_id).cloned()
     }
-    
+
     /// Get session by ID
     pub fn get_session(&self, session_id: &str) -> Option<SessionState> {
         self.core_state.read().sessions.get(session_id).cloned()
     }
-    
+
     /// List projects with optional filter
     pub fn list_projects(&self, status_filter: Option<ProjectStatus>) -> Vec<ProjectState> {
         let state = self.core_state.read();
@@ -685,7 +685,7 @@ impl UnifiedStateManager {
             .cloned()
             .collect()
     }
-    
+
     /// List tasks with optional filters
     pub fn list_tasks(&self, project_id: Option<&str>, status_filter: Option<TaskStatus>) -> Vec<TaskState> {
         let state = self.core_state.read();
@@ -693,18 +693,18 @@ impl UnifiedStateManager {
             .values()
             .filter(|task| {
                 project_id.map_or(true, |pid| task.project_id == pid) &&
-                status_filter.map_or(true, |status| task.status == status)
+                    status_filter.map_or(true, |status| task.status == status)
             })
             .cloned()
             .collect()
     }
-    
+
     /// Get state statistics
     pub fn get_statistics(&self) -> StateStatistics {
         let core_state = self.core_state.read();
         let live_state_count = self.live_state.len();
         let history_count = self.state_history.read().len();
-        
+
         StateStatistics {
             total_projects: core_state.projects.len(),
             active_projects: core_state.projects.values().filter(|p| p.status == ProjectStatus::Active).count(),
@@ -717,14 +717,14 @@ impl UnifiedStateManager {
             performance_metrics: core_state.performance_metrics.clone(),
         }
     }
-    
+
     /// Broadcast state change
     fn broadcast_change(&self, event: StateChangeEvent) {
         if self.config.enable_broadcasting {
             if let Err(_) = self.state_broadcaster.send(event.clone()) {
                 warn!("No subscribers for state change event");
             }
-            
+
             // Record in history
             let mut history = self.state_history.write();
             if history.len() >= self.config.max_history_size {
@@ -733,18 +733,18 @@ impl UnifiedStateManager {
             history.push(event);
         }
     }
-    
+
     /// Get recent state changes
     pub fn get_recent_changes(&self, limit: usize) -> Vec<StateChangeEvent> {
         let history = self.state_history.read();
         history.iter().rev().take(limit).cloned().collect()
     }
-    
+
     /// Clean up expired live state entries
     pub fn cleanup_expired_state(&self) -> usize {
         let now = SystemTime::now();
         let mut removed_count = 0;
-        
+
         self.live_state.retain(|_, entry| {
             let expired = entry.last_updated.elapsed().unwrap_or(Duration::MAX) > Duration::from_secs(3600); // 1 hour
             if expired {
@@ -752,11 +752,11 @@ impl UnifiedStateManager {
             }
             !expired
         });
-        
+
         if removed_count > 0 {
             info!("Cleaned up {} expired live state entries", removed_count);
         }
-        
+
         removed_count
     }
 }
@@ -783,7 +783,7 @@ mod tests {
     #[test]
     fn test_project_creation() {
         let state_manager = UnifiedStateManager::new();
-        
+
         let project = ProjectState {
             id: "test_project".to_string(),
             name: "Test Project".to_string(),
@@ -803,9 +803,9 @@ mod tests {
             created_at: SystemTime::now(),
             last_modified: SystemTime::now(),
         };
-        
+
         assert!(state_manager.create_project(project, "test").is_ok());
-        
+
         let retrieved = state_manager.get_project("test_project");
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().name, "Test Project");
@@ -814,7 +814,7 @@ mod tests {
     #[test]
     fn test_task_status_update() {
         let state_manager = UnifiedStateManager::new();
-        
+
         let task = TaskState {
             id: "test_task".to_string(),
             project_id: "test_project".to_string(),
@@ -831,11 +831,11 @@ mod tests {
             dependencies: vec![],
             artifacts: vec![],
         };
-        
+
         state_manager.create_task(task, "test").unwrap();
-        
+
         assert!(state_manager.update_task_status("test_task", TaskStatus::Running, Some(0.5), "test").is_ok());
-        
+
         let retrieved = state_manager.get_task("test_task").unwrap();
         assert_eq!(retrieved.status, TaskStatus::Running);
         assert_eq!(retrieved.progress, 0.5);
@@ -845,11 +845,11 @@ mod tests {
     #[test]
     fn test_live_state() {
         let state_manager = UnifiedStateManager::new();
-        
+
         state_manager.set_live_state("test_key", json!("test_value"), "test").unwrap();
-        
+
         assert_eq!(state_manager.get_live_state("test_key"), Some(json!("test_value")));
-        
+
         let removed = state_manager.remove_live_state("test_key");
         assert_eq!(removed, Some(json!("test_value")));
         assert_eq!(state_manager.get_live_state("test_key"), None);

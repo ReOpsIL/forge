@@ -10,43 +10,43 @@ pub type MCPResult<T> = Result<T, MCPError>;
 pub enum MCPError {
     #[error("Transport error: {0}")]
     Transport(#[from] TransportError),
-    
+
     #[error("Protocol error: {0}")]
     Protocol(#[from] ProtocolError),
-    
+
     #[error("Tool execution error: {0}")]
     ToolExecution(#[from] ToolError),
-    
+
     #[error("Session error: {0}")]
     Session(#[from] SessionError),
-    
+
     #[error("State management error: {0}")]
     State(#[from] StateError),
-    
+
     #[error("Context error: {0}")]
     Context(#[from] ContextError),
-    
+
     #[error("Server error: {0}")]
     Server(#[from] ServerError),
-    
+
     #[error("Validation error: {0}")]
     Validation(String),
-    
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
-    
+
     #[error("Resource not found: {0}")]
     NotFound(String),
-    
+
     #[error("Timeout: {0}")]
     Timeout(String),
-    
+
     #[error("Internal server error: {0}")]
     Internal(String),
-    
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
-    
+
     #[error("Recovery attempted: {recovery_action}")]
     RecoverableError {
         source: Box<dyn std::error::Error + Send + Sync>,
@@ -60,22 +60,22 @@ pub enum MCPError {
 pub enum TransportError {
     #[error("Connection failed: {0}")]
     ConnectionFailed(String),
-    
+
     #[error("Connection lost: {0}")]
     ConnectionLost(String),
-    
+
     #[error("WebSocket error: {0}")]
     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
-    
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
-    
+
     #[error("Invalid message format: {0}")]
     InvalidMessage(String),
-    
+
     #[error("Transport closed")]
     Closed,
 }
@@ -85,19 +85,19 @@ pub enum TransportError {
 pub enum ProtocolError {
     #[error("Invalid JSON-RPC message: {0}")]
     InvalidMessage(String),
-    
+
     #[error("Method not found: {0}")]
     MethodNotFound(String),
-    
+
     #[error("Invalid parameters: {0}")]
     InvalidParams(String),
-    
+
     #[error("Parse error: {0}")]
     ParseError(String),
-    
+
     #[error("Internal error: {0}")]
     InternalError(String),
-    
+
     #[error("Server error: {0}")]
     ServerError(String),
 }
@@ -107,31 +107,31 @@ pub enum ProtocolError {
 pub enum ToolError {
     #[error("Tool not found: {0}")]
     NotFound(String),
-    
+
     #[error("Invalid parameters: {0}")]
     InvalidParams(String),
-    
+
     #[error("Execution failed: {0}")]
     ExecutionFailed(String),
-    
+
     #[error("Timeout: tool execution exceeded {timeout_ms}ms")]
     Timeout { timeout_ms: u64 },
-    
+
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
-    
+
     #[error("Resource limit exceeded: {0}")]
     ResourceLimit(String),
-    
+
     #[error("Dependency error: {0}")]
     Dependency(String),
-    
+
     #[error("File system error: {0}")]
     FileSystem(String),
-    
+
     #[error("Git operation error: {0}")]
     Git(String),
-    
+
     #[error("Network error: {0}")]
     Network(String),
 }
@@ -141,19 +141,19 @@ pub enum ToolError {
 pub enum SessionError {
     #[error("Session not found: {0}")]
     NotFound(String),
-    
+
     #[error("Session expired: {0}")]
     Expired(String),
-    
+
     #[error("Session limit exceeded")]
     LimitExceeded,
-    
+
     #[error("Authentication failed: {0}")]
     AuthenticationFailed(String),
-    
+
     #[error("Concurrent access violation: {0}")]
     ConcurrentAccess(String),
-    
+
     #[error("Session corrupted: {0}")]
     Corrupted(String),
 }
@@ -163,19 +163,19 @@ pub enum SessionError {
 pub enum StateError {
     #[error("Transaction failed: {0}")]
     TransactionFailed(String),
-    
+
     #[error("Consistency violation: {0}")]
     ConsistencyViolation(String),
-    
+
     #[error("Lock acquisition failed: {0}")]
     LockFailed(String),
-    
+
     #[error("Rollback failed: {0}")]
     RollbackFailed(String),
-    
+
     #[error("Persistence error: {0}")]
     Persistence(String),
-    
+
     #[error("Conflict detected: {0}")]
     Conflict(String),
 }
@@ -185,25 +185,25 @@ pub enum StateError {
 pub enum ContextError {
     #[error("Context not found: {0}")]
     NotFound(String),
-    
+
     #[error("Context expired: {0}")]
     Expired(String),
-    
+
     #[error("Serialization failed: {0}")]
     Serialization(String),
-    
+
     #[error("Size limit exceeded: current {current}, limit {limit}")]
     SizeLimit { current: usize, limit: usize },
-    
+
     #[error("Context locked: {0}")]
     Locked(String),
-    
+
     #[error("Storage limit exceeded: {0}")]
     StorageLimit(String),
-    
+
     #[error("Entry is read-only: {0}")]
     ReadOnly(String),
-    
+
     #[error("Concurrent access error: {0}")]
     ConcurrentAccess(String),
 }
@@ -213,22 +213,22 @@ pub enum ContextError {
 pub enum ServerError {
     #[error("Method not found: {0}")]
     MethodNotFound(String),
-    
+
     #[error("Invalid parameters: {0}")]
     InvalidParams(String),
-    
+
     #[error("Session required")]
     SessionRequired,
-    
+
     #[error("Session not found: {0}")]
     SessionNotFound(String),
-    
+
     #[error("Tool execution failed: {0}")]
     ToolExecutionFailed(String),
-    
+
     #[error("Server startup failed: {0}")]
     StartupFailed(String),
-    
+
     #[error("Server shutdown failed: {0}")]
     ShutdownFailed(String),
 }
@@ -261,7 +261,7 @@ impl JsonRpcError {
             data: None,
         }
     }
-    
+
     pub fn with_data(mut self, data: Value) -> Self {
         self.data = Some(data);
         self
@@ -315,21 +315,21 @@ impl ErrorRecoverySystem {
             retry_delay,
         }
     }
-    
+
     pub async fn attempt_recovery<F, T>(&self, operation: F) -> MCPResult<T>
     where
         F: Fn() -> MCPResult<T>,
     {
         let mut attempts = 0;
         let mut last_error = None;
-        
+
         while attempts < self.max_retry_attempts {
             match operation() {
                 Ok(result) => return Ok(result),
                 Err(error) => {
                     attempts += 1;
                     last_error = Some(error);
-                    
+
                     if attempts < self.max_retry_attempts {
                         tracing::warn!(
                             "Operation failed (attempt {}/{}), retrying in {:?}",
@@ -342,7 +342,7 @@ impl ErrorRecoverySystem {
                 }
             }
         }
-        
+
         Err(last_error.unwrap_or_else(|| MCPError::Internal("Unknown error during recovery".to_string())))
     }
 }

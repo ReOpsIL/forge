@@ -1,11 +1,5 @@
 use crate::models::Task;
-use crate::project_config::{
-    ProjectConfigManager, DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT,
-    DEFAULT_AUTO_COMPLETE_USER_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT,
-    DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT,
-    DEFAULT_GENERATE_TASKS_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT,
-    DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT, PROJECT_CONFIG_FILE
-};
+use crate::project_config::{ProjectConfigManager, DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT, DEFAULT_GENERATE_TASKS_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP, PROJECT_CONFIG_FILE};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -509,7 +503,7 @@ pub struct BlockConnection {
 }
 
 impl BlockConnection {
-    pub(crate) fn new() -> BlockConnection {
+    pub fn new() -> BlockConnection {
         Self {
             name: String::new(),
             ctype: String::new(),
@@ -536,10 +530,10 @@ pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
     // Get system prompt from config or use default
-    let system_prompt = config.process_markdown_spec_system_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT);
+    let system_prompt = config.process_markdown_spec_system_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP);
 
     // Get user prompt template from config or use default
-    let user_prompt_template = config.process_markdown_spec_user_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT);
+    let user_prompt_template = config.process_markdown_spec_user_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP);
 
     // Create the user prompt by formatting the template with the markdown content
     let user_prompt = user_prompt_template.replace("{}", markdown_content);

@@ -156,7 +156,7 @@ pub fn glob_match(pattern: &str, text: &str) -> bool {
 pub async fn list_directory_single(
     path: &Path,
     include_hidden: bool,
-    filter_pattern: Option<&str>
+    filter_pattern: Option<&str>,
 ) -> Result<Vec<Value>, ToolError> {
     use tokio::fs;
     let mut entries = Vec::new();
@@ -165,7 +165,6 @@ pub async fn list_directory_single(
 
     while let Some(entry) = dir.next_entry().await
         .map_err(|e| ToolError::FileSystem(format!("Failed to read directory entry: {}", e)))? {
-
         let file_name = entry.file_name();
         let file_name_str = file_name.to_string_lossy();
 
@@ -205,7 +204,7 @@ pub async fn list_directory_recursive(
     path: &Path,
     max_depth: usize,
     include_hidden: bool,
-    filter_pattern: Option<&str>
+    filter_pattern: Option<&str>,
 ) -> Result<Vec<Value>, ToolError> {
     fn collect_entries(
         entries: &mut Vec<Value>,
@@ -213,7 +212,7 @@ pub async fn list_directory_recursive(
         current_depth: usize,
         max_depth: usize,
         include_hidden: bool,
-        filter_pattern: Option<&str>
+        filter_pattern: Option<&str>,
     ) -> Result<(), ToolError> {
         if current_depth > max_depth {
             return Ok(());

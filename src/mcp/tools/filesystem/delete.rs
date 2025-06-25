@@ -120,7 +120,7 @@ impl MCPTool for DeleteTool {
         info!("Deleted {}: {}", if is_dir { "directory" } else { "file" }, path);
 
         Ok(ToolResult::success()
-            .with_content(Content::Text { 
+            .with_content(Content::Text {
                 text: format!("Successfully deleted {}: {}", if is_dir { "directory" } else { "file" }, path)
             })
             .with_context_update(context_update)
@@ -136,11 +136,11 @@ mod tests {
     #[tokio::test]
     async fn test_delete_tool() {
         let temp_dir = TempDir::new().unwrap();
-        
+
         // Create a test file to delete
         let test_file = temp_dir.path().join("test.txt");
         fs::write(&test_file, "test content").await.unwrap();
-        
+
         let tool = DeleteTool;
         let params = json!({
             "path": test_file.to_string_lossy()

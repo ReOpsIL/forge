@@ -92,8 +92,8 @@ impl MCPTool for CreateDirectoryTool {
         info!("Created directory: {}", path);
 
         Ok(ToolResult::success()
-            .with_content(Content::Text { 
-                text: format!("Successfully created directory: {}", path) 
+            .with_content(Content::Text {
+                text: format!("Successfully created directory: {}", path)
             })
             .with_context_update(context_update))
     }
@@ -108,7 +108,7 @@ mod tests {
     async fn test_create_directory_tool() {
         let temp_dir = TempDir::new().unwrap();
         let dir_path = temp_dir.path().join("new_dir");
-        
+
         let tool = CreateDirectoryTool;
         let params = json!({
             "path": dir_path.to_string_lossy(),

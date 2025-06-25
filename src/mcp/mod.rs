@@ -1,5 +1,5 @@
 /// Model Context Protocol (MCP) implementation for Forge IDE
-/// 
+///
 /// This module provides a comprehensive MCP server implementation that enables
 /// bidirectional communication between Forge and Claude Code, replacing the
 /// brittle CLI subprocess approach with structured tool-based interactions.

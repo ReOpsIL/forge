@@ -106,9 +106,9 @@ impl MCPTool for WriteFileTool {
         // Create backup if requested and file exists
         let mut backup_path = None;
         if backup && canonical_path.exists() {
-            let backup_file = format!("{}.backup.{}", 
-                canonical_path.to_string_lossy(), 
-                chrono::Utc::now().format("%Y%m%d_%H%M%S")
+            let backup_file = format!("{}.backup.{}",
+                                      canonical_path.to_string_lossy(),
+                                      chrono::Utc::now().format("%Y%m%d_%H%M%S")
             );
             backup_path = Some(PathBuf::from(&backup_file));
             fs::copy(&canonical_path, &backup_file).await
@@ -148,8 +148,8 @@ impl MCPTool for WriteFileTool {
 
         if let Some(backup_path) = backup_path {
             context_update.custom_data.as_mut().unwrap().insert(
-                "backup_created".to_string(), 
-                json!(backup_path.to_string_lossy())
+                "backup_created".to_string(),
+                json!(backup_path.to_string_lossy()),
             );
         }
 
@@ -161,8 +161,8 @@ impl MCPTool for WriteFileTool {
         info!("Wrote file: {} ({} bytes)", path, bytes_written);
 
         Ok(ToolResult::success()
-            .with_content(Content::Text { 
-                text: format!("Successfully wrote {} bytes to {}", bytes_written, path) 
+            .with_content(Content::Text {
+                text: format!("Successfully wrote {} bytes to {}", bytes_written, path)
             })
             .with_context_update(context_update)
             .with_notification(notification))

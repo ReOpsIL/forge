@@ -51,7 +51,7 @@ pub struct MCPNotification {
 
 impl MCPMessage {
     const JSONRPC_VERSION: &'static str = "2.0";
-    
+
     /// Create a new request message
     pub fn request(method: impl Into<String>, params: Option<Value>) -> Self {
         Self {
@@ -63,7 +63,7 @@ impl MCPMessage {
             error: None,
         }
     }
-    
+
     /// Create a new response message
     pub fn response(id: Value, result: Option<Value>) -> Self {
         Self {
@@ -75,7 +75,7 @@ impl MCPMessage {
             error: None,
         }
     }
-    
+
     /// Create a new error response message
     pub fn error_response(id: Value, error: JsonRpcError) -> Self {
         Self {
@@ -87,7 +87,7 @@ impl MCPMessage {
             error: Some(error),
         }
     }
-    
+
     /// Create a new notification message
     pub fn notification(method: impl Into<String>, params: Option<Value>) -> Self {
         Self {
@@ -99,22 +99,22 @@ impl MCPMessage {
             error: None,
         }
     }
-    
+
     /// Check if this is a request message
     pub fn is_request(&self) -> bool {
         self.method.is_some() && self.id.is_some()
     }
-    
+
     /// Check if this is a response message
     pub fn is_response(&self) -> bool {
         self.id.is_some() && self.method.is_none() && (self.result.is_some() || self.error.is_some())
     }
-    
+
     /// Check if this is a notification message
     pub fn is_notification(&self) -> bool {
         self.method.is_some() && self.id.is_none()
     }
-    
+
     /// Validate the message structure
     pub fn validate(&self) -> MCPResult<()> {
         // Check JSON-RPC version
@@ -123,7 +123,7 @@ impl MCPMessage {
                 format!("Invalid JSON-RPC version: {}", self.jsonrpc)
             )));
         }
-        
+
         // Validate message type consistency
         if self.is_request() {
             if self.result.is_some() || self.error.is_some() {
@@ -137,7 +137,7 @@ impl MCPMessage {
                     "Response message cannot have method or params fields".to_string()
                 )));
             }
-            
+
             // Response must have either result or error, but not both
             match (self.result.is_some(), self.error.is_some()) {
                 (true, true) => {
@@ -163,10 +163,10 @@ impl MCPMessage {
                 "Message does not match any valid type (request, response, notification)".to_string()
             )));
         }
-        
+
         Ok(())
     }
-    
+
     /// Convert to typed request
     pub fn as_request(&self) -> MCPResult<MCPRequest> {
         if !self.is_request() {
@@ -174,7 +174,7 @@ impl MCPMessage {
                 "Message is not a request".to_string()
             )));
         }
-        
+
         Ok(MCPRequest {
             jsonrpc: self.jsonrpc.clone(),
             id: self.id.clone().unwrap(),
@@ -182,7 +182,7 @@ impl MCPMessage {
             params: self.params.clone(),
         })
     }
-    
+
     /// Convert to typed response
     pub fn as_response(&self) -> MCPResult<MCPResponse> {
         if !self.is_response() {
@@ -190,7 +190,7 @@ impl MCPMessage {
                 "Message is not a response".to_string()
             )));
         }
-        
+
         Ok(MCPResponse {
             jsonrpc: self.jsonrpc.clone(),
             id: self.id.clone().unwrap(),
@@ -198,7 +198,7 @@ impl MCPMessage {
             error: self.error.clone(),
         })
     }
-    
+
     /// Convert to typed notification
     pub fn as_notification(&self) -> MCPResult<MCPNotification> {
         if !self.is_notification() {
@@ -206,7 +206,7 @@ impl MCPMessage {
                 "Message is not a notification".to_string()
             )));
         }
-        
+
         Ok(MCPNotification {
             jsonrpc: self.jsonrpc.clone(),
             method: self.method.clone().unwrap(),
@@ -349,32 +349,32 @@ impl MessageParser {
     pub fn parse_message(data: &[u8]) -> MCPResult<MCPMessage> {
         let message: MCPMessage = serde_json::from_slice(data)
             .map_err(|e| MCPError::Protocol(ProtocolError::ParseError(e.to_string())))?;
-        
+
         message.validate()?;
         Ok(message)
     }
-    
+
     /// Serialize a message to JSON bytes
     pub fn serialize_message(message: &MCPMessage) -> MCPResult<Vec<u8>> {
         message.validate()?;
         serde_json::to_vec(message)
             .map_err(|e| MCPError::Protocol(ProtocolError::InternalError(e.to_string())))
     }
-    
+
     /// Parse multiple messages from a buffer (for stream parsing)
     pub fn parse_messages(buffer: &str) -> Vec<MCPResult<MCPMessage>> {
         let mut results = Vec::new();
-        
+
         for line in buffer.lines() {
             let line = line.trim();
             if line.is_empty() {
                 continue;
             }
-            
+
             let result = Self::parse_message(line.as_bytes());
             results.push(result);
         }
-        
+
         results
     }
 }
@@ -424,7 +424,7 @@ mod tests {
         let json_data = r#"{"jsonrpc":"2.0","id":"1","method":"test","params":{"key":"value"}}"#;
         let result = MessageParser::parse_message(json_data.as_bytes());
         assert!(result.is_ok());
-        
+
         let message = result.unwrap();
         assert!(message.is_request());
         assert_eq!(message.method.unwrap(), "test");

@@ -24,16 +24,16 @@ pub enum TransportType {
 pub trait MCPTransport: Send + Sync {
     /// Send a message through the transport
     async fn send(&mut self, message: MCPMessage) -> MCPResult<()>;
-    
+
     /// Receive a message from the transport
     async fn receive(&mut self) -> MCPResult<MCPMessage>;
-    
+
     /// Close the transport connection
     async fn close(&mut self) -> MCPResult<()>;
-    
+
     /// Check if the transport is still connected
     fn is_connected(&self) -> bool;
-    
+
     /// Get the transport type
     fn transport_type(&self) -> TransportType;
 }
@@ -51,14 +51,14 @@ impl WebSocketTransport {
         let ws_stream = accept_async(stream)
             .await
             .map_err(|e| MCPError::Transport(TransportError::WebSocket(e)))?;
-        
+
         let (ws_sender, ws_receiver) = ws_stream.split();
         let (msg_sender, msg_receiver) = mpsc::unbounded_channel();
         let (response_sender, response_receiver) = mpsc::unbounded_channel();
-        
+
         let is_connected = Arc::new(RwLock::new(true));
         let is_connected_clone = is_connected.clone();
-        
+
         // Spawn task to handle outgoing messages
         let mut ws_sender = ws_sender;
         tokio::spawn(async move {
@@ -71,7 +71,7 @@ impl WebSocketTransport {
                         continue;
                     }
                 };
-                
+
                 let ws_message = WsMessage::Text(String::from_utf8_lossy(&json_data).to_string());
                 if let Err(e) = ws_sender.send(ws_message).await {
                     error!("Failed to send WebSocket message: {}", e);
@@ -80,7 +80,7 @@ impl WebSocketTransport {
                 }
             }
         });
-        
+
         // Spawn task to handle incoming messages
         let msg_sender_clone = msg_sender.clone();
         let is_connected_clone = is_connected.clone();
@@ -136,7 +136,7 @@ impl WebSocketTransport {
             }
             *is_connected_clone.write().await = false;
         });
-        
+
         Ok(Self {
             sender: response_sender,
             receiver: msg_receiver,
@@ -153,14 +153,14 @@ impl MCPTransport for WebSocketTransport {
                 "WebSocket connection is closed".to_string()
             )));
         }
-        
+
         self.sender
             .send(message)
             .map_err(|_| MCPError::Transport(TransportError::ConnectionLost(
                 "WebSocket sender channel closed".to_string()
             )))
     }
-    
+
     async fn receive(&mut self) -> MCPResult<MCPMessage> {
         self.receiver
             .recv()
@@ -169,17 +169,17 @@ impl MCPTransport for WebSocketTransport {
                 "WebSocket receiver channel closed".to_string()
             )))
     }
-    
+
     async fn close(&mut self) -> MCPResult<()> {
         *self.is_connected.write().await = false;
         Ok(())
     }
-    
+
     fn is_connected(&self) -> bool {
         // Use try_read to avoid blocking
         self.is_connected.try_read().map(|guard| *guard).unwrap_or(false)
     }
-    
+
     fn transport_type(&self) -> TransportType {
         TransportType::WebSocket
     }
@@ -198,11 +198,11 @@ impl HttpTransport {
             is_connected: true,
         }
     }
-    
+
     /// Handle an HTTP request and return the response
     pub async fn handle_request(&mut self, request_body: Vec<u8>) -> MCPResult<Vec<u8>> {
         let request = MessageParser::parse_message(&request_body)?;
-        
+
         // For HTTP, we expect immediate responses
         // This would typically be handled by the MCP server
         // For now, return a placeholder response
@@ -210,14 +210,14 @@ impl HttpTransport {
             let req = request.as_request()?;
             MCPMessage::response(
                 req.id,
-                Some(serde_json::json!({"status": "received"}))
+                Some(serde_json::json!({"status": "received"})),
             )
         } else {
             return Err(MCPError::Transport(TransportError::InvalidMessage(
                 "HTTP transport expects request messages".to_string()
             )));
         };
-        
+
         MessageParser::serialize_message(&response)
     }
 }
@@ -232,12 +232,12 @@ impl MCPTransport for HttpTransport {
                 return Ok(());
             }
         }
-        
+
         Err(MCPError::Transport(TransportError::InvalidMessage(
             "HTTP transport requires message ID for responses".to_string()
         )))
     }
-    
+
     async fn receive(&mut self) -> MCPResult<MCPMessage> {
         // HTTP is request-response, so receiving is handled differently
         // This would typically be called by the HTTP handler
@@ -245,16 +245,16 @@ impl MCPTransport for HttpTransport {
             "HTTP transport does not support streaming receive".to_string()
         )))
     }
-    
+
     async fn close(&mut self) -> MCPResult<()> {
         self.is_connected = false;
         Ok(())
     }
-    
+
     fn is_connected(&self) -> bool {
         self.is_connected
     }
-    
+
     fn transport_type(&self) -> TransportType {
         TransportType::Http
     }
@@ -272,7 +272,7 @@ impl StdioTransport {
         let (msg_sender, msg_receiver) = mpsc::unbounded_channel();
         let (response_sender, response_receiver) = mpsc::unbounded_channel();
         let is_connected = Arc::new(RwLock::new(true));
-        
+
         // Spawn task to handle stdout output
         let is_connected_clone = is_connected.clone();
         tokio::spawn(async move {
@@ -285,26 +285,26 @@ impl StdioTransport {
                         continue;
                     }
                 };
-                
+
                 // Write to stdout with newline delimiter
                 if let Err(e) = tokio::io::AsyncWriteExt::write_all(
                     &mut tokio::io::stdout(),
-                    &json_data
+                    &json_data,
                 ).await {
                     error!("Failed to write to stdout: {}", e);
                     *is_connected_clone.write().await = false;
                     break;
                 }
-                
+
                 if let Err(e) = tokio::io::AsyncWriteExt::write_all(
                     &mut tokio::io::stdout(),
-                    b"\n"
+                    b"\n",
                 ).await {
                     error!("Failed to write newline to stdout: {}", e);
                     *is_connected_clone.write().await = false;
                     break;
                 }
-                
+
                 if let Err(e) = tokio::io::AsyncWriteExt::flush(&mut tokio::io::stdout()).await {
                     error!("Failed to flush stdout: {}", e);
                     *is_connected_clone.write().await = false;
@@ -312,22 +312,22 @@ impl StdioTransport {
                 }
             }
         });
-        
+
         // Spawn task to handle stdin input
         let msg_sender_clone = msg_sender.clone();
         let is_connected_clone = is_connected.clone();
         tokio::spawn(async move {
             use tokio::io::{AsyncBufReadExt, BufReader};
-            
+
             let stdin = tokio::io::stdin();
             let reader = BufReader::new(stdin);
             let mut lines = reader.lines();
-            
+
             while let Ok(Some(line)) = lines.next_line().await {
                 if line.trim().is_empty() {
                     continue;
                 }
-                
+
                 match MessageParser::parse_message(line.as_bytes()) {
                     Ok(mcp_message) => {
                         if let Err(_) = msg_sender_clone.send(mcp_message) {
@@ -340,10 +340,10 @@ impl StdioTransport {
                     }
                 }
             }
-            
+
             *is_connected_clone.write().await = false;
         });
-        
+
         Ok(Self {
             sender: response_sender,
             receiver: msg_receiver,
@@ -360,14 +360,14 @@ impl MCPTransport for StdioTransport {
                 "Stdio connection is closed".to_string()
             )));
         }
-        
+
         self.sender
             .send(message)
             .map_err(|_| MCPError::Transport(TransportError::ConnectionLost(
                 "Stdio sender channel closed".to_string()
             )))
     }
-    
+
     async fn receive(&mut self) -> MCPResult<MCPMessage> {
         self.receiver
             .recv()
@@ -376,16 +376,16 @@ impl MCPTransport for StdioTransport {
                 "Stdio receiver channel closed".to_string()
             )))
     }
-    
+
     async fn close(&mut self) -> MCPResult<()> {
         *self.is_connected.write().await = false;
         Ok(())
     }
-    
+
     fn is_connected(&self) -> bool {
         self.is_connected.try_read().map(|guard| *guard).unwrap_or(false)
     }
-    
+
     fn transport_type(&self) -> TransportType {
         TransportType::Stdio
     }
@@ -400,13 +400,13 @@ impl TransportFactory {
         let transport = WebSocketTransport::new(stream).await?;
         Ok(Box::new(transport))
     }
-    
+
     /// Create an HTTP transport
     pub async fn create_http() -> MCPResult<Box<dyn MCPTransport>> {
         let transport = HttpTransport::new();
         Ok(Box::new(transport))
     }
-    
+
     /// Create a stdio transport
     pub async fn create_stdio() -> MCPResult<Box<dyn MCPTransport>> {
         let transport = StdioTransport::new().await?;
@@ -430,14 +430,14 @@ mod tests {
         let mut transport = HttpTransport::new();
         assert!(transport.is_connected());
         assert_eq!(transport.transport_type(), TransportType::Http);
-        
+
         // Test handling a request
         let request = MCPMessage::request("test_method", Some(json!({"param": "value"})));
         let request_data = MessageParser::serialize_message(&request).unwrap();
-        
+
         let response_data = transport.handle_request(request_data).await.unwrap();
         let response = MessageParser::parse_message(&response_data).unwrap();
-        
+
         assert!(response.is_response());
     }
 
@@ -446,7 +446,7 @@ mod tests {
         let message = MCPMessage::request("test", Some(json!({"key": "value"})));
         let serialized = MessageParser::serialize_message(&message).unwrap();
         let deserialized = MessageParser::parse_message(&serialized).unwrap();
-        
+
         assert_eq!(message.method, deserialized.method);
         assert_eq!(message.params, deserialized.params);
     }
