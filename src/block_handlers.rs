@@ -2,9 +2,9 @@ use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
-
+use tracing::{error, info};
 use crate::block_config::{generate_sample_config, BlockConfigManager};
-use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_markdown_spec};
+use crate::llm_handler::{auto_complete_description, enhance_description, generate_tasks, process_specification, GeneratedBlock, LLMProvider};
 use crate::models::{Block, Task};
 use crate::project_config::ProjectConfigManager;
 
@@ -46,7 +46,7 @@ pub struct ProcessMarkdownResponse {
     pub message: String,
 }
 
-// Define request and response types for markdown specification processing
+// Define request and response types for specification processing
 #[derive(Deserialize)]
 pub struct ProcessSpecRequest {
     pub markdown_content: String,
@@ -449,72 +449,96 @@ pub async fn process_markdown_handler(request: web::Json<ProcessMarkdownRequest>
     }
 }
 
-// API endpoint to process a markdown specification and generate blocks
-pub async fn process_spec_handler(request: web::Json<ProcessSpecRequest>, data: web::Data<AppState>) -> impl Responder {
+// API endpoint to process a specification and generate blocks
+pub async fn process_specification_handler(request: web::Json<ProcessSpecRequest>, data: web::Data<AppState>) -> impl Responder {
     let request = request.into_inner();
-
+    
     // Get the project configuration to get the LLM provider setting
     let project_config = match data.project_manager.get_config() {
         Ok(config) => config,
         Err(e) => {
-            println!("Failed to get project config: {}", e);
+            error!("Failed to get project config: {}", e);
             return HttpResponse::InternalServerError().body(format!("Failed to get project config: {}", e));
         }
     };
 
-    // Process the markdown specification and generate blocks
-    match process_markdown_spec(
+    // Process the specification and generate blocks
+    match process_specification(
         &request.markdown_content, 
         project_config.llm_provider
     ).await {
-
         Ok(generated_blocks) => {
-            let mut created_blocks = Vec::new();
-
-            // Create blocks from the generated blocks
-            for generated_block in generated_blocks {
-
-                // Store the name for error reporting
-                let block_id = generated_block.block_id.clone();
-                let block_name = generated_block.name.clone();
-                println!("Generated block {}: {}",block_id, block_name);
-
-                // Create a new Block from the GeneratedBlock
-                let block = Block::new(
-                    block_name.clone(),
-                    generated_block.description,
-                    generated_block.inputs,
-                    generated_block.outputs
-                );
-
-                // Add the block to the database
-                match data.block_manager.add_block(block.clone()) {
-                    Ok(_) => {
-                        created_blocks.push(block);
-                    },
-                    Err(e) => {
-                        println!("Error Failed to add block ");
-                        return HttpResponse::BadRequest().body(format!("Failed to add block '{}': {}", block_name, e));
+            match data.project_manager.get_config().unwrap().llm_provider.unwrap() {
+                LLMProvider::ClaudeCode => {
+                    let response = ProcessSpecResponse {
+                        status: "success".to_string(),
+                        message: "Successfully processed specification and created blocks using mcp.".to_string(),
+                        blocks: Vec::new(),
+                    };
+                    HttpResponse::Ok().json(response)
+                }
+                _ => {
+                    match create_blocks_from_llm(generated_blocks, data)  {
+                        Ok(response) => {
+                            HttpResponse::Ok().json(response)
+                        },
+                        Err(e) => {
+                            error!("Failed to process specification: {}", e);
+                            HttpResponse::InternalServerError().body(format!("Failed to process specification: {}", e))
+                        }
                     }
                 }
             }
 
-            // Save the updated blocks to the file
-            if let Err(e) = data.block_manager.save_blocks_to_file() {
-                return HttpResponse::InternalServerError().body(e);
-            }
-
-            // Return the response with the created blocks
-            let response = ProcessSpecResponse {
-                status: "success".to_string(),
-                message: format!("Successfully processed markdown specification and created {} blocks", created_blocks.len()),
-                blocks: created_blocks,
-            };
-            HttpResponse::Ok().json(response)
         },
         Err(e) => {
-            HttpResponse::InternalServerError().body(format!("Failed to process markdown specification: {}", e))
+            HttpResponse::InternalServerError().body(format!("Failed to process specification: {}", e))
         }
     }
+}
+
+pub fn create_blocks_from_llm(generated_blocks: Vec<GeneratedBlock>, data: web::Data<AppState>) -> Result<(ProcessSpecResponse), String>  {
+    let mut created_blocks = Vec::new();
+
+    // Create blocks from the generated blocks
+    for generated_block in generated_blocks {
+
+        // Store the name for error reporting
+        let block_id = generated_block.block_id.clone();
+        let block_name = generated_block.name.clone();
+        info!("Generated block {}: {}",block_id, block_name);
+
+        // Create a new Block from the GeneratedBlock
+        let block = Block::new(
+            block_name.clone(),
+            generated_block.description,
+            generated_block.inputs,
+            generated_block.outputs
+        );
+
+        // Add the block to the database
+        match data.block_manager.add_block(block.clone()) {
+            Ok(_) => {
+                created_blocks.push(block);
+            },
+            Err(e) => {
+                info!("Error Failed to add block ");
+                return Err(format!("Failed to add block '{}': {}", block_name, e));
+            }
+        }
+    }
+
+    // Save the updated blocks to the file
+    if let Err(e) = data.block_manager.save_blocks_to_file() {
+       return Err(e);
+    }
+
+    // Return the response with the created blocks
+    let response = ProcessSpecResponse {
+        status: "success".to_string(),
+        message: format!("Successfully processed specification and created {} blocks", created_blocks.len()),
+        blocks: created_blocks,
+    };
+    Ok(response)
 }
 

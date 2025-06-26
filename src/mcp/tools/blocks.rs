@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
 
 use crate::llm_handler::BlockConnection;
@@ -67,7 +67,7 @@ impl MCPTool for ListBlocksTool {
         match context.block_manager.load_blocks_from_file() {
             Ok(_) => info!("Blocks loaded successfully from ListBlocksTool::execute"),
             Err(e) => {
-                warn!("Failed to load blocks - called from ListBlocksTool::execute - Error: {}", e);
+                error!("Failed to load blocks - called from ListBlocksTool::execute - Error: {}", e);
             }
         }
 
@@ -166,7 +166,7 @@ impl MCPTool for ListBlocksTool {
             ].into_iter().collect()),
         };
 
-        debug!("Listed {} blocks", result_blocks.len());
+        info!("Listed {} blocks", result_blocks.len());
 
         // Format the result as pretty-printed JSON
         let formatted_blocks = serde_json::to_string_pretty(&result_blocks)
@@ -257,10 +257,10 @@ impl MCPTool for CreateBlockTool {
         // Save the updated blocks to file
         match context.block_manager.save_blocks_to_file() {
             Ok(_) => {
-                debug!("Successfully saved blocks to file");
+                info!("Successfully saved blocks to file");
             }
             Err(e) => {
-                warn!("Failed to save blocks to file: {}", e);
+                error!("Failed to save blocks to file: {}", e);
                 return Err(ToolError::ExecutionFailed(format!("Failed to save blocks: {}", e)));
             }
         }
@@ -421,9 +421,9 @@ impl MCPTool for CreateTaskTool {
 
         // Load blocks to verify the block exists
         match context.block_manager.load_blocks_from_file() {
-            Ok(_) => debug!("Blocks loaded successfully for CreateTaskTool"),
+            Ok(_) => info!("Blocks loaded successfully for CreateTaskTool"),
             Err(e) => {
-                warn!("Failed to load blocks in CreateTaskTool: {}", e);
+                error!("Failed to load blocks in CreateTaskTool: {}", e);
             }
         }
 
@@ -462,10 +462,10 @@ impl MCPTool for CreateTaskTool {
         // Save the updated blocks to file
         match context.block_manager.save_blocks_to_file() {
             Ok(_) => {
-                debug!("Successfully saved blocks to file after adding task");
+                info!("Successfully saved blocks to file after adding task");
             },
             Err(e) => {
-                warn!("Failed to save blocks to file: {}", e);
+                error!("Failed to save blocks to file: {}", e);
                 return Err(ToolError::ExecutionFailed(format!("Failed to save blocks: {}", e)));
             }
         }

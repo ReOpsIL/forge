@@ -23,7 +23,7 @@ mod task_queue;
 mod log_stream;
 
 mod mcp;
-use crate::block_handlers::{generate_tasks_block_handler, process_spec_handler};
+use crate::block_handlers::{generate_tasks_block_handler, process_specification_handler};
 use crate::git_handlers::pull_handler;
 use block_config::{generate_sample_config, BlockConfigManager, DEFAULT_BLOCK_CONFIG_FILE};
 use block_handlers::{
@@ -208,18 +208,18 @@ async fn main() -> std::io::Result<()> {
         Ok(_) => info!("Blocks loaded successfully from {}", blocks_config_path),
         Err(e) => {
             warn!("Failed to load blocks from {}: {}", blocks_config_path, e);
-            info!("Generating a sample config file...");
-            if let Err(e) = generate_sample_config(&blocks_config_path) {
-                error!("Failed to generate sample config: {}", e);
-            } else {
-                info!("Sample config generated successfully");
-                // Try loading again
-                if let Err(e) = block_manager.load_blocks_from_file() {
-                    error!("Failed to load blocks from the generated config: {}", e);
-                } else {
-                    info!("Blocks loaded successfully from the generated config");
-                }
-            }
+            // info!("Generating a sample config file...");
+            // if let Err(e) = generate_sample_config(&blocks_config_path) {
+            //     error!("Failed to generate sample config: {}", e);
+            // } else {
+            //     info!("Sample config generated successfully");
+            //     // Try loading again
+            //     if let Err(e) = block_manager.load_blocks_from_file() {
+            //         error!("Failed to load blocks from the generated config: {}", e);
+            //     } else {
+            //         info!("Blocks loaded successfully from the generated config");
+            //     }
+            // }
         }
     }
 
@@ -282,7 +282,7 @@ async fn run_http_server(
                     .route("/blocks/{block_id}/generate-tasks", web::put().to(generate_tasks_block_handler))
                     .route("/blocks/auto-complete", web::post().to(auto_complete_handler))
                     .route("/blocks/process-markdown", web::post().to(process_markdown_handler))
-                    .route("/blocks/process-spec", web::post().to(process_spec_handler))
+                    .route("/blocks/process-spec", web::post().to(process_specification_handler))
                     .route("/blocks/{blockId}/dependencies", web::get().to(get_block_dependencies_handler))
                     .route("/generate-sample", web::post().to(generate_sample_config_handler))
                     // Project routes

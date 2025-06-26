@@ -47,6 +47,8 @@ const ProjectView = ({ setActiveView }) => {
 
     // LLM provider options
     const llmProviderOptions = [
+        { label: 'ClaudeCode', value: 'ClaudeCode' },
+        { label: 'GeminiCode', value: 'GeminiCode' },
         { label: 'OpenRouter', value: 'OpenRouter' },
         { label: 'Gemini', value: 'Gemini' },
         { label: 'Anthropic', value: 'Anthropic' }
@@ -377,7 +379,7 @@ const ProjectView = ({ setActiveView }) => {
                             <label htmlFor="llm_provider">
                                 LLM Provider
                                 <Tooltip target=".llm-provider-help" position="right">
-                                    The LLM provider to use for AI-powered features. If not selected, OpenRouter will be used by default.
+                                    The LLM provider to use for AI-powered features. If not selected, ClaudeCode will be used by default.
                                 </Tooltip>
                                 <i className="pi pi-question-circle ml-2 llm-provider-help" style={{ cursor: 'pointer' }}></i>
                             </label>
@@ -390,6 +392,46 @@ const ProjectView = ({ setActiveView }) => {
                                 className="w-full"
                             />
                         </div>
+
+                        {projectConfig.llm_provider === 'ClaudeCode' && (
+                            <div className="field">
+                                <label htmlFor="anthropic_model">
+                                    Anthropic Model
+                                    <Tooltip target=".anthropic-model-help" position="right">
+                                        The model to use with Anthropic. If not selected, the default model will be used.
+                                    </Tooltip>
+                                    <i className="pi pi-question-circle ml-2 anthropic-model-help" style={{ cursor: 'pointer' }}></i>
+                                </label>
+                                <Dropdown
+                                    id="anthropic_model"
+                                    value={projectConfig.anthropic_model}
+                                    options={anthropicModelOptions}
+                                    onChange={(e) => handleInputChange('anthropic_model', e.value)}
+                                    placeholder="Select an Anthropic Model"
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+
+                        {projectConfig.llm_provider === 'GeminiCode' && (
+                            <div className="field">
+                                <label htmlFor="gemini_model">
+                                    Gemini Model
+                                    <Tooltip target=".gemini-model-help" position="right">
+                                        The model to use with Gemini. If not selected, the default model will be used.
+                                    </Tooltip>
+                                    <i className="pi pi-question-circle ml-2 gemini-model-help" style={{ cursor: 'pointer' }}></i>
+                                </label>
+                                <Dropdown
+                                    id="gemini_model"
+                                    value={projectConfig.gemini_model}
+                                    options={geminiModelOptions}
+                                    onChange={(e) => handleInputChange('gemini_model', e.value)}
+                                    placeholder="Select a Gemini Model"
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
 
                         {projectConfig.llm_provider === 'OpenRouter' && (
                             <div className="field">

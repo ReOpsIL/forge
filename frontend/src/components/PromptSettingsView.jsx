@@ -36,7 +36,7 @@ const PromptSettingsView = ({ setActiveView }) => {
         { label: 'Auto Complete', icon: 'pi pi-pencil' },
         { label: 'Enhance Description', icon: 'pi pi-file-edit' },
         { label: 'Generate Tasks', icon: 'pi pi-list' },
-        { label: 'Process Markdown', icon: 'pi pi-file' }
+        { label: 'Process Specification', icon: 'pi pi-file' }
     ];
 
     useEffect(() => {
@@ -390,7 +390,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                         </div>
                     </>
                 );
-            case 3: // Process Markdown
+            case 3: // Process Specification
                 return (
                     <>
                         <div className="field">

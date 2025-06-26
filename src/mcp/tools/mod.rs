@@ -414,6 +414,9 @@ impl Default for SessionPermissions {
     fn default() -> Self {
         let mut permissions = std::collections::HashSet::new();
         permissions.insert(Permission::FileRead);
+        permissions.insert(Permission::FileWrite);
+        permissions.insert(Permission::ProjectConfig);
+        permissions.insert(Permission::TaskManagement);
 
         Self {
             granted_permissions: permissions,

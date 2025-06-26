@@ -44,8 +44,7 @@ pub const DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT: &str = "Transform the followi
 
 Original description:
 {}
-
-Enhanced specification:";
+";
 
 pub const DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT: &str = "You are a senior software developer and project manager expert at breaking down software components into granular, executable development tasks. Focus on creating tasks that are specific, measurable, and can be directly implemented by developers.";
 
@@ -145,8 +144,8 @@ Specification document:
 {}
 ";
 
-// MCP-based prompts for processing markdown specifications using create_block and create_task tools
-pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP: &str = "You are a software architecture analyst expert at parsing technical specifications and creating structured implementation components using MCP tools. You will use the `create_block` and `create_task` MCP tools to directly create forge Blocks and their associated Tasks based on markdown specifications.
+// MCP-based prompts for processing specifications using create_block and create_task tools
+pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP: &str = "You are a software architecture analyst expert at parsing technical specifications and creating structured implementation components using MCP tools. You will use the `create_block` and `create_task` MCP tools to directly create forge Blocks and their associated Tasks based on specifications.
 
 **Available MCP Tools:**
 - `create_block`: Creates a new block with name, description, and optional block_id

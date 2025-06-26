@@ -5,10 +5,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::env;
 use std::sync::Arc;
+use tokio::process::Command;
+use std::process::Stdio;
 
 // LLM Provider enum
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum LLMProvider {
+    ClaudeCode,
+    GeminiCode,
     OpenRouter,
     Gemini,
     Anthropic,
@@ -16,7 +20,7 @@ pub enum LLMProvider {
 
 impl Default for LLMProvider {
     fn default() -> Self {
-        LLMProvider::OpenRouter
+        LLMProvider::ClaudeCode
     }
 }
 
@@ -151,6 +155,8 @@ impl LLMProviderImpl {
             LLMProvider::OpenRouter => self.send_openrouter_prompt(system_prompt, user_prompt).await,
             LLMProvider::Gemini => self.send_gemini_prompt(system_prompt, user_prompt).await,
             LLMProvider::Anthropic => self.send_anthropic_prompt(system_prompt, user_prompt).await,
+            LLMProvider::ClaudeCode => self.send_claudecode_prompt(system_prompt, user_prompt).await,
+            LLMProvider::GeminiCode => self.send_geminicode_prompt(system_prompt, user_prompt).await,
         }
     }
 
@@ -309,6 +315,98 @@ impl LLMProviderImpl {
         println!("No response from Anthropic");
         Err("No response from Anthropic".to_string())
     }
+
+    async fn send_claudecode_prompt(&self, system_prompt: &str, user_prompt: &str) -> Result<String, String> {
+        // Create a combined prompt for Claude Code
+        let combined_prompt = format!("{}\n\n{}", system_prompt, user_prompt);
+        
+        // Execute the claude command with the specified arguments
+        let mut command = Command::new("claude");
+        command
+            .arg("--print")
+            .arg("--dangerously-skip-permissions")
+            .arg("--output-format")
+            .arg("json")
+            .arg(combined_prompt)
+            //.stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        println!("{:?}",command);
+        // Spawn the process
+        let mut child = command.spawn()
+            .map_err(|e| format!("Failed to execute claude command: {}", e))?;
+
+        // // Write the prompt to stdin
+        // if let Some(stdin) = child.stdin.take() {
+        //     use tokio::io::AsyncWriteExt;
+        //     let mut stdin = stdin;
+        //     stdin.write_all(combined_prompt.as_bytes()).await
+        //         .map_err(|e| format!("Failed to write to claude stdin: {}", e))?;
+        //     stdin.shutdown().await
+        //         .map_err(|e| format!("Failed to close claude stdin: {}", e))?;
+        // }
+
+        // Wait for the process to complete and capture output
+        let output = child.wait_with_output().await
+            .map_err(|e| format!("Failed to wait for claude process: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Claude command failed: {}", stderr));
+        }
+
+        // Parse the stdout as the response
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // For ClaudeCode, we expect minimal JSON response since MCP tools handle block/task creation
+        // The response should just be the claude output, not comprehensive block/task data
+        Ok(stdout.to_string())
+    }
+
+    async fn send_geminicode_prompt(&self, system_prompt: &str, user_prompt: &str) -> Result<String, String> {
+        // Create a combined prompt for Claude Code
+        let combined_prompt = format!("{}\n\n{}", system_prompt, user_prompt);
+
+        // Execute the claude command with the specified arguments
+        let mut command = Command::new("gemini");
+        command
+            .arg("-p")
+            .arg("--dangerously-skip-permissions")
+            .arg(combined_prompt)
+            //.stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        println!("{:?}",command);
+        // Spawn the process
+        let mut child = command.spawn()
+            .map_err(|e| format!("Failed to execute claude command: {}", e))?;
+
+        // // Write the prompt to stdin
+        // if let Some(stdin) = child.stdin.take() {
+        //     use tokio::io::AsyncWriteExt;
+        //     let mut stdin = stdin;
+        //     stdin.write_all(combined_prompt.as_bytes()).await
+        //         .map_err(|e| format!("Failed to write to claude stdin: {}", e))?;
+        //     stdin.shutdown().await
+        //         .map_err(|e| format!("Failed to close claude stdin: {}", e))?;
+        // }
+
+        // Wait for the process to complete and capture output
+        let output = child.wait_with_output().await
+            .map_err(|e| format!("Failed to wait for claude process: {}", e))?;
+
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("Claude command failed: {}", stderr));
+        }
+
+        // Parse the stdout as the response
+        let stdout = String::from_utf8_lossy(&output.stdout);
+
+        // For ClaudeCode, we expect minimal JSON response since MCP tools handle block/task creation
+        // The response should just be the claude output, not comprehensive block/task data
+        Ok(stdout.to_string())
+    }
 }
 
 
@@ -342,6 +440,12 @@ pub async fn auto_complete_description(description: &str, provider_type: Option<
         LLMProvider::Anthropic => {
             provider.send_anthropic_prompt(system_prompt, &user_prompt).await
         },
+        LLMProvider::ClaudeCode => {
+            provider.send_claudecode_prompt(system_prompt, &user_prompt).await
+        },
+        LLMProvider::GeminiCode => {
+            provider.send_geminicode_prompt(system_prompt, &user_prompt).await
+        },
     }
 }
 
@@ -374,6 +478,12 @@ pub async fn enhance_description(description: &str, provider_type: Option<LLMPro
         LLMProvider::Anthropic => {
             provider.send_anthropic_prompt(system_prompt, &user_prompt).await
         },
+        LLMProvider::ClaudeCode => {
+            provider.send_claudecode_prompt(system_prompt, &user_prompt).await
+        },
+        LLMProvider::GeminiCode => {
+            provider.send_geminicode_prompt(system_prompt, &user_prompt).await
+        },
     }
 }
 
@@ -386,8 +496,8 @@ pub struct TaskResponse {
 }
 
 // Function to get the full task response from LLM
-pub async fn get_task_response(description: &str, provider_type: &Option<LLMProvider>) -> Result<TaskResponse, String> {
-    let provider = LLMProviderImpl::new(provider_type.clone().unwrap_or_default());
+pub async fn get_task_response(description: &str, llm_provider: &Option<LLMProvider>) -> Result<TaskResponse, String> {
+    let provider = LLMProviderImpl::new(llm_provider.clone().unwrap_or_default());
 
     // Load project configuration to get custom prompts
     let project_manager = ProjectConfigManager::get_instance();
@@ -413,6 +523,12 @@ pub async fn get_task_response(description: &str, provider_type: &Option<LLMProv
         LLMProvider::Anthropic => {
             provider.send_anthropic_prompt(system_prompt, &user_prompt).await?
         },
+        LLMProvider::ClaudeCode => {
+            provider.send_claudecode_prompt(system_prompt, &user_prompt).await?
+        },
+        LLMProvider::GeminiCode => {
+            provider.send_geminicode_prompt(system_prompt, &user_prompt).await?
+        },
     };
 
     println!("{}",content);
@@ -428,9 +544,9 @@ pub async fn get_task_response(description: &str, provider_type: &Option<LLMProv
 }
 
 // Function to generate tasks for a block based on its description
-pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider>) -> Result<Vec<Task>, String> {
+pub async fn generate_tasks(description: &str, llm_provider: Option<LLMProvider>) -> Result<Vec<Task>, String> {
     // Try to get the structured task response
-    match get_task_response(description, &provider_type).await {
+    match get_task_response(description, &llm_provider).await {
         Ok(task_response) => {
             // Extract task names from the structured response
             // let tasks: Vec<String> = task_response.tasks
@@ -449,52 +565,7 @@ pub async fn generate_tasks(description: &str, provider_type: Option<LLMProvider
     }
 }
 
-// // Function to process a markdown file and generate tasks
-// pub async fn process_markdown_file(markdown_content: &str, provider_type: Option<LLMProvider>) -> Result<Vec<String>, String> {
-//     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
-// 
-//     // Create the system prompt
-//     let system_prompt = "You are an expert software developer assistant that helps extract and format tasks from markdown files.";
-// 
-//     // Create the user prompt
-//     let user_prompt = format!(
-//         "Process the following markdown file and extract a list of tasks. Format each task as a separate item in a list. If the markdown already contains a list of tasks, extract and format them appropriately:\n\n{}",
-//         markdown_content
-//     );
-// 
-//     // Send the prompt and get the response
-//     let content = provider.send_prompt(system_prompt, &user_prompt).await?;
-// 
-//     // Parse the content into a list of tasks
-//     // Simple parsing: split by newlines and filter out empty lines and list markers
-//     let tasks: Vec<String> = content
-//         .lines()
-//         .map(|line| line.trim())
-//         .filter(|line| !line.is_empty())
-//         .map(|line| {
-//             // Remove list markers like "1.", "- ", "* ", etc.
-//             if line.starts_with(|c: char| c.is_numeric() || c == '-' || c == '*') {
-//                 let mut chars = line.chars();
-//                 chars.next(); // Skip the first character
-// 
-//                 // Skip any following characters that are not letters (like ".", ")", " ")
-//                 let mut result = chars.as_str();
-//                 while !result.is_empty() && !result.chars().next().unwrap().is_alphabetic() {
-//                     result = &result[1..];
-//                 }
-// 
-//                 result.trim().to_string()
-//             } else {
-//                 line.to_string()
-//             }
-//         })
-//         .filter(|line| !line.is_empty())
-//         .collect();
-// 
-//     Ok(tasks)
-// }
-
-// Define the structure for a block generated from a markdown specification
+// Define the structure for a block generated from a specification
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockConnection {
     pub name: String,
@@ -521,39 +592,64 @@ pub struct GeneratedBlock {
     pub outputs: Vec<BlockConnection>,
 }
 
-// Function to process a markdown specification and generate blocks
-pub async fn process_markdown_spec(markdown_content: &str, provider_type: Option<LLMProvider>) -> Result<Vec<GeneratedBlock>, String> {
-    let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
+// Function to process a specification and generate blocks
+pub async fn process_specification(markdown_content: &str, llm_provider: Option<LLMProvider>) -> Result<Vec<GeneratedBlock>, String> {
+
+    let llm_provider = LLMProviderImpl::new(llm_provider.unwrap_or_default());
 
     // Load project configuration to get custom prompts
     let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // Get system prompt from config or use default
-    let system_prompt = config.process_markdown_spec_system_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP);
+    // For ClaudeCode, use MCP prompts that create blocks/tasks directly
+    match llm_provider.provider_type {
+        LLMProvider::ClaudeCode | LLMProvider::GeminiCode => {
+            let system_prompt = config.process_markdown_spec_system_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP);
 
-    // Get user prompt template from config or use default
-    let user_prompt_template = config.process_markdown_spec_user_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP);
+            // Get MCP user prompt template from config or use default
+            let user_prompt_template = config.process_markdown_spec_user_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP);
 
-    // Create the user prompt by formatting the template with the markdown content
-    let user_prompt = user_prompt_template.replace("{}", markdown_content);
+            // Create the user prompt by formatting the template with the markdown content
+            let user_prompt = user_prompt_template.replace("{}", markdown_content);
 
-    // Send the prompt and get the response
-    let content = provider.send_prompt(system_prompt, &user_prompt).await?;
+            // Send the prompt and get the response
+            let content = llm_provider.send_prompt(system_prompt, &user_prompt).await?;
 
-    // Extract the JSON part from the response
-    let json_start = content.find('[').unwrap_or(0);
-    let json_end = content.rfind(']').map(|i| i + 1).unwrap_or(content.len());
-    let json_str = &content[json_start..json_end];
+            // For ClaudeCode, the MCP tools create blocks/tasks directly
+            // We return an empty list since actual blocks/tasks are created via MCP tools
+            println!("ClaudeCode response: {}", content);
+            println!("Blocks and tasks have been created directly via MCP tools");
 
-    println!("{}",json_str);
-    // Parse the JSON into a list of GeneratedBlock objects
-    let blocks: Vec<GeneratedBlock> = serde_json::from_str(json_str).map_err(|e| {
-        println!("Failed to parse generated blocks: {}", e);
-        format!("Failed to parse generated blocks: {}", e)
-    })?;
+            Ok(Vec::new())
+        },
+        _ => {
+            // For other providers, use the original JSON-based approach
+            // Get system prompt from config or use default (original prompts)
+            let system_prompt = config.process_markdown_spec_system_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT);
 
-    //println!("{:?}",blocks[0]);
+            // Get user prompt template from config or use default (original prompts)
+            let user_prompt_template = config.process_markdown_spec_user_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT);
 
-    Ok(blocks)
+            // Create the user prompt by formatting the template with the markdown content
+            let user_prompt = user_prompt_template.replace("{}", markdown_content);
+
+            // Send the prompt and get the response
+            let content = llm_provider.send_prompt(system_prompt, &user_prompt).await?;
+
+            // Extract the JSON part from the response
+            let json_start = content.find('[').unwrap_or(0);
+            let json_end = content.rfind(']').map(|i| i + 1).unwrap_or(content.len());
+            let json_str = &content[json_start..json_end];
+
+            println!("{}",json_str);
+            // Parse the JSON into a list of GeneratedBlock objects
+            let blocks: Vec<GeneratedBlock> = serde_json::from_str(json_str).map_err(|e| {
+                println!("Failed to parse generated blocks: {}", e);
+                format!("Failed to parse generated blocks: {}", e)
+            })?;
+
+            Ok(blocks)
+        }
+    }
+    
 }
