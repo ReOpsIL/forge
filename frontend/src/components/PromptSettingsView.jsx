@@ -18,8 +18,12 @@ const PromptSettingsView = ({ setActiveView }) => {
         enhance_description_user_prompt: '',
         generate_tasks_system_prompt: '',
         generate_tasks_user_prompt: '',
-        process_markdown_spec_system_prompt: '',
-        process_markdown_spec_user_prompt: ''
+        generate_tasks_system_prompt_mcp: '',
+        generate_tasks_user_prompt_mcp: '',
+        process_specification_system_prompt: '',
+        process_specification_user_prompt: '',
+        process_specification_system_prompt_mcp: '',
+        process_specification_user_prompt_mcp: ''
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -36,7 +40,7 @@ const PromptSettingsView = ({ setActiveView }) => {
         { label: 'Auto Complete', icon: 'pi pi-pencil' },
         { label: 'Enhance Description', icon: 'pi pi-file-edit' },
         { label: 'Generate Tasks', icon: 'pi pi-list' },
-        { label: 'Process Markdown', icon: 'pi pi-file' }
+        { label: 'Process Specification', icon: 'pi pi-file' }
     ];
 
     useEffect(() => {
@@ -103,8 +107,12 @@ const PromptSettingsView = ({ setActiveView }) => {
                     enhance_description_user_prompt: '',
                     generate_tasks_system_prompt: '',
                     generate_tasks_user_prompt: '',
-                    process_markdown_spec_system_prompt: '',
-                    process_markdown_spec_user_prompt: ''
+                    generate_tasks_system_prompt_mcp: '',
+                    generate_tasks_user_prompt_mcp: '',
+                    process_specification_system_prompt: '',
+                    process_specification_user_prompt: '',
+                    process_specification_system_prompt_mcp: '',
+                    process_specification_user_prompt_mcp: ''
                 });
                 setLoading(false);
                 return;
@@ -202,8 +210,12 @@ const PromptSettingsView = ({ setActiveView }) => {
                 enhance_description_user_prompt: data.enhance_description_user_prompt,
                 generate_tasks_system_prompt: data.generate_tasks_system_prompt,
                 generate_tasks_user_prompt: data.generate_tasks_user_prompt,
-                process_markdown_spec_system_prompt: data.process_markdown_spec_system_prompt,
-                process_markdown_spec_user_prompt: data.process_markdown_spec_user_prompt
+                generate_tasks_system_prompt_mcp: data.generate_tasks_system_prompt_mcp,
+                generate_tasks_user_prompt_mcp: data.generate_tasks_user_prompt_mcp,
+                process_specification_system_prompt: data.process_specification_system_prompt,
+                process_specification_user_prompt: data.process_specification_user_prompt,
+                process_specification_system_prompt_mcp: data.process_specification_system_prompt_mcp,
+                process_specification_user_prompt_mcp: data.process_specification_user_prompt_mcp
             }));
 
             toastRef.current.show({
@@ -388,26 +400,21 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 />
                             </div>
                         </div>
-                    </>
-                );
-            case 3: // Process Markdown
-                return (
-                    <>
                         <div className="field">
-                            <label htmlFor="process_markdown_spec_system_prompt">
-                                System Prompt
-                                <Tooltip target=".markdown-system-help" position="right">
-                                    System prompt for processing markdown specifications.
+                            <label htmlFor="generate_tasks_system_prompt_mcp">
+                                System Prompt ==MCP==
+                                <Tooltip target=".tasks-system-help" position="right">
+                                    System prompt for generating tasks from block descriptions ==using MCP Tools==.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 tasks-system-help" style={{ cursor: 'pointer' }}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
                                     height="100px"
                                     defaultLanguage="markdown"
                                     theme="vs-dark"
-                                    value={projectConfig.process_markdown_spec_system_prompt}
-                                    onChange={(value) => handleInputChange('process_markdown_spec_system_prompt', value || '')}
+                                    value={projectConfig.generate_tasks_system_prompt_mcp}
+                                    onChange={(value) => handleInputChange('generate_tasks_system_prompt_mcp', value || '')}
                                     options={{
                                         minimap: { enabled: false },
                                         scrollBeyondLastLine: false,
@@ -419,7 +426,62 @@ const PromptSettingsView = ({ setActiveView }) => {
                             </div>
                         </div>
                         <div className="field">
-                            <label htmlFor="process_markdown_spec_user_prompt">
+                            <label htmlFor="generate_tasks_user_prompt_mcp">
+                                User Prompt ==MCP==
+                                <Tooltip target=".tasks-user-help" position="right">
+                                    User prompt template for generating tasks from block descriptions ==using MCP Tools==. Use {} as a placeholder for the description.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 tasks-user-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <div className="monaco-editor-container">
+                                <Editor
+                                    height="300px"
+                                    defaultLanguage="markdown"
+                                    theme="vs-dark"
+                                    value={projectConfig.generate_tasks_user_prompt_mcp}
+                                    onChange={(value) => handleInputChange('generate_tasks_user_prompt_mcp', value || '')}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: 'on',
+                                        lineNumbers: 'on',
+                                        automaticLayout: true
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </>
+                );
+            case 3: // Process Specification
+                return (
+                    <>
+                        <div className="field">
+                            <label htmlFor="process_specification_system_prompt">
+                                System Prompt
+                                <Tooltip target=".markdown-system-help" position="right">
+                                    System prompt for processing markdown specifications.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <div className="monaco-editor-container">
+                                <Editor
+                                    height="100px"
+                                    defaultLanguage="markdown"
+                                    theme="vs-dark"
+                                    value={projectConfig.process_specification_system_prompt}
+                                    onChange={(value) => handleInputChange('process_specification_system_prompt', value || '')}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: 'on',
+                                        lineNumbers: 'on',
+                                        automaticLayout: true
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="field">
+                            <label htmlFor="process_specification_user_prompt">
                                 User Prompt
                                 <Tooltip target=".markdown-user-help" position="right">
                                     User prompt template for processing markdown specifications. Use {} as a placeholder for the markdown content.
@@ -431,8 +493,58 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     height="300px"
                                     defaultLanguage="markdown"
                                     theme="vs-dark"
-                                    value={projectConfig.process_markdown_spec_user_prompt}
-                                    onChange={(value) => handleInputChange('process_markdown_spec_user_prompt', value || '')}
+                                    value={projectConfig.process_specification_user_prompt}
+                                    onChange={(value) => handleInputChange('process_specification_user_prompt', value || '')}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: 'on',
+                                        lineNumbers: 'on',
+                                        automaticLayout: true
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="field">
+                            <label htmlFor="process_specification_system_prompt_mcp">
+                                System Prompt ==MCP==
+                                <Tooltip target=".markdown-system-help" position="right">
+                                    System prompt for processing markdown specifications ==using MCP Tools==.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <div className="monaco-editor-container">
+                                <Editor
+                                    height="100px"
+                                    defaultLanguage="markdown"
+                                    theme="vs-dark"
+                                    value={projectConfig.process_specification_system_prompt_mcp}
+                                    onChange={(value) => handleInputChange('process_specification_system_prompt_mcp', value || '')}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollBeyondLastLine: false,
+                                        wordWrap: 'on',
+                                        lineNumbers: 'on',
+                                        automaticLayout: true
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="field">
+                            <label htmlFor="process_specification_user_prompt_mcp">
+                                User Prompt ==MCP==
+                                <Tooltip target=".markdown-user-help" position="right">
+                                    User prompt template for processing markdown specifications ==using MCP Tools==. Use {} as a placeholder for the markdown content.
+                                </Tooltip>
+                                <i className="pi pi-question-circle ml-2 markdown-user-help" style={{ cursor: 'pointer' }}></i>
+                            </label>
+                            <div className="monaco-editor-container">
+                                <Editor
+                                    height="300px"
+                                    defaultLanguage="markdown"
+                                    theme="vs-dark"
+                                    value={projectConfig.process_specification_user_prompt_mcp}
+                                    onChange={(value) => handleInputChange('process_specification_user_prompt_mcp', value || '')}
                                     options={{
                                         minimap: { enabled: false },
                                         scrollBeyondLastLine: false,

@@ -4,15 +4,10 @@ use std::fs;
 use std::io::Write;
 use std::path::Path;
 use std::process::Command;
-use std::process::Stdio;
 use std::sync::Arc;
-use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::block_config::BlockConfigManager;
 use crate::project_config::ProjectConfigManager;
-use crate::models::Task;
-use crate::task_executor;
-use crate::task_executor::get_task_executor;
 use crate::task_executor_wrapper::enqueue_task;
 
 // AppState for git handlers

@@ -3,13 +3,11 @@ import {Toast} from 'primereact/toast'
 import {Dialog} from 'primereact/dialog'
 import {Button} from 'primereact/button'
 import {Menubar} from 'primereact/menubar'
-import {InputText} from 'primereact/inputtext'
 import BlocksView from './components/BlocksView'
 import FlowView from './components/FlowView'
 import ProjectView from './components/ProjectView'
 import PromptSettingsView from './components/PromptSettingsView'
 import LoggerView from './components/LoggerView'
-import ChatView from './components/ChatView'
 import useGit from './Git'
 import './App.css'
 
@@ -93,13 +91,6 @@ function App() {
                 }
             }
         },
-        {
-            label: 'Chat',
-            icon: 'pi pi-fw pi-comments',
-            command: () => {
-                setActiveView('chat')
-            }
-        },
         git.getBuildMenuItem(),
         git.getImportSpecMenuItem(),
         git.getGitMenuItems()
@@ -117,8 +108,6 @@ function App() {
                 return <PromptSettingsView setActiveView={setActiveView}/>
             case 'logger':
                 return <LoggerView/>
-            case 'chat':
-                return <ChatView/>
             case 'help':
                 return (
                     <div className="content">

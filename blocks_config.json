@@ -1,56 +1,454 @@
 [
   {
-    "name": "Claude",
-    "block_id": "4zRHvC",
-    "description": "chat with claude",
-    "inputs": [],
-    "outputs": [],
+    "name": "AdvancedLLMCapabilities",
+    "block_id": "NUhdny",
+    "description": "Enhanced LLM integration with sophisticated code generation, intelligent suggestions, and automated optimization capabilities",
+    "inputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
     "connections": {
       "input_connections": [],
       "output_connections": []
     },
     "todo_list": {
-      "ugylxu": {
-        "task_id": "ugylxu",
-        "task_name": "Suggest features",
-        "description": "Ask Gemini or Claude to suggest new cool innovative features",
-        "acceptance_criteria": [],
+      "lzQG8C": {
+        "task_id": "lzQG8C",
+        "task_name": "Context-Aware Code Generation",
+        "description": "Enhance LLM integration to generate code based on complete project context and inter-module relationships",
+        "acceptance_criteria": [
+          "LLM can access and understand all block relationships",
+          "Generated code maintains consistency with existing codebase",
+          "Context includes file dependencies and data flow patterns"
+        ],
         "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
+        "estimated_effort": "1 week",
+        "files_affected": [
+          "src/llm_handler.rs",
+          "src/context_analyzer.rs"
+        ],
         "function_signatures": [],
         "testing_requirements": [],
         "log": "",
         "commit_id": "",
         "status": "TODO"
       },
-      "kds0or": {
-        "task_id": "kds0or",
-        "task_name": "Docs",
-        "description": "Update product docs",
-        "acceptance_criteria": [],
+      "BQkW5A": {
+        "task_id": "BQkW5A",
+        "task_name": "Intelligent Block Connection Suggestions",
+        "description": "Create system that suggests optimal connections between blocks based on data flow analysis",
+        "acceptance_criteria": [
+          "Suggestions based on input/output type compatibility",
+          "Machine learning model for connection patterns",
+          "Real-time suggestions during block creation"
+        ],
         "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/connection_suggester.rs",
+          "src/ml_models.rs"
+        ],
         "function_signatures": [],
         "testing_requirements": [],
         "log": "",
         "commit_id": "",
         "status": "TODO"
       },
-      "squ3t0": {
-        "task_id": "squ3t0",
-        "task_name": "Claude",
-        "description": "Add new \"Chat\" page. The Chat page will use a Terminal component to display and interact with \"Claude\" executable on server side. Add new backend component that starts \"Claude\" and streams / interact with \"Terminal\" component on user side. When user select \"Chat\" page for the first time - start the \"Claude\" process on server side and leave it open all the time till server goes down.",
-        "acceptance_criteria": [],
+      "CHYdqJ": {
+        "task_id": "CHYdqJ",
+        "task_name": "Automated Refactoring Engine",
+        "description": "Build system that automatically suggests and implements code refactoring based on best practices",
+        "acceptance_criteria": [
+          "Identifies code smells and anti-patterns",
+          "Suggests specific refactoring actions",
+          "Can automatically apply safe refactoring operations"
+        ],
         "dependencies": [],
-        "estimated_effort": "",
-        "files_affected": [],
+        "estimated_effort": "3 weeks",
+        "files_affected": [
+          "src/refactoring_engine.rs",
+          "src/code_analyzer.rs"
+        ],
         "function_signatures": [],
         "testing_requirements": [],
         "log": "",
         "commit_id": "",
-        "status": "[COMPLETED]"
+        "status": "TODO"
+      }
+    }
+  },
+  {
+    "name": "EnhancedVisualization",
+    "block_id": "nRUaPV",
+    "description": "Advanced visualization features including real-time collaboration, sophisticated layout algorithms, and custom themes",
+    "inputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {
+      "KCIGUx": {
+        "task_id": "KCIGUx",
+        "task_name": "Custom Themes and Templates",
+        "description": "Create system for custom block appearances, themes, and reusable templates",
+        "acceptance_criteria": [
+          "Theme system with CSS-like styling",
+          "Custom block templates with parameters",
+          "Theme marketplace/sharing functionality",
+          "Import/export of custom themes"
+        ],
+        "dependencies": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/theming/mod.rs",
+          "src/templates/manager.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "HZM6sD": {
+        "task_id": "HZM6sD",
+        "task_name": "Real-time Collaborative Editing",
+        "description": "Enable multiple users to simultaneously edit block diagrams with conflict resolution",
+        "acceptance_criteria": [
+          "Multiple users can edit simultaneously",
+          "Changes are synchronized in real-time",
+          "Conflict resolution for simultaneous edits",
+          "User presence indicators"
+        ],
+        "dependencies": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/collaboration/mod.rs",
+          "src/realtime_sync.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "NZAulV": {
+        "task_id": "NZAulV",
+        "task_name": "Advanced Layout Algorithms",
+        "description": "Create sophisticated automatic layout algorithms for complex block diagrams",
+        "acceptance_criteria": [
+          "Hierarchical layout for nested blocks",
+          "Force-directed layout for optimal spacing",
+          "Layered layout for data flow visualization",
+          "Custom layout constraints support"
+        ],
+        "dependencies": [],
+        "estimated_effort": "3 weeks",
+        "files_affected": [
+          "src/layout/algorithms.rs",
+          "src/layout/constraints.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      }
+    }
+  },
+  {
+    "name": "ExpandedCodeGeneration",
+    "block_id": "T6cDTZ",
+    "description": "Multi-language code generation system with comprehensive template support and automated test generation",
+    "inputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {
+      "cvlxYN": {
+        "task_id": "cvlxYN",
+        "task_name": "Multi-Language Code Generation",
+        "description": "Extend code generation to support multiple programming languages and frameworks",
+        "acceptance_criteria": [
+          "Support for Rust, Python, JavaScript, TypeScript, Go",
+          "Framework-specific code generation (React, Django, etc.)",
+          "Language-specific best practices integration",
+          "Cross-language interoperability support"
+        ],
+        "dependencies": [],
+        "estimated_effort": "4 weeks",
+        "files_affected": [
+          "src/codegen/languages/mod.rs",
+          "src/codegen/templates/"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "BpSTPk": {
+        "task_id": "BpSTPk",
+        "task_name": "Code Optimization Pipeline",
+        "description": "Build system that optimizes generated code for performance and maintainability",
+        "acceptance_criteria": [
+          "Performance optimization passes",
+          "Dead code elimination",
+          "Code style normalization",
+          "Dependency optimization"
+        ],
+        "dependencies": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/optimization/mod.rs",
+          "src/optimization/passes.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "tQgxnJ": {
+        "task_id": "tQgxnJ",
+        "task_name": "Automated Test Generation",
+        "description": "Create system that automatically generates comprehensive tests for generated code",
+        "acceptance_criteria": [
+          "Unit tests for all generated functions",
+          "Integration tests for block interactions",
+          "Property-based test generation",
+          "Test coverage analysis"
+        ],
+        "dependencies": [],
+        "estimated_effort": "3 weeks",
+        "files_affected": [
+          "src/test_gen/mod.rs",
+          "src/test_gen/generators.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      }
+    }
+  },
+  {
+    "name": "ExtensibilityFramework",
+    "block_id": "Zv2qWq",
+    "description": "Plugin system and API framework for custom block types and third-party integrations",
+    "inputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {
+      "UX6GWy": {
+        "task_id": "UX6GWy",
+        "task_name": "Custom Block Type System",
+        "description": "Enable creation of custom block types with specific behaviors and properties",
+        "acceptance_criteria": [
+          "Custom block type definition language",
+          "Runtime block type registration",
+          "Type validation and constraints",
+          "Custom block rendering"
+        ],
+        "dependencies": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/block_types/custom.rs",
+          "src/block_types/registry.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "yXDVGi": {
+        "task_id": "yXDVGi",
+        "task_name": "Plugin Architecture",
+        "description": "Create a robust plugin system that allows third-party extensions",
+        "acceptance_criteria": [
+          "Dynamic plugin loading and unloading",
+          "Plugin API with versioning support",
+          "Sandbox security for plugins",
+          "Plugin dependency management"
+        ],
+        "dependencies": [],
+        "estimated_effort": "3 weeks",
+        "files_affected": [
+          "src/plugins/mod.rs",
+          "src/plugins/api.rs",
+          "src/plugins/loader.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "Td79eG": {
+        "task_id": "Td79eG",
+        "task_name": "External Service Integration API",
+        "description": "Create API for integrating external tools and services with Forge",
+        "acceptance_criteria": [
+          "REST API for external tool integration",
+          "Webhook support for external notifications",
+          "OAuth integration for third-party services",
+          "API rate limiting and security"
+        ],
+        "dependencies": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/api/external.rs",
+          "src/webhooks/mod.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      }
+    }
+  },
+  {
+    "name": "CoreArchitectureRefinement",
+    "block_id": "w9ciBN",
+    "description": "Improvements to existing block-based architecture, configuration management, and performance optimization",
+    "inputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "ctype": "",
+        "description": ""
+      }
+    ],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {
+      "aWoQCG": {
+        "task_id": "aWoQCG",
+        "task_name": "Enhanced Error Handling",
+        "description": "Create comprehensive error handling and recovery system",
+        "acceptance_criteria": [
+          "Structured error types with context",
+          "Error recovery mechanisms",
+          "User-friendly error messages",
+          "Error reporting and analytics"
+        ],
+        "dependencies": [],
+        "estimated_effort": "1 week",
+        "files_affected": [
+          "src/errors.rs",
+          "src/error_recovery.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "kaqG60": {
+        "task_id": "kaqG60",
+        "task_name": "Block Configuration Optimization",
+        "description": "Improve performance and reliability of block configuration storage and retrieval",
+        "acceptance_criteria": [
+          "Faster block loading and saving",
+          "Configuration validation and migration",
+          "Backup and recovery mechanisms",
+          "Configuration versioning"
+        ],
+        "dependencies": [],
+        "estimated_effort": "1 week",
+        "files_affected": [
+          "src/block_config.rs",
+          "src/config_validator.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "rAa3FV": {
+        "task_id": "rAa3FV",
+        "task_name": "Advanced Caching System",
+        "description": "Create intelligent caching for blocks, tasks, and generated code",
+        "acceptance_criteria": [
+          "Multi-level caching (memory, disk, distributed)",
+          "Cache invalidation strategies",
+          "Cache warming and preloading",
+          "Cache performance monitoring"
+        ],
+        "dependencies": [],
+        "estimated_effort": "2 weeks",
+        "files_affected": [
+          "src/cache/mod.rs",
+          "src/cache/strategies.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
       }
     }
   }

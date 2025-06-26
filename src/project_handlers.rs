@@ -1,8 +1,8 @@
-use actix_web::{web, HttpResponse, Responder, Error};
+use crate::profession_prompts::{self, ProfessionCategory};
+use crate::project_config::{test_git_connection, ProjectConfig, ProjectConfigManager};
+use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use crate::project_config::{ProjectConfig, ProjectConfigManager, test_git_connection};
-use crate::profession_prompts::{self, Profession, ProfessionCategory};
 
 // AppState for project handlers
 pub struct ProjectAppState {
@@ -58,8 +58,12 @@ pub struct ProfessionPromptsResponse {
     pub enhance_description_user_prompt: String,
     pub generate_tasks_system_prompt: String,
     pub generate_tasks_user_prompt: String,
-    pub process_markdown_spec_system_prompt: String,
-    pub process_markdown_spec_user_prompt: String,
+    pub generate_tasks_system_prompt_mcp: String,
+    pub generate_tasks_user_prompt_mcp: String,
+    pub process_specification_system_prompt: String,
+    pub process_specification_user_prompt: String,
+    pub process_specification_system_prompt_mcp: String,
+    pub process_specification_user_prompt_mcp: String,
 }
 
 // Handler to get project configuration
@@ -202,8 +206,12 @@ pub async fn get_profession_prompts_handler(path: web::Path<String>) -> impl Res
             enhance_description_user_prompt: profession.prompts.enhance_description_user_prompt,
             generate_tasks_system_prompt: profession.prompts.generate_tasks_system_prompt,
             generate_tasks_user_prompt: profession.prompts.generate_tasks_user_prompt,
-            process_markdown_spec_system_prompt: profession.prompts.process_markdown_spec_system_prompt,
-            process_markdown_spec_user_prompt: profession.prompts.process_markdown_spec_user_prompt,
+            generate_tasks_system_prompt_mcp: profession.prompts.generate_tasks_system_prompt_mcp,
+            generate_tasks_user_prompt_mcp: profession.prompts.generate_tasks_user_prompt_mcp,
+            process_specification_system_prompt: profession.prompts.process_specification_system_prompt,
+            process_specification_user_prompt: profession.prompts.process_specification_user_prompt,
+            process_specification_system_prompt_mcp: profession.prompts.process_specification_system_prompt_mcp,
+            process_specification_user_prompt_mcp: profession.prompts.process_specification_user_prompt_mcp,
         };
 
         HttpResponse::Ok().json(prompts_response)

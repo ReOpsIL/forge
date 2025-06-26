@@ -1,8 +1,9 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::{env, fs};
-use std::io::{self, ErrorKind};
-use std::path::{Path, PathBuf};
+use std::io::{self};
+use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::fs;
 
 pub const PROJECT_CONFIG_FILE: &str = "project_config.json";
 
@@ -43,8 +44,7 @@ pub const DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT: &str = "Transform the followi
 
 Original description:
 {}
-
-Enhanced specification:";
+";
 
 pub const DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT: &str = "You are a senior software developer and project manager expert at breaking down software components into granular, executable development tasks. Focus on creating tasks that are specific, measurable, and can be directly implemented by developers.";
 
@@ -106,6 +106,79 @@ Based on the software component description below, generate a prioritized list o
 - Include 5-15 prioritized tasks
 - Tasks should be ordered by implementation priority";
 
+// MCP-based prompts for task generation using create_task tool
+pub const DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP: &str = "You are a senior software developer and project manager expert at breaking down software components into granular, executable development tasks using MCP tools. You will use the `create_task` MCP tool to directly create forge Tasks based on component descriptions.
+
+**Available MCP Tools:**
+- `create_task`: Creates a detailed task with comprehensive metadata including acceptance criteria, dependencies, effort estimation, and testing requirements
+
+**Your Role:**
+- Analyze software component descriptions and identify implementation requirements
+- Create specific, actionable tasks using the create_task tool
+- Ensure tasks are properly scoped (1-8 hours of work)
+- Define clear acceptance criteria and dependencies
+- Follow structured approach to task breakdown and creation";
+
+pub const DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP: &str = "Analyze the following software component description and create implementation tasks using the `create_task` MCP tool.
+
+**Process:**
+1. **Parse the component description** to identify all implementation requirements
+2. **Create tasks** using `create_task` for each specific implementation requirement with:
+   - Specific, actionable task names
+   - Detailed descriptions of what needs to be implemented
+   - Comprehensive acceptance criteria for completion
+   - Dependencies on other components or tasks
+   - Realistic effort estimation (1-8 hours or small/medium/large)
+   - Files that will be affected or created
+   - Function signatures for key interfaces
+   - Testing requirements and validation criteria
+
+**Task Creation Guidelines:**
+- Break down component into specific, actionable tasks (5-15 tasks typically)
+- Ensure each task is estimable in scope (1-8 hours of work)
+- Include relevant file names, function signatures, or code locations
+- Specify comprehensive testing requirements
+- Define clear dependencies between tasks
+- Use effort indicators: small (1-3 hours), medium (3-6 hours), large (6-8 hours)
+- Order tasks by implementation priority
+
+**Implementation Priority:**
+- Create tasks in logical implementation order
+- Consider dependencies when ordering tasks
+- Ensure foundational components are implemented first
+
+**Example MCP Tool Usage:**
+```
+create_task:
+{
+  \"block_id\": \"[component_block_id]\",
+  \"task_name\": \"Implement Core Authentication Logic\",
+  \"description\": \"Create the main authentication service with login/logout functionality and session management\",
+  \"acceptance_criteria\": [
+    \"User can successfully log in with valid credentials\",
+    \"Invalid credentials return appropriate error messages\",
+    \"Sessions are properly managed and expired after timeout\",
+    \"Password hashing uses secure algorithms\"
+  ],
+  \"dependencies\": [\"User Model\", \"Database Connection\"],
+  \"estimated_effort\": \"medium\",
+  \"files_affected\": [\"src/auth/service.rs\", \"src/models/user.rs\", \"src/auth/session.rs\"],
+  \"function_signatures\": [
+    \"pub fn authenticate(username: &str, password: &str) -> Result<Session, AuthError>\",
+    \"pub fn logout(session_id: &str) -> Result<(), AuthError>\"
+  ],
+  \"testing_requirements\": [
+    \"Unit tests for authentication logic\",
+    \"Integration tests for login/logout flow\",
+    \"Security tests for password handling\"
+  ]
+}
+```
+
+Now analyze the following component description and create the appropriate tasks:
+
+{}";
+
 pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT: &str = "You are a software architecture analyst expert at parsing technical specifications and extracting structured implementation components. Your output must be valid JSON that can be directly consumed by automated development tools.";
 
 pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the following technical specification markdown and extract structured implementation blocks. 
@@ -141,6 +214,85 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the followi
 - Ensure each block is self-contained where possible
 
 Specification document:
+{}
+";
+
+// MCP-based prompts for processing specifications using create_block and create_task tools
+pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP: &str = "You are a software architecture analyst expert at parsing technical specifications and creating structured implementation components using MCP tools. You will use the `create_block` and `create_task` MCP tools to directly create forge Blocks and their associated Tasks based on specifications.
+
+**Available MCP Tools:**
+- `create_block`: Creates a new block with name, description, and optional block_id
+- `create_task`: Creates a detailed task for a block with comprehensive metadata
+
+**Your Role:**
+- Parse technical specifications and identify implementation components
+- Create blocks using the create_block tool for major components
+- Create detailed tasks using the create_task tool for each implementation requirement
+- Ensure proper relationships between blocks and tasks
+- Follow structured approach to component extraction and creation";
+
+pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP: &str = "Analyze the following technical specification markdown and create structured implementation blocks and tasks using MCP tools.
+
+**Process:**
+1. **Parse the specification** to identify major components and implementation requirements
+2. **Create blocks** using `create_block` for each major component with:
+   - Clear, descriptive names (CamelCase)
+   - Detailed implementation descriptions
+   - Technical specifics and scope
+3. **Create tasks** using `create_task` for each implementation requirement with:
+   - Specific, actionable task names
+   - Detailed descriptions of what needs to be implemented
+   - Acceptance criteria for completion
+   - Dependencies on other components
+   - Estimated effort (small/medium/large or time estimates)
+   - Files that will be affected
+   - Function signatures if applicable
+   - Testing requirements
+
+**Block Creation Guidelines:**
+- Extract only implementable components (ignore pure documentation)
+- Group related functionality into logical blocks
+- Ensure each block has a clear, focused purpose
+- Use descriptive names that reflect the component's function
+
+**Task Creation Guidelines:**
+- Break down each block into specific, actionable tasks
+- Include comprehensive acceptance criteria
+- Specify dependencies between tasks and components
+- Estimate effort realistically (1-8 hours, or small/medium/large)
+- List files that will need to be created or modified
+- Include function signatures for key interfaces
+- Define testing requirements for each task
+
+**Implementation Order:**
+1. First, create all necessary blocks
+2. Then, create tasks for each block in logical implementation order
+3. Ensure task dependencies reflect proper implementation sequence
+
+**Example MCP Tool Usage:**
+```
+create_block:
+{
+  \"name\": \"UserAuthenticationService\",
+  \"description\": \"Handles user authentication with JWT tokens, password hashing, and session management\"
+}
+
+create_task:
+{
+  \"block_id\": \"[block_id_from_create_block_response]\",
+  \"task_name\": \"Implement JWT Token Generation\",
+  \"description\": \"Create JWT token generation and validation functionality\",
+  \"acceptance_criteria\": [\"Tokens expire after 24 hours\", \"Include user ID and role in payload\", \"Use secure signing algorithm\"],
+  \"dependencies\": [\"User Model\", \"Security Configuration\"],
+  \"estimated_effort\": \"4 hours\",
+  \"files_affected\": [\"src/auth/jwt.rs\", \"src/models/user.rs\"],
+  \"function_signatures\": [\"pub fn generate_token(user_id: u64) -> Result<String, AuthError>\"],
+  \"testing_requirements\": [\"Unit tests for token generation\", \"Integration tests for auth flow\"]
+}
+```
+
+Now analyze the following specification and create the appropriate blocks and tasks:
+
 {}
 ";
 
@@ -205,8 +357,12 @@ pub struct ProjectConfig {
     pub enhance_description_user_prompt: Option<String>,
     pub generate_tasks_system_prompt: Option<String>,
     pub generate_tasks_user_prompt: Option<String>,
-    pub process_markdown_spec_system_prompt: Option<String>,
-    pub process_markdown_spec_user_prompt: Option<String>,
+    pub generate_tasks_system_prompt_mcp: Option<String>,
+    pub generate_tasks_user_prompt_mcp: Option<String>,
+    pub process_specification_system_prompt: Option<String>,
+    pub process_specification_user_prompt: Option<String>,
+    pub process_specification_system_prompt_mcp: Option<String>,
+    pub process_specification_user_prompt_mcp: Option<String>,
 }
 
 impl Default for ProjectConfig {
@@ -231,18 +387,33 @@ impl Default for ProjectConfig {
             enhance_description_user_prompt: Some(DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT.to_string()),
             generate_tasks_system_prompt: Some(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT.to_string()),
             generate_tasks_user_prompt: Some(DEFAULT_GENERATE_TASKS_USER_PROMPT.to_string()),
-            process_markdown_spec_system_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT.to_string()),
-            process_markdown_spec_user_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string()),
+            generate_tasks_system_prompt_mcp: Some(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP.to_string()),
+            generate_tasks_user_prompt_mcp: Some(DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP.to_string()),
+            process_specification_system_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT.to_string()),
+            process_specification_user_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string()),
+            process_specification_system_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP.to_string()),
+            process_specification_user_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP.to_string()),
         }
     }
 }
 
+// Global singleton instance
+lazy_static! {
+    static ref PROJECT_MANAGER: Arc<ProjectConfigManager> = Arc::new(ProjectConfigManager::new(PROJECT_CONFIG_FILE));
+}
+
+#[derive(Debug)]
 pub struct ProjectConfigManager {
     config_file: String,
     config: Mutex<ProjectConfig>,
 }
 
 impl ProjectConfigManager {
+    // Get the singleton instance
+    pub fn get_instance() -> Arc<ProjectConfigManager> {
+        PROJECT_MANAGER.clone()
+    }
+
     pub fn new(config_file: &str) -> Self {
         Self {
             config_file: config_file.to_string(),

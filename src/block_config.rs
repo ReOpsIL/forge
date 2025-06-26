@@ -1,20 +1,35 @@
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
-use std::io::{self, Write};
-use serde_json;
-use rand::{Rng, distributions::Alphanumeric};
 use crate::llm_handler::BlockConnection;
 use crate::models::{Block, Connections, InputConnection, OutputConnection, Task};
+use lazy_static::lazy_static;
+use rand::{distributions::Alphanumeric, Rng};
+use serde_json;
+use std::collections::HashMap;
+use std::fs;
+use std::io::{self, Write};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
+
+// Default config file path
+pub const DEFAULT_BLOCK_CONFIG_FILE: &str = "blocks_config.json";
 
 // Struct to manage block configurations
+#[derive(Debug)]
 pub struct BlockConfigManager {
     blocks: Arc<Mutex<Vec<Block>>>,
-    config_file: String,
+    pub config_file: String,
+}
+
+// Global singleton instance
+lazy_static! {
+    static ref BLOCK_MANAGER: Arc<BlockConfigManager> = Arc::new(BlockConfigManager::new(DEFAULT_BLOCK_CONFIG_FILE));
 }
 
 impl BlockConfigManager {
+    // Get the singleton instance
+    pub fn get_instance() -> Arc<BlockConfigManager> {
+        BLOCK_MANAGER.clone()
+    }
+
     // Create a new BlockConfigManager
     pub fn new(config_file: &str) -> Self {
         BlockConfigManager {
@@ -22,7 +37,7 @@ impl BlockConfigManager {
             config_file: config_file.to_string(),
         }
     }
-    
+
     // Load blocks from a JSON file
     pub fn load_blocks_from_file(&self) -> Result<Vec<Block>, String> {
         let path = Path::new(&self.config_file);
@@ -172,6 +187,25 @@ impl BlockConfigManager {
         }
     }
 
+    // Add a full Task object to a block
+    pub fn add_task(&self, block_id: &str, task: Task) -> Result<String, String> {
+        let mut blocks_lock = match self.blocks.lock() {
+            Ok(lock) => lock,
+            Err(_) => return Err("Failed to acquire lock on blocks".to_string()),
+        };
+
+        // Find the block to update
+        let index = blocks_lock.iter().position(|b| b.block_id == block_id);
+        match index {
+            Some(i) => {
+                let task_id = task.task_id.clone();
+                blocks_lock[i].todo_list.insert(task_id.clone(), task);
+                Ok(task_id)
+            },
+            None => Err(format!("Block with ID {} not found", block_id)),
+        }
+    }
+
     // Remove a todo item from a block
     pub fn remove_task_item(&self, block_id: &str, task_id: String) -> Result<(), String> {
         let mut blocks_lock = match self.blocks.lock() {
@@ -208,10 +242,6 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
     for i in 0..10 {
         let name = block_names[i].to_string();
         let description = format!("This is the {} module", name);
-
-        // Generate random inputs and outputs
-        let num_inputs = rand::thread_rng().gen_range(1..=3);
-        let num_outputs = rand::thread_rng().gen_range(1..=3);
 
         // Generate random connections
         let mut input_connections = Vec::new();

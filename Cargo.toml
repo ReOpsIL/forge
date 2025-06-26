@@ -4,18 +4,63 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Web framework and HTTP
 actix-web = "4.4.0"
 actix-files = "0.6.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-rand = "0.8.5"
-reqwest = { version = "0.11", features = ["json"] }
-tokio = { version = "1", features = ["full"] }
-dotenv = "0.15.0"
-lazy_static = "1.5.0"
-futures = "0.3.31"
-tokio-stream = "0.1.17"
 actix-web-actors = "4.2"
 actix = "0.13"
 awc = "3.2"
+
+# Async runtime and utilities
+tokio = { version = "1", features = ["full"] }
+futures = "0.3.31"
+tokio-stream = "0.1.17"
+async-trait = "0.1"
+
+# Serialization and JSON
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# MCP Protocol and transport
+tokio-tungstenite = "0.20"
+futures-util = "0.3"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Utilities
+rand = "0.8.5"
+dotenv = "0.15.0"
+lazy_static = "1.5.0"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+regex = "1.10"
+
+# State management and concurrency
+dashmap = "5.5"
+parking_lot = "0.12"
+
+# Error handling and monitoring
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-appender = "0.2"
+
+# Validation and security
+jsonschema = "0.17"
+
+# Performance and caching
+lru = "0.12"
+
+# File system utilities
+base64 = "0.21"
+mime_guess = "2.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Testing utilities
+tempfile = "3.8"
+
+# Command line parsing
+clap = { version = "4.0", features = ["derive"] }
+
+# Process management (existing)
 portable-pty = "0.9.0"
