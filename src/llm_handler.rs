@@ -1,5 +1,5 @@
 use crate::models::Task;
-use crate::project_config::{ProjectConfigManager, DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT, DEFAULT_GENERATE_TASKS_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP, PROJECT_CONFIG_FILE};
+use crate::project_config::{ProjectConfigManager, DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP, DEFAULT_GENERATE_TASKS_USER_PROMPT, DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT, DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP, PROJECT_CONFIG_FILE};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -7,6 +7,34 @@ use std::env;
 use std::sync::Arc;
 use tokio::process::Command;
 use std::process::Stdio;
+
+
+// Define the structure for a block generated from a specification
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BlockConnection {
+    pub name: String,
+    pub ctype: String,
+    pub description: String,
+}
+
+impl BlockConnection {
+    pub fn new() -> BlockConnection {
+        Self {
+            name: String::new(),
+            ctype: String::new(),
+            description: String::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GeneratedBlock {
+    pub name: String,
+    pub block_id: String,
+    pub description: String,
+    pub inputs: Vec<BlockConnection>,
+    pub outputs: Vec<BlockConnection>,
+}
 
 // LLM Provider enum
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -496,57 +524,65 @@ pub struct TaskResponse {
 }
 
 // Function to get the full task response from LLM
-pub async fn get_task_response(description: &str, llm_provider: &Option<LLMProvider>) -> Result<TaskResponse, String> {
-    let provider = LLMProviderImpl::new(llm_provider.clone().unwrap_or_default());
+pub async fn generate_tasks_response(description: &str, llm_provider: &Option<LLMProvider>) -> Result<TaskResponse, String> {
+    let llm_provider = LLMProviderImpl::new(llm_provider.clone().unwrap_or_default());
 
     // Load project configuration to get custom prompts
     let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // Get system prompt from config or use default
-    let system_prompt = config.generate_tasks_system_prompt.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT);
+    match llm_provider.provider_type {
+        LLMProvider::ClaudeCode | LLMProvider::GeminiCode => {
+            let system_prompt = config.generate_tasks_system_prompt_mcp.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP);
 
-    // Get user prompt template from config or use default
-    let user_prompt_template = config.generate_tasks_user_prompt.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_USER_PROMPT);
+            // Get user prompt template from config or use default
+            let user_prompt_template = config.generate_tasks_user_prompt_mcp.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP);
 
-    // Create the user prompt by formatting the template with the description
-    let user_prompt = user_prompt_template.replace("{}", description);
+            // Create the user prompt by formatting the template with the description
+            let user_prompt = user_prompt_template.replace("{}", description);
 
-    // Send the prompt and get the response
-    let content = match provider.provider_type {
-        LLMProvider::OpenRouter => {
-            provider.send_openrouter_prompt(system_prompt, &user_prompt).await?
+            let content = llm_provider.send_prompt(system_prompt, &user_prompt).await?;
+
+            println!("ClaudeCode/GeminiCode response: {}", content);
+            println!("Tasks have been created directly via MCP tools");
+
+            Ok(TaskResponse {
+                component_name: String::new(),
+                total_tasks: 0,
+                tasks: Vec::new(),
+            })
         },
-        LLMProvider::Gemini => {
-            provider.send_gemini_prompt(system_prompt, &user_prompt).await?
-        },
-        LLMProvider::Anthropic => {
-            provider.send_anthropic_prompt(system_prompt, &user_prompt).await?
-        },
-        LLMProvider::ClaudeCode => {
-            provider.send_claudecode_prompt(system_prompt, &user_prompt).await?
-        },
-        LLMProvider::GeminiCode => {
-            provider.send_geminicode_prompt(system_prompt, &user_prompt).await?
-        },
-    };
+        _ => {
+            // Get system prompt from config or use default
+            let system_prompt = config.generate_tasks_system_prompt.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT);
 
-    println!("{}",content);
+            // Get user prompt template from config or use default
+            let user_prompt_template = config.generate_tasks_user_prompt.as_deref().unwrap_or(DEFAULT_GENERATE_TASKS_USER_PROMPT);
 
-    // Extract the JSON part from the response
-    let json_start = content.find('{').unwrap_or(0);
-    let json_end = content.rfind('}').map(|i| i + 1).unwrap_or(content.len());
-    let json_str = &content[json_start..json_end];
+            // Create the user prompt by formatting the template with the description
+            let user_prompt = user_prompt_template.replace("{}", description);
 
-    // Parse the content as JSON
-    serde_json::from_str::<TaskResponse>(&json_str)
-        .map_err(|e| format!("Failed to parse JSON response: {}", e))
+            let content = llm_provider.send_prompt(system_prompt, &user_prompt).await?;
+
+
+            println!("{}",content);
+
+            // Extract the JSON part from the response
+            let json_start = content.find('{').unwrap_or(0);
+            let json_end = content.rfind('}').map(|i| i + 1).unwrap_or(content.len());
+            let json_str = &content[json_start..json_end];
+
+            // Parse the content as JSON
+            serde_json::from_str::<TaskResponse>(&json_str)
+                .map_err(|e| format!("Failed to parse JSON response: {}", e))
+        }
+    }
 }
 
 // Function to generate tasks for a block based on its description
 pub async fn generate_tasks(description: &str, llm_provider: Option<LLMProvider>) -> Result<Vec<Task>, String> {
     // Try to get the structured task response
-    match get_task_response(description, &llm_provider).await {
+    match generate_tasks_response(description, &llm_provider).await {
         Ok(task_response) => {
             // Extract task names from the structured response
             // let tasks: Vec<String> = task_response.tasks
@@ -565,32 +601,7 @@ pub async fn generate_tasks(description: &str, llm_provider: Option<LLMProvider>
     }
 }
 
-// Define the structure for a block generated from a specification
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BlockConnection {
-    pub name: String,
-    pub ctype: String,
-    pub description: String,
-}
 
-impl BlockConnection {
-    pub fn new() -> BlockConnection {
-        Self {
-            name: String::new(),
-            ctype: String::new(),
-            description: String::new(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GeneratedBlock {
-    pub name: String,
-    pub block_id: String,
-    pub description: String,
-    pub inputs: Vec<BlockConnection>,
-    pub outputs: Vec<BlockConnection>,
-}
 
 // Function to process a specification and generate blocks
 pub async fn process_specification(markdown_content: &str, llm_provider: Option<LLMProvider>) -> Result<Vec<GeneratedBlock>, String> {
@@ -601,13 +612,13 @@ pub async fn process_specification(markdown_content: &str, llm_provider: Option<
     let project_manager = ProjectConfigManager::get_instance();
     let config = project_manager.load_config().map_err(|e| format!("Failed to load project config: {}", e))?;
 
-    // For ClaudeCode, use MCP prompts that create blocks/tasks directly
+    // For ClaudeCode/GeminiCode, use MCP prompts that create blocks/tasks directly
     match llm_provider.provider_type {
         LLMProvider::ClaudeCode | LLMProvider::GeminiCode => {
-            let system_prompt = config.process_markdown_spec_system_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP);
+            let system_prompt = config.process_specification_system_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP);
 
             // Get MCP user prompt template from config or use default
-            let user_prompt_template = config.process_markdown_spec_user_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP);
+            let user_prompt_template = config.process_specification_user_prompt_mcp.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP);
 
             // Create the user prompt by formatting the template with the markdown content
             let user_prompt = user_prompt_template.replace("{}", markdown_content);
@@ -617,7 +628,7 @@ pub async fn process_specification(markdown_content: &str, llm_provider: Option<
 
             // For ClaudeCode, the MCP tools create blocks/tasks directly
             // We return an empty list since actual blocks/tasks are created via MCP tools
-            println!("ClaudeCode response: {}", content);
+            println!("ClaudeCode/GeminiCode response: {}", content);
             println!("Blocks and tasks have been created directly via MCP tools");
 
             Ok(Vec::new())
@@ -625,10 +636,10 @@ pub async fn process_specification(markdown_content: &str, llm_provider: Option<
         _ => {
             // For other providers, use the original JSON-based approach
             // Get system prompt from config or use default (original prompts)
-            let system_prompt = config.process_markdown_spec_system_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT);
+            let system_prompt = config.process_specification_system_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT);
 
             // Get user prompt template from config or use default (original prompts)
-            let user_prompt_template = config.process_markdown_spec_user_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT);
+            let user_prompt_template = config.process_specification_user_prompt.as_deref().unwrap_or(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT);
 
             // Create the user prompt by formatting the template with the markdown content
             let user_prompt = user_prompt_template.replace("{}", markdown_content);

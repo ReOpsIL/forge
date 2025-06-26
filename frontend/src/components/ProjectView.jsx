@@ -35,8 +35,12 @@ const ProjectView = ({ setActiveView }) => {
         enhance_description_user_prompt: '',
         generate_tasks_system_prompt: '',
         generate_tasks_user_prompt: '',
-        process_markdown_spec_system_prompt: '',
-        process_markdown_spec_user_prompt: ''
+        generate_tasks_system_prompt_mcp: '',
+        generate_tasks_user_prompt_mcp: '',
+        process_specification_system_prompt: '',
+        process_specification_user_prompt: '',
+        process_specification_system_prompt_mcp: '',
+        process_specification_user_prompt_mcp: ''
     });
 
     const [loading, setLoading] = useState(true);
@@ -114,8 +118,12 @@ const ProjectView = ({ setActiveView }) => {
                     enhance_description_user_prompt: '',
                     generate_tasks_system_prompt: '',
                     generate_tasks_user_prompt: '',
-                    process_markdown_spec_system_prompt: '',
-                    process_markdown_spec_user_prompt: ''
+                    generate_tasks_system_prompt_mcp: '',
+                    generate_tasks_user_prompt_mcp: '',
+                    process_specification_system_prompt: '',
+                    process_specification_user_prompt: '',
+                    process_specification_system_prompt_mcp: '',
+                    process_specification_user_prompt_mcp: ''
                 });
                 setLoading(false);
                 return;

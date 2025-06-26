@@ -445,8 +445,8 @@ The project configuration is stored in `project_config.json` and can be managed 
 - `enhance_description_user_prompt`: User prompt template for enhancing descriptions
 - `generate_tasks_system_prompt`: System prompt for generating tasks
 - `generate_tasks_user_prompt`: User prompt template for generating tasks
-- `process_markdown_spec_system_prompt`: System prompt for processing markdown specifications
-- `process_markdown_spec_user_prompt`: User prompt template for processing markdown specifications
+- `process_specification_system_prompt`: System prompt for processing markdown specifications
+- `process_specification_user_prompt`: User prompt template for processing markdown specifications
 
 #### Block Configuration
 

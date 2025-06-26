@@ -106,6 +106,79 @@ Based on the software component description below, generate a prioritized list o
 - Include 5-15 prioritized tasks
 - Tasks should be ordered by implementation priority";
 
+// MCP-based prompts for task generation using create_task tool
+pub const DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP: &str = "You are a senior software developer and project manager expert at breaking down software components into granular, executable development tasks using MCP tools. You will use the `create_task` MCP tool to directly create forge Tasks based on component descriptions.
+
+**Available MCP Tools:**
+- `create_task`: Creates a detailed task with comprehensive metadata including acceptance criteria, dependencies, effort estimation, and testing requirements
+
+**Your Role:**
+- Analyze software component descriptions and identify implementation requirements
+- Create specific, actionable tasks using the create_task tool
+- Ensure tasks are properly scoped (1-8 hours of work)
+- Define clear acceptance criteria and dependencies
+- Follow structured approach to task breakdown and creation";
+
+pub const DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP: &str = "Analyze the following software component description and create implementation tasks using the `create_task` MCP tool.
+
+**Process:**
+1. **Parse the component description** to identify all implementation requirements
+2. **Create tasks** using `create_task` for each specific implementation requirement with:
+   - Specific, actionable task names
+   - Detailed descriptions of what needs to be implemented
+   - Comprehensive acceptance criteria for completion
+   - Dependencies on other components or tasks
+   - Realistic effort estimation (1-8 hours or small/medium/large)
+   - Files that will be affected or created
+   - Function signatures for key interfaces
+   - Testing requirements and validation criteria
+
+**Task Creation Guidelines:**
+- Break down component into specific, actionable tasks (5-15 tasks typically)
+- Ensure each task is estimable in scope (1-8 hours of work)
+- Include relevant file names, function signatures, or code locations
+- Specify comprehensive testing requirements
+- Define clear dependencies between tasks
+- Use effort indicators: small (1-3 hours), medium (3-6 hours), large (6-8 hours)
+- Order tasks by implementation priority
+
+**Implementation Priority:**
+- Create tasks in logical implementation order
+- Consider dependencies when ordering tasks
+- Ensure foundational components are implemented first
+
+**Example MCP Tool Usage:**
+```
+create_task:
+{
+  \"block_id\": \"[component_block_id]\",
+  \"task_name\": \"Implement Core Authentication Logic\",
+  \"description\": \"Create the main authentication service with login/logout functionality and session management\",
+  \"acceptance_criteria\": [
+    \"User can successfully log in with valid credentials\",
+    \"Invalid credentials return appropriate error messages\",
+    \"Sessions are properly managed and expired after timeout\",
+    \"Password hashing uses secure algorithms\"
+  ],
+  \"dependencies\": [\"User Model\", \"Database Connection\"],
+  \"estimated_effort\": \"medium\",
+  \"files_affected\": [\"src/auth/service.rs\", \"src/models/user.rs\", \"src/auth/session.rs\"],
+  \"function_signatures\": [
+    \"pub fn authenticate(username: &str, password: &str) -> Result<Session, AuthError>\",
+    \"pub fn logout(session_id: &str) -> Result<(), AuthError>\"
+  ],
+  \"testing_requirements\": [
+    \"Unit tests for authentication logic\",
+    \"Integration tests for login/logout flow\",
+    \"Security tests for password handling\"
+  ]
+}
+```
+
+Now analyze the following component description and create the appropriate tasks:
+
+{}";
+
 pub const DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT: &str = "You are a software architecture analyst expert at parsing technical specifications and extracting structured implementation components. Your output must be valid JSON that can be directly consumed by automated development tools.";
 
 pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the following technical specification markdown and extract structured implementation blocks. 
@@ -284,10 +357,12 @@ pub struct ProjectConfig {
     pub enhance_description_user_prompt: Option<String>,
     pub generate_tasks_system_prompt: Option<String>,
     pub generate_tasks_user_prompt: Option<String>,
-    pub process_markdown_spec_system_prompt: Option<String>,
-    pub process_markdown_spec_user_prompt: Option<String>,
-    pub process_markdown_spec_system_prompt_mcp: Option<String>,
-    pub process_markdown_spec_user_prompt_mcp: Option<String>,
+    pub generate_tasks_system_prompt_mcp: Option<String>,
+    pub generate_tasks_user_prompt_mcp: Option<String>,
+    pub process_specification_system_prompt: Option<String>,
+    pub process_specification_user_prompt: Option<String>,
+    pub process_specification_system_prompt_mcp: Option<String>,
+    pub process_specification_user_prompt_mcp: Option<String>,
 }
 
 impl Default for ProjectConfig {
@@ -312,10 +387,12 @@ impl Default for ProjectConfig {
             enhance_description_user_prompt: Some(DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT.to_string()),
             generate_tasks_system_prompt: Some(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT.to_string()),
             generate_tasks_user_prompt: Some(DEFAULT_GENERATE_TASKS_USER_PROMPT.to_string()),
-            process_markdown_spec_system_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT.to_string()),
-            process_markdown_spec_user_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string()),
-            process_markdown_spec_system_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP.to_string()),
-            process_markdown_spec_user_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP.to_string()),
+            generate_tasks_system_prompt_mcp: Some(DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP.to_string()),
+            generate_tasks_user_prompt_mcp: Some(DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP.to_string()),
+            process_specification_system_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT.to_string()),
+            process_specification_user_prompt: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT.to_string()),
+            process_specification_system_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP.to_string()),
+            process_specification_user_prompt_mcp: Some(DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP.to_string()),
         }
     }
 }

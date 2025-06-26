@@ -73,8 +73,8 @@ Both prompts are integrated into the `ProjectConfig` struct:
 ```rust
 pub struct ProjectConfig {
     // ... existing fields ...
-    pub process_markdown_spec_system_prompt_mcp: Option<String>,
-    pub process_markdown_spec_user_prompt_mcp: Option<String>,
+    pub process_specification_system_prompt_mcp: Option<String>,
+    pub process_specification_user_prompt_mcp: Option<String>,
 }
 ```
 
