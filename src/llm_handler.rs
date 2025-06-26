@@ -438,10 +438,7 @@ impl LLMProviderImpl {
 }
 
 
-pub async fn auto_complete_description(description: &str, provider_type: Option<LLMProvider>,
-                                       openrouter_model: Option<String>,
-                                       gemini_model: Option<String>,
-                                       anthropic_model: Option<String>) -> Result<String, String> {
+pub async fn auto_complete_description(description: &str, provider_type: Option<LLMProvider>) -> Result<String, String> {
     let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts

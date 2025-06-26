@@ -369,10 +369,7 @@ pub async fn auto_complete_handler(description: web::Json<String>, data: web::Da
 
     match auto_complete_description(
         &description, 
-        project_config.llm_provider,
-        project_config.openrouter_model.clone(),
-        project_config.gemini_model.clone(),
-        project_config.anthropic_model.clone()
+        project_config.llm_provider
     ).await {
         Ok(enhanced_description) => {
             let response = AutoCompleteResponse {
