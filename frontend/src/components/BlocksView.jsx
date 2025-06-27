@@ -17,7 +17,7 @@ import DependencyTreeView from './DependencyTreeView';
 import TaskDialog from './TaskDialog';
 import './BlocksView.css';
 
-const BlocksView = () => {
+const BlocksView = ({ refreshTrigger }) => {
     const [blocks, setBlocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingDescription, setEditingDescription] = useState({});
@@ -67,9 +67,53 @@ const BlocksView = () => {
     const [newInput, setNewInput] = useState('');
     const [newOutput, setNewOutput] = useState('');
 
+    // Create a ref to store the current blocks data
+    const blocksRef = useRef([]);
+
+    // Update the ref whenever blocks changes
+    useEffect(() => {
+        blocksRef.current = blocks;
+    }, [blocks]);
+
+    // Fetch blocks when the component mounts
     useEffect(() => {
         fetchBlocks();
-    }, []);
+
+        // Set up an interval to check if blocks_config.json was modified
+        const checkConfigInterval = setInterval(async () => {
+            try {
+                // Fetch blocks data to check if it has changed
+                const response = await fetch('/api/blocks');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch blocks');
+                }
+                const data = await response.json();
+
+                // Compare with current blocks data using the ref
+                const currentBlocks = JSON.stringify(blocksRef.current);
+                const newBlocks = JSON.stringify(data);
+
+                // If blocks data has changed, update the state
+                if (currentBlocks !== newBlocks) {
+                    console.log('Blocks configuration has changed, reloading...');
+                    setBlocks(data);
+                }
+            } catch (error) {
+                console.error('Error checking blocks configuration:', error);
+            }
+        }, 5000); // Check every 5 seconds
+
+        // Clean up the interval when the component unmounts
+        return () => clearInterval(checkConfigInterval);
+    }, []); // No dependencies to avoid re-creating the interval
+
+    // Fetch blocks when the refreshTrigger changes (i.e., when the Blocks tab is clicked)
+    useEffect(() => {
+        if (refreshTrigger > 0) {
+            console.log('Blocks tab clicked, fetching blocks data...');
+            fetchBlocks();
+        }
+    }, [refreshTrigger]);
 
     // Create a ref for the toast
     const toastRef = useRef(null);

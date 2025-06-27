@@ -16,6 +16,7 @@ function App() {
     const [projectConfigured, setProjectConfigured] = useState(true)
     const [showConfigDialog, setShowConfigDialog] = useState(false)
     const [configMessage, setConfigMessage] = useState('')
+    const [blocksRefreshTrigger, setBlocksRefreshTrigger] = useState(0)
     const toastRef = useRef(null)
 
     // Use the Git hook to get all git-related functionality
@@ -62,6 +63,7 @@ function App() {
             command: () => {
                 if (projectConfigured) {
                     setActiveView('blocks')
+                    setBlocksRefreshTrigger(prev => prev + 1)
                 } else {
                     setShowConfigDialog(true)
                 }
@@ -99,7 +101,7 @@ function App() {
     const renderContent = () => {
         switch (activeView) {
             case 'blocks':
-                return <BlocksView/>
+                return <BlocksView refreshTrigger={blocksRefreshTrigger}/>
             case 'flow':
                 return <FlowView/>
             case 'project':

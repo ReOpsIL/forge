@@ -295,7 +295,7 @@ Based on the frontend component description below, generate a prioritized list o
         \"string\"
       ],
       \"dependencies\": [
-        \"string or task_id\"
+        \"task_id or block_id (must use IDs only, not names)\"
       ],
       \"estimated_effort\": \"S|M|L\",
       \"files_affected\": [
@@ -321,7 +321,7 @@ Based on the frontend component description below, generate a prioritized list o
 - Estimable in scope (typically 1-8 hours of work)
 - Include relevant file names, component names, or code locations
 - Specify testing requirements including unit and UI tests
-- Indicate dependencies between tasks using task IDs or descriptive names
+- Indicate dependencies between tasks using task_id or block_id ONLY (never use names or descriptive strings)
 - Use effort indicators: S (Simple, 1-3 hours), M (Medium, 3-6 hours), L (Large, 6-8 hours)
 - Task ID: task_id should be a random alpha numeric string of 6 characters.
 
@@ -353,7 +353,7 @@ Based on the frontend component description below, generate a prioritized list o
    - Specific, actionable task names focused on UI implementation
    - Detailed descriptions of what needs to be built
    - Comprehensive acceptance criteria including visual and interaction requirements
-   - Dependencies on other components, APIs, or design assets
+   - Dependencies on other components, APIs, or design assets (use block_id or task_id only, never names)
    - Realistic effort estimation for frontend work (1-8 hours)
    - Files that will be affected (components, stylesheets, tests)
    - Function signatures for component props and methods
@@ -381,7 +381,7 @@ create_task:
     \"Meets WCAG 2.1 AA accessibility standards\",
     \"Includes hover and focus states for interactivity\"
   ],
-  \"dependencies\": [\"Design System\", \"Product API\", \"Cart Context\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"medium\",
   \"files_affected\": [\"src/components/ProductCard.tsx\", \"src/components/ProductCard.test.tsx\", \"src/styles/ProductCard.scss\"],
   \"function_signatures\": [
@@ -423,7 +423,7 @@ Now analyze the following frontend component description and create the appropri
   \"outputs\": [
     {\"name\": \"eventName\", \"ctype\": \"eventType\", \"description\": \"expected event behavior\"}
   ],
-  \"dependencies\": [\"RequiredComponent1\", \"RequiredLibrary2\"]
+  \"dependencies\": [\"abc123\", \"def456\"] // Use actual block_id or task_id values only
 }
 ```
 
@@ -460,7 +460,7 @@ Specification document:
    - Specific, actionable task names for frontend development
    - Detailed descriptions of UI elements to be implemented
    - Acceptance criteria including visual and interaction requirements
-   - Dependencies on design systems, APIs, and other components
+   - Dependencies on design systems, APIs, and other components (use block_id or task_id only, never names)
    - Estimated effort for frontend development work
    - Files that will be affected (components, styles, tests)
    - Function signatures for component props and methods
@@ -487,7 +487,7 @@ create_task:
   \"task_name\": \"Implement Product Grid Component\",
   \"description\": \"Create responsive product grid with lazy loading and filtering capabilities\",
   \"acceptance_criteria\": [\"Grid displays products in responsive layout\", \"Lazy loading improves performance\", \"Filtering works in real-time\", \"Meets WCAG accessibility standards\"],
-  \"dependencies\": [\"Product API\", \"Design System\", \"Filter Components\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"medium\",
   \"files_affected\": [\"src/components/ProductGrid.tsx\", \"src/styles/ProductGrid.scss\", \"tests/ProductGrid.test.tsx\"],
   \"function_signatures\": [\"ProductGrid(products: Product[], filters: FilterState)\", \"onProductSelect: (product: Product) => void\"],
@@ -557,7 +557,7 @@ Based on the backend component description below, generate a prioritized list of
         \"string\"
       ],
       \"dependencies\": [
-        \"string or task_id\"
+        \"task_id or block_id (must use IDs only, not names)\"
       ],
       \"estimated_effort\": \"S|M|L\",
       \"files_affected\": [
@@ -583,7 +583,7 @@ Based on the backend component description below, generate a prioritized list of
 - Estimable in scope (typically 1-8 hours of work)
 - Include relevant file names, function names, or code locations
 - Specify testing requirements including unit and integration tests
-- Indicate dependencies between tasks using task IDs or descriptive names
+- Indicate dependencies between tasks using task_id or block_id ONLY (never use names or descriptive strings)
 - Use effort indicators: S (Simple, 1-3 hours), M (Medium, 3-6 hours), L (Large, 6-8 hours)
 - Task ID: task_id should be a random alpha numeric string of 6 characters.
 
@@ -615,7 +615,7 @@ Based on the backend component description below, generate a prioritized list of
    - Specific, actionable task names focused on server-side implementation
    - Detailed descriptions of what needs to be built
    - Comprehensive acceptance criteria including performance and security requirements
-   - Dependencies on other services, databases, or external APIs
+   - Dependencies on other services, databases, or external APIs (use block_id or task_id only, never names)
    - Realistic effort estimation for backend work (1-8 hours)
    - Files that will be affected (controllers, models, services, tests)
    - Function signatures for API endpoints and service methods
@@ -644,7 +644,7 @@ create_task:
     \"API returns appropriate HTTP status codes and error messages\",
     \"Rate limiting implemented to prevent brute force attacks\"
   ],
-  \"dependencies\": [\"User Model\", \"Database Connection\", \"JWT Library\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"src/controllers/auth.js\", \"src/models/User.js\", \"src/middleware/auth.js\", \"tests/auth.test.js\"],
   \"function_signatures\": [
@@ -687,7 +687,7 @@ Now analyze the following backend component description and create the appropria
   \"outputs\": [
     {\"name\": \"responseName\", \"ctype\": \"responseType\", \"description\": \"expected response format\"}
   ],
-  \"dependencies\": [\"RequiredService1\", \"RequiredDatabase2\"]
+  \"dependencies\": [\"abc123\", \"def456\"] // Use actual block_id or task_id values only
 }
 ```
 
@@ -724,7 +724,7 @@ Specification document:
    - Specific, actionable task names for backend development
    - Detailed descriptions of server-side functionality to be implemented
    - Acceptance criteria including performance, security, and reliability requirements
-   - Dependencies on databases, external services, and other APIs
+   - Dependencies on databases, external services, and other APIs (use block_id or task_id only, never names)
    - Estimated effort for backend development work
    - Files that will be affected (controllers, models, services, tests)
    - Function signatures for API endpoints and service methods
@@ -751,7 +751,7 @@ create_task:
   \"task_name\": \"Implement JWT Authentication API\",
   \"description\": \"Create secure JWT-based authentication with login, logout, and token refresh functionality\",
   \"acceptance_criteria\": [\"Secure password hashing with bcrypt\", \"JWT tokens with proper expiration\", \"Role-based access control\", \"Rate limiting for security\", \"Comprehensive error handling\"],
-  \"dependencies\": [\"User Model\", \"Database Connection\", \"Security Middleware\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"src/controllers/auth.js\", \"src/models/User.js\", \"src/middleware/auth.js\", \"tests/auth.test.js\"],
   \"function_signatures\": [\"POST /api/auth/login\", \"POST /api/auth/logout\", \"POST /api/auth/refresh\", \"authenticateToken(req, res, next)\"],
@@ -824,7 +824,7 @@ Original description:
    - Specific, actionable task names covering both frontend and backend
    - Detailed descriptions of what needs to be implemented across the stack
    - Comprehensive acceptance criteria including UI, API, and data requirements
-   - Dependencies on both frontend components and backend services
+   - Dependencies on both frontend components and backend services (use block_id or task_id only, never names)
    - Realistic effort estimation for fullstack work (1-8 hours)
    - Files that will be affected (components, controllers, models, tests)
    - Function signatures for both API endpoints and frontend methods
@@ -853,7 +853,7 @@ create_task:
     \"Profile updates are immediately reflected in the UI\",
     \"Secure authentication protects profile operations\"
   ],
-  \"dependencies\": [\"User Authentication\", \"Database Schema\", \"API Framework\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"src/components/UserProfile.tsx\", \"src/api/users.js\", \"src/models/User.js\", \"tests/userProfile.test.js\"],
   \"function_signatures\": [
@@ -899,7 +899,7 @@ Now analyze the following fullstack component description and create the appropr
    - Specific, actionable task names for fullstack development
    - Detailed descriptions covering frontend, backend, and integration work
    - Acceptance criteria for UI, API, and data layer components
-   - Dependencies on both frontend components and backend services
+   - Dependencies on both frontend components and backend services (use block_id or task_id only, never names)
    - Estimated effort for fullstack development work
    - Files that will be affected across the entire stack
    - Function signatures for both frontend and backend interfaces
@@ -927,7 +927,7 @@ create_task:
   \"task_name\": \"Implement Profile Settings API and UI\",
   \"description\": \"Create complete profile management functionality with RESTful API endpoints and responsive React interface\",
   \"acceptance_criteria\": [\"API handles profile CRUD operations with validation\", \"UI provides intuitive profile editing experience\", \"Real-time updates reflect changes immediately\", \"Secure authentication protects all operations\"],
-  \"dependencies\": [\"User Authentication\", \"Database Schema\", \"Frontend Framework\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"src/components/ProfileSettings.tsx\", \"src/api/profile.js\", \"src/models/User.js\", \"tests/profile.test.js\"],
   \"function_signatures\": [\"GET /api/users/:id/profile\", \"PUT /api/users/:id/profile\", \"const ProfileSettings: React.FC\"],
@@ -999,7 +999,7 @@ Original description:
    - Specific, actionable task names for mobile platforms (iOS/Android/Cross-platform)
    - Detailed descriptions of what needs to be implemented for mobile apps
    - Comprehensive acceptance criteria including UI, performance, and platform requirements
-   - Dependencies on mobile frameworks, APIs, and platform services
+   - Dependencies on mobile frameworks, APIs, and platform services (use block_id or task_id only, never names)
    - Realistic effort estimation for mobile development (1-8 hours)
    - Files that will be affected (views, controllers, models, platform-specific code)
    - Function signatures for mobile APIs and component interfaces
@@ -1028,7 +1028,7 @@ create_task:
     \"Notification analytics and delivery tracking implemented\",
     \"Supports rich media notifications (images, videos)\"
   ],
-  \"dependencies\": [\"Firebase FCM\", \"iOS Push Certificate\", \"User Authentication\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"src/services/NotificationService.ts\", \"ios/PushNotifications.swift\", \"android/PushService.java\", \"tests/notifications.test.js\"],
   \"function_signatures\": [
@@ -1113,7 +1113,7 @@ Original description:
    - Specific, actionable task names for infrastructure and automation
    - Detailed descriptions of what needs to be implemented or automated
    - Comprehensive acceptance criteria including reliability, security, and performance
-   - Dependencies on cloud services, tools, and infrastructure components
+   - Dependencies on cloud services, tools, and infrastructure components (use block_id or task_id only, never names)
    - Realistic effort estimation for DevOps work (1-8 hours)
    - Files that will be affected (IaC templates, CI/CD configs, scripts)
    - Function signatures for automation scripts and APIs
@@ -1142,7 +1142,7 @@ create_task:
     \"Health checks and readiness probes are configured\",
     \"Pipeline includes security scanning and vulnerability checks\"
   ],
-  \"dependencies\": [\"Docker Registry\", \"Kubernetes Cluster\", \"GitOps Repository\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\".github/workflows/deploy.yml\", \"k8s/deployment.yaml\", \"k8s/service.yaml\", \"scripts/deploy.sh\"],
   \"function_signatures\": [
@@ -1228,7 +1228,7 @@ Original description:
    - Specific, actionable task names for design and implementation
    - Detailed descriptions of visual elements and interactions to be created
    - Comprehensive acceptance criteria including visual consistency and accessibility
-   - Dependencies on design systems, brand guidelines, and development frameworks
+   - Dependencies on design systems, brand guidelines, and development frameworks (use block_id or task_id only, never names)
    - Realistic effort estimation for design work (1-8 hours)
    - Files that will be affected (design files, style guides, component libraries)
    - Function signatures for design tokens and component APIs
@@ -1257,7 +1257,7 @@ create_task:
     \"Design tokens are documented and integrated\",
     \"Figma component is production-ready with proper constraints\"
   ],
-  \"dependencies\": [\"Design System\", \"Brand Guidelines\", \"Typography Scale\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"medium\",
   \"files_affected\": [\"designs/components/Card.fig\", \"tokens/card-tokens.json\", \"docs/card-specs.md\"],
   \"function_signatures\": [
@@ -1342,7 +1342,7 @@ Original description:
    - Specific, actionable task names for research and design activities
    - Detailed descriptions of user experience improvements to be implemented
    - Comprehensive acceptance criteria including user satisfaction and usability metrics
-   - Dependencies on user research data, personas, and business requirements
+   - Dependencies on user research data, personas, and business requirements (use block_id or task_id only, never names)
    - Realistic effort estimation for UX work (1-8 hours)
    - Files that will be affected (wireframes, prototypes, research reports)
    - Function signatures for user flows and interaction patterns
@@ -1371,7 +1371,7 @@ create_task:
     \"Error states provide clear guidance and recovery options\",
     \"A/B testing shows 15% improvement in conversion rate\"
   ],
-  \"dependencies\": [\"Current Analytics Data\", \"User Personas\", \"Business Requirements\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"research/checkout-analysis.md\", \"wireframes/checkout-v2.fig\", \"prototypes/checkout-flow.prototype\"],
   \"function_signatures\": [
@@ -1457,7 +1457,7 @@ Original description:
    - Specific, actionable task names for analysis and modeling activities
    - Detailed descriptions of analytical methods and techniques to be applied
    - Comprehensive acceptance criteria including statistical significance and model performance
-   - Dependencies on data sources, computational resources, and domain expertise
+   - Dependencies on data sources, computational resources, and domain expertise (use block_id or task_id only, never names)
    - Realistic effort estimation for data science work (1-8 hours)
    - Files that will be affected (notebooks, scripts, models, reports)
    - Function signatures for data processing and modeling functions
@@ -1486,7 +1486,7 @@ create_task:
     \"Business impact analysis quantifies potential revenue retention\",
     \"Model deployment pipeline is production-ready\"
   ],
-  \"dependencies\": [\"Customer Data\", \"Feature Store\", \"ML Infrastructure\"],
+  \"dependencies\": [\"abc123\", \"def456\"], // Use actual block_id or task_id values only
   \"estimated_effort\": \"large\",
   \"files_affected\": [\"notebooks/churn_analysis.ipynb\", \"src/models/churn_model.py\", \"tests/test_churn_model.py\", \"reports/churn_results.md\"],
   \"function_signatures\": [
