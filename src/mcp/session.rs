@@ -7,6 +7,10 @@ use uuid::Uuid;
 
 use crate::mcp::errors::{MCPError, MCPResult, SessionError};
 use crate::mcp::tools::{ExecutionContext, SessionPermissions, ToolExecution, UserPreferences};
+use tracing::info;
+
+pub const MAX_MCP_SESSIONS : usize= 2500;
+
 
 /// Session identifier type
 pub type SessionId = String;
@@ -142,7 +146,7 @@ pub struct SessionConfig {
 impl Default for SessionConfig {
     fn default() -> Self {
         Self {
-            max_sessions: 25,
+            max_sessions: MAX_MCP_SESSIONS,
             session_timeout: Duration::from_secs(7200), // 2 hours
             enable_persistence: true,
             max_tool_history: 1000,
@@ -177,6 +181,51 @@ impl SessionManager {
         drop(sessions); // Release read lock
 
         let session_id = Uuid::new_v4().to_string();
+        let now = SystemTime::now();
+
+        let session = Session {
+            id: session_id.clone(),
+            client_info,
+            context: SessionContext {
+                current_project: None,
+                current_block: None,
+                working_directory: std::env::current_dir()
+                    .unwrap_or_else(|_| std::path::PathBuf::from("/")),
+                environment_variables: HashMap::new(),
+                user_preferences: UserPreferences::default(),
+                cached_data: HashMap::new(),
+            },
+            active_tasks: Vec::new(),
+            tool_history: Vec::new(),
+            permissions: self.config.default_permissions.clone(),
+            collaboration_state: CollaborationState {
+                is_collaborative: false,
+                collaborators: Vec::new(),
+                shared_context: HashMap::new(),
+                conflict_resolution: ConflictResolutionStrategy::Manual,
+            },
+            created_at: now,
+            last_activity: now,
+            status: SessionStatus::Active,
+        };
+
+        let mut sessions = self.sessions.write().await;
+        sessions.insert(session_id.clone(), session);
+
+        Ok(session_id)
+    }
+
+    /// Create a temporary session with short timeout for single tool execution
+    pub async fn create_temp_session(&self, client_info: ClientInfo) -> MCPResult<SessionId> {
+        let sessions = self.sessions.read().await;
+        
+        // Check session limit
+        if sessions.len() >= self.config.max_sessions {
+            return Err(MCPError::Session(SessionError::LimitExceeded));
+        }
+        drop(sessions);
+
+        let session_id = format!("temp-{}", uuid::Uuid::new_v4());
         let now = SystemTime::now();
 
         let session = Session {
@@ -280,6 +329,27 @@ impl SessionManager {
         let count = expired_sessions.len();
         for id in expired_sessions {
             sessions.remove(&id);
+        }
+
+        count
+    }
+
+    /// Clean up all temporary sessions immediately (more aggressive than regular cleanup)
+    pub async fn cleanup_temp_sessions(&self) -> usize {
+        let mut sessions = self.sessions.write().await;
+        let temp_sessions: Vec<String> = sessions
+            .keys()
+            .filter(|id| id.starts_with("temp-"))
+            .cloned()
+            .collect();
+
+        let count = temp_sessions.len();
+        for id in temp_sessions {
+            sessions.remove(&id);
+        }
+
+        if count > 0 {
+            info!("Cleaned up {} temporary sessions", count);
         }
 
         count
@@ -416,7 +486,7 @@ impl SessionCleanupService {
     pub fn new(manager: Arc<SessionManager>) -> Self {
         Self {
             manager,
-            cleanup_interval: Duration::from_secs(300), // 5 minutes
+            cleanup_interval: Duration::from_secs(30), // 30 seconds for faster cleanup
         }
     }
 
@@ -431,9 +501,16 @@ impl SessionCleanupService {
             loop {
                 cleanup_timer.tick().await;
 
+                // Clean up expired sessions
                 let cleaned_count = manager.cleanup_expired_sessions().await;
                 if cleaned_count > 0 {
                     tracing::info!("Cleaned up {} expired sessions", cleaned_count);
+                }
+
+                // Also clean up temporary sessions more aggressively
+                let temp_cleaned = manager.cleanup_temp_sessions().await;
+                if temp_cleaned > 0 {
+                    tracing::info!("Cleaned up {} temporary sessions", temp_cleaned);
                 }
             }
         });

@@ -6,6 +6,7 @@
 pub mod registry;
 pub mod blocks;
 pub mod filesystem;
+pub(crate) mod tasks;
 
 // Re-export core tool types
 pub use self::registry::ToolRegistry;

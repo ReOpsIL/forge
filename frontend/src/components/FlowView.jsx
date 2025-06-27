@@ -1,4 +1,4 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useState, useEffect, useCallback, useRef} from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -15,8 +15,44 @@ const FlowView = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+    // Create a ref to store the current blocks data
+    const blocksRef = useRef([]);
+
+    // Update the ref whenever blocks changes
+    useEffect(() => {
+        blocksRef.current = blocks;
+    }, [blocks]);
+
     useEffect(() => {
         fetchBlocks();
+
+        // Set up an interval to check if blocks_config.json was modified
+        const checkConfigInterval = setInterval(async () => {
+            try {
+                // Fetch blocks data to check if it has changed
+                const response = await fetch('/api/blocks');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch blocks');
+                }
+                const data = await response.json();
+
+                // Compare with current blocks data using the ref
+                const currentBlocks = JSON.stringify(blocksRef.current);
+                const newBlocks = JSON.stringify(data);
+
+                // If blocks data has changed, update the state
+                if (currentBlocks !== newBlocks) {
+                    console.log('Blocks configuration has changed, reloading...');
+                    setBlocks(data);
+                    processBlocksData(data);
+                }
+            } catch (error) {
+                console.error('Error checking blocks configuration:', error);
+            }
+        }, 5000); // Check every 5 seconds
+
+        // Clean up the interval when the component unmounts
+        return () => clearInterval(checkConfigInterval);
     }, []);
 
     const fetchBlocks = async () => {

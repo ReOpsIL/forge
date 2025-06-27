@@ -12,6 +12,8 @@ use std::time::{Duration, SystemTime};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio::time::interval;
 use tracing::{debug, error, info, warn};
+use crate::mcp::session::MAX_MCP_SESSIONS;
+
 
 use crate::mcp::{
     context::{ContextManager, ContextStore},
@@ -23,7 +25,8 @@ use crate::mcp::{
     session::{ClientInfo, SessionCleanupService, SessionId, SessionManager},
     state::{StateConfig, UnifiedStateManager},
     tools::{
-        blocks::{CreateBlockTool, CreateTaskTool, ListBlocksTool},
+        blocks::{CreateBlockTool, ListBlocksTool},
+        tasks::{CreateTaskTool},
         filesystem::{
             create_directory::CreateDirectoryTool,
             delete::DeleteTool,
@@ -71,7 +74,7 @@ pub struct MCPServerConfig {
 impl Default for MCPServerConfig {
     fn default() -> Self {
         Self {
-            max_sessions: 25,
+            max_sessions: MAX_MCP_SESSIONS,
             session_timeout: Duration::from_secs(7200), // 2 hours
             max_concurrent_tools: 8,
             tool_timeout: Duration::from_secs(300), // 5 minutes
@@ -404,21 +407,25 @@ impl MCPServer {
             .ok_or_else(|| MCPError::Server(ServerError::InvalidParams("Missing tool name".to_string())))?;
         let tool_params = params.get("arguments").cloned().unwrap_or(json!({}));
 
+        // Track if we created a temporary session for this tool call
+        let mut created_temp_session = false;
+        
         // If no session exists, create one automatically
         let session_id_str = if let Some(id) = session_id {
             id.clone()
         } else {
-            info!("No session found for tool '{}', creating a default session automatically", tool_name);
+            info!("No session found for tool '{}', creating a temporary session", tool_name);
             let client_info = ClientInfo {
-                client_name: "Default".to_string(),
+                client_name: "TempToolSession".to_string(),
                 client_version: "1.0.0".to_string(),
                 user_id: None,
                 capabilities: vec![],
                 connection_time: SystemTime::now(),
             };
 
-            let new_session_id = self.session_manager.create_session(client_info).await?;
-            info!("Created default session with ID: {}", new_session_id);
+            let new_session_id = self.session_manager.create_temp_session(client_info).await?;
+            created_temp_session = true;
+            info!("Created temporary session with ID: {}", new_session_id);
             new_session_id
         };
 
@@ -433,6 +440,15 @@ impl MCPServer {
         // Execute tool
         let result = self.tool_registry.execute_tool(tool_name, tool_params, &mut context).await
             .map_err(|e| MCPError::Server(ServerError::ToolExecutionFailed(e.to_string())))?;
+
+        // Immediately clean up temporary session after tool execution
+        if created_temp_session {
+            if let Err(e) = self.session_manager.terminate_session(&session_id_str).await {
+                warn!("Failed to terminate temporary session {}: {}", session_id_str, e);
+            } else {
+                info!("Cleaned up temporary session: {}", session_id_str);
+            }
+        }
 
         // Update stats
         {
