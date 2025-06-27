@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "name": "Input Connections and Output Connections",
+    "block_id": "Hzgbjz",
+    "description": "When processing a product specification and generating Blocks and Tasks, Currently the prompt does not refer input and output connections of Blocks and the connections between the Blocks, Update the prompts to  include the in/out types of each block (according to block description, usage, implementation and tasks) and the connections to other Blocks",
+    "inputs": [],
+    "outputs": [],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {}
+  }
+]

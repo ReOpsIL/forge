@@ -67,7 +67,7 @@ Based on the software component description below, generate a prioritized list o
         \"string\"
       ],
       \"dependencies\": [
-        \"string or task_id\"
+        \"task_id\"
       ],
       \"estimated_effort\": \"S|M|L\",
       \"files_affected\": [
@@ -92,7 +92,7 @@ Based on the software component description below, generate a prioritized list o
 - Estimable in scope (typically 1-8 hours of work)
 - Include relevant file names, function signatures, or code locations
 - Specify testing requirements where applicable
-- Indicate dependencies between tasks using task IDs or descriptive names
+- Indicate dependencies between tasks using task_id only (no names or other identifiers)
 - Use effort indicators: S (Simple, 1-3 hours), M (Medium, 3-6 hours), L (Large, 6-8 hours)
 - Task ID: task_id should be a random alpha numeric string of 6 characters.
 
@@ -127,7 +127,7 @@ pub const DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP: &str = "Analyze the following 
    - Specific, actionable task names
    - Detailed descriptions of what needs to be implemented
    - Comprehensive acceptance criteria for completion
-   - Dependencies on other components or tasks
+   - Dependencies using block_id for blocks and task_id for tasks only
    - Realistic effort estimation (1-8 hours or small/medium/large)
    - Files that will be affected or created
    - Function signatures for key interfaces
@@ -138,7 +138,7 @@ pub const DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP: &str = "Analyze the following 
 - Ensure each task is estimable in scope (1-8 hours of work)
 - Include relevant file names, function signatures, or code locations
 - Specify comprehensive testing requirements
-- Define clear dependencies between tasks
+- Define clear dependencies between tasks using task_id only
 - Use effort indicators: small (1-3 hours), medium (3-6 hours), large (6-8 hours)
 - Order tasks by implementation priority
 
@@ -160,7 +160,7 @@ create_task:
     \"Sessions are properly managed and expired after timeout\",
     \"Password hashing uses secure algorithms\"
   ],
-  \"dependencies\": [\"User Model\", \"Database Connection\"],
+  \"dependencies\": [\"task_abc123\", \"task_def456\"],
   \"estimated_effort\": \"medium\",
   \"files_affected\": [\"src/auth/service.rs\", \"src/models/user.rs\", \"src/auth/session.rs\"],
   \"function_signatures\": [
@@ -203,7 +203,7 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT: &str = "Analyze the followi
   \"outputs\": [
     {\"name\": \"outputName\", \"ctype\": \"dataType\", \"description\": \"expected result format\"}
   ],
-  \"dependencies\": [\"RequiredComponent1\", \"RequiredComponent2\"]
+  \"dependencies\": [\"block_abc123\", \"block_def456\"]
 }
 ```
 
@@ -243,7 +243,7 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP: &str = "Analyze the fol
    - Specific, actionable task names
    - Detailed descriptions of what needs to be implemented
    - Acceptance criteria for completion
-   - Dependencies on other components
+   - Dependencies using block_id for blocks and task_id for tasks only
    - Estimated effort (small/medium/large or time estimates)
    - Files that will be affected
    - Function signatures if applicable
@@ -258,7 +258,7 @@ pub const DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP: &str = "Analyze the fol
 **Task Creation Guidelines:**
 - Break down each block into specific, actionable tasks
 - Include comprehensive acceptance criteria
-- Specify dependencies between tasks and components
+- Specify dependencies between tasks and components using task_id and block_id only
 - Estimate effort realistically (1-8 hours, or small/medium/large)
 - List files that will need to be created or modified
 - Include function signatures for key interfaces
@@ -283,7 +283,7 @@ create_task:
   \"task_name\": \"Implement JWT Token Generation\",
   \"description\": \"Create JWT token generation and validation functionality\",
   \"acceptance_criteria\": [\"Tokens expire after 24 hours\", \"Include user ID and role in payload\", \"Use secure signing algorithm\"],
-  \"dependencies\": [\"User Model\", \"Security Configuration\"],
+  \"dependencies\": [\"block_abc123\", \"block_def456\"],
   \"estimated_effort\": \"4 hours\",
   \"files_affected\": [\"src/auth/jwt.rs\", \"src/models/user.rs\"],
   \"function_signatures\": [\"pub fn generate_token(user_id: u64) -> Result<String, AuthError>\"],
