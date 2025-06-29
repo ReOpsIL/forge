@@ -289,7 +289,9 @@ impl ClaudeWebSocket {
             }
         });
 
-        // Spawn blocking task to handle PTY output (from Claude to broadcast channel)
+        // Spawn blocking task to handle PTY output (from Claude to broadcast channel and stream capture)
+        let session_manager_for_output = Arc::clone(&self.session_manager);
+        let session_id_for_output = self.session_id.clone();
         tokio::task::spawn_blocking(move || {
             let mut reader = master_reader;
             let mut buffer = [0u8; 8192];
@@ -306,9 +308,17 @@ impl ClaudeWebSocket {
                         debug!("PTY output: {}", output);
 
                         // Send output to broadcast channel (all connected WebSockets will receive it)
-                        if let Err(e) = output_tx.send(output) {
+                        if let Err(e) = output_tx.send(output.clone()) {
                             warn!("Failed to send PTY output to broadcast channel: {}", e);
                             // Continue reading even if no receivers are listening
+                        }
+
+                        // Also capture the output for stream logging if there's an active capture
+                        if let Some(session) = session_manager_for_output.get_session(&session_id_for_output) {
+                            if let Err(e) = session.write_to_active_capture(&buffer[..n]) {
+                                debug!("Failed to write to stream capture: {}", e);
+                                // Don't break on capture errors, just log them
+                            }
                         }
                     }
                     Err(e) => {

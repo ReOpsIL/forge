@@ -3,8 +3,10 @@
 pub mod block_config;
 pub mod block_handlers;
 pub mod llm_handler;
+pub mod log_manager;
 pub mod log_stream;
 pub mod models;
 pub mod project_config;
+pub mod stream_capture;
 pub mod task_executor;
 pub mod task_queue;

@@ -1,4 +1,5 @@
 use crate::llm_handler::BlockConnection;
+use crate::stream_capture::StreamCaptureManager;
 use portable_pty::Child;
 use rand::{Rng, distributions::Alphanumeric};
 use serde::{Deserialize, Serialize};
@@ -312,11 +313,18 @@ pub struct ClaudeSession {
     pub connection_count: Arc<Mutex<u32>>,
     /// Broadcast channel for sending output to multiple WebSocket connections
     pub output_tx: Arc<Mutex<Option<tokio::sync::broadcast::Sender<String>>>>,
+    /// Stream capture manager for this session
+    pub stream_capture_manager: Arc<StreamCaptureManager>,
+    /// Currently active task capture (if any)
+    pub active_task_capture: Arc<Mutex<Option<String>>>,
 }
 
 impl ClaudeSession {
     pub fn new(session_id: String) -> Self {
         let now = Instant::now();
+        let capture_config = crate::stream_capture::CaptureConfig::default();
+        let stream_capture_manager = Arc::new(StreamCaptureManager::new(capture_config));
+        
         Self {
             session_id,
             created_at: now,
@@ -326,6 +334,8 @@ impl ClaudeSession {
             is_active: Arc::new(Mutex::new(false)),
             connection_count: Arc::new(Mutex::new(0)),
             output_tx: Arc::new(Mutex::new(None)),
+            stream_capture_manager,
+            active_task_capture: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -411,6 +421,61 @@ impl ClaudeSession {
             *is_active
         } else {
             false
+        }
+    }
+
+    /// Start stream capture for a specific task
+    pub fn start_task_capture(&self, task_id: &str, block_id: &str) -> Result<(), crate::stream_capture::CaptureError> {
+        // Stop any existing capture first
+        if let Ok(mut active_capture) = self.active_task_capture.lock() {
+            if let Some(current_task_id) = active_capture.as_ref() {
+                let _ = self.stream_capture_manager.stop_capture(current_task_id);
+            }
+            
+            // Start new capture
+            self.stream_capture_manager.start_capture(task_id, block_id)?;
+            *active_capture = Some(task_id.to_string());
+        }
+        
+        Ok(())
+    }
+
+    /// Stop stream capture for the current task
+    pub fn stop_task_capture(&self) -> Result<Option<Vec<u8>>, crate::stream_capture::CaptureError> {
+        if let Ok(mut active_capture) = self.active_task_capture.lock() {
+            if let Some(task_id) = active_capture.take() {
+                let captured_data = self.stream_capture_manager.stop_capture(&task_id)?;
+                return Ok(Some(captured_data));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Write data to the active task capture
+    pub fn write_to_active_capture(&self, data: &[u8]) -> Result<(), crate::stream_capture::CaptureError> {
+        if let Ok(active_capture) = self.active_task_capture.lock() {
+            if let Some(task_id) = active_capture.as_ref() {
+                self.stream_capture_manager.write_to_capture(task_id, data)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Check if there's an active task capture
+    pub fn has_active_capture(&self) -> bool {
+        if let Ok(active_capture) = self.active_task_capture.lock() {
+            active_capture.is_some()
+        } else {
+            false
+        }
+    }
+
+    /// Get the currently active capture task ID
+    pub fn get_active_capture_task_id(&self) -> Option<String> {
+        if let Ok(active_capture) = self.active_task_capture.lock() {
+            active_capture.clone()
+        } else {
+            None
         }
     }
 }
