@@ -1,0 +1,228 @@
+/* Terminal container styles */
+.terminal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #1e1e1e;
+  overflow: hidden;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'DejaVu Sans Mono', monospace;
+}
+
+/* Header styles */
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #0d1117;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.terminal-title {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+  user-select: none;
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-text {
+  color: #8b949e;
+  font-size: 12px;
+  text-transform: capitalize;
+  user-select: none;
+}
+
+.reconnect-button {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #f0f6fc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.reconnect-button:hover:not(:disabled) {
+  background: #30363d;
+  border-color: #8b949e;
+}
+
+.reconnect-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Terminal body styles */
+.terminal-body {
+  flex: 1;
+  background-color: #1e1e1e;
+  position: relative;
+  overflow: hidden;
+  cursor: text;
+  min-height: 0; /* Important for flex child to shrink */
+}
+
+/* Ensure xterm.js terminal fills the container */
+.terminal-body .xterm {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.terminal-body .xterm-viewport {
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+}
+
+.terminal-body .xterm-screen {
+  height: 100% !important;
+  white-space: nowrap !important;
+}
+
+/* Prevent text wrapping in terminal */
+.terminal-body .xterm-rows {
+  white-space: nowrap !important;
+}
+
+.terminal-body .xterm-row {
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+.terminal-body .xterm-row > span {
+  white-space: nowrap !important;
+  display: inline !important;
+}
+
+.terminal-body .xterm-char-measure-element {
+  white-space: nowrap !important;
+}
+
+/* Force XTerm to not wrap */
+.terminal-body .xterm .xterm-viewport .xterm-rows .xterm-row {
+  white-space: nowrap !important;
+  word-wrap: none !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
+
+/* Custom scrollbar for the terminal */
+.terminal-body .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.terminal-body .xterm-viewport::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.terminal-body .xterm-viewport::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.terminal-body .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+.terminal-body .xterm-viewport::-webkit-scrollbar-corner {
+  background: #1e1e1e;
+}
+
+/* Focus styles */
+.terminal-body:focus-within {
+  outline: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .terminal-container {
+    font-size: 13px;
+  }
+  
+  .terminal-header {
+    padding: 6px 12px;
+  }
+  
+  .terminal-controls {
+    gap: 8px;
+  }
+  
+  .reconnect-button {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .terminal-container {
+    background-color: #000000;
+    border-color: #ffffff;
+  }
+  
+  .terminal-header {
+    background-color: #000000;
+    border-bottom-color: #ffffff;
+  }
+  
+  .terminal-body {
+    background-color: #000000;
+  }
+  
+  .reconnect-button {
+    background: #000000;
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+}
+
+/* Selection styles for better visibility */
+.terminal-body ::selection {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Loading animation for connecting status */
+.status-indicator {
+  animation: none;
+}
+
+.connection-status .status-text {
+  transition: color 0.2s;
+}
+
+/* When connecting, add a subtle pulse animation */
+.status-indicator[style*="#f1fa8c"] {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

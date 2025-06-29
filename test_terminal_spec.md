@@ -1,0 +1,1 @@
+Simple terminal component that runs "claude" as a subprocess and streams output to frontend via WebSocket connection. Include backend WebSocket handler and basic frontend integration.
