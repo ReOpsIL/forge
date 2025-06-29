@@ -13,8 +13,6 @@ class TerminalManager {
         this.subscribers = new Set()
         this.connectionStatus = 'disconnected'
         this.wsUrl = null
-        this.reconnectAttempts = 0
-        this.maxReconnectAttempts = 10
         this.reconnectDelay = 3000
         this.currentElement = null
         this.userScrolledUp = false
@@ -122,18 +120,11 @@ class TerminalManager {
                 this.ws = null
                 
                 // Auto-reconnect with exponential backoff
-                if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                    const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts)
-                    this.reconnectAttempts++
-                    
-                    setTimeout(() => {
-                        if (this.xterm && this.connectionStatus !== 'connected') {
-                            this.connectWebSocket()
-                        }
-                    }, delay)
-                } else {
-                    this.updateConnectionStatus('error')
-                }
+                setTimeout(() => {
+                    if (this.xterm && this.connectionStatus !== 'connected') {
+                        this.connectWebSocket()
+                    }
+                }, this.reconnectDelay)
             }
 
             this.ws.onerror = (error) => {
@@ -234,7 +225,6 @@ class TerminalManager {
     }
 
     reconnect() {
-        this.reconnectAttempts = 0
         this.connectWebSocket()
     }
 

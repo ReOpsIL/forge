@@ -358,7 +358,7 @@ async fn run_http_server(
                     )
                     // Log streaming routes
                     .route("/logs/stream/{task_id}", web::get().to(stream_logs))
-                    .route("/git/branches", web::get().to(get_branches_handler))
+                    .route("/logs/task-ids", web::get().to(get_task_ids))
                     // Claude WebSocket route
                     .route("/claude/ws", web::get().to(claude_ws_handler)),
             )

@@ -47,7 +47,9 @@ impl TaskExecutor {
     // Start a background thread to process the task queue
     fn start_background_thread(executor: Arc<TaskExecutor>) {
         thread::spawn(move || {
-            loop {
+            let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+            rt.block_on(async {
+                loop {
                 // Process any tasks in the queue
                 if let Some(task) = executor.get_next_task() {
                     println!("Processing task: {}:{}", task.block_id, task.task_id);
@@ -62,9 +64,10 @@ impl TaskExecutor {
                     }
                 }
 
-                // Sleep for a short time before checking the queue again
-                thread::sleep(Duration::from_millis(100));
-            }
+                    // Sleep for a short time before checking the queue again
+                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                }
+            });
         });
     }
 
@@ -1106,6 +1109,14 @@ IMPORTANT DEBUG INSTRUCTIONS:
         // Send the prompt to Claude CLI via stdin
         if let Some(session) = &self.claude_session_manager.get_session(claude_session_id) {
             session.update_activity();
+
+            // Start stream capture for this task
+            let capture_task_id = format!("{}:{}", block_id, task_id);
+            if let Err(e) = session.start_task_capture(&capture_task_id, block_id) {
+                error!("Failed to start stream capture for task {}: {}", capture_task_id, e);
+            } else {
+                info!("Started stream capture for task {}", capture_task_id);
+            }
 
             // Send prompt to Claude CLI stdin
             if let Ok(stdin_opt) = session.stdin_tx.lock() {

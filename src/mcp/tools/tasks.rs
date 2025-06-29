@@ -415,6 +415,23 @@ impl MCPTool for UpdateTaskTool {
             if let Some(status) = params["status"].as_str() {
                 task.status = status.to_string();
                 updated_fields.push("status");
+                
+                // If task is being marked as completed, stop stream capture
+                if status == "COMPLETED" || status == "DONE" {
+                    if let Some(claude_session_manager) = &context.claude_session_manager {
+                        let claude_session_id = "default-claude-session";
+                        if let Some(session) = claude_session_manager.get_session(claude_session_id) {
+                            let capture_task_id = format!("{}:{}", block_id, task_id);
+                            if session.get_active_capture_task_id() == Some(capture_task_id.clone()) {
+                                if let Err(e) = session.stop_task_capture() {
+                                    warn!("Failed to stop stream capture for completed task {}: {}", capture_task_id, e);
+                                } else {
+                                    info!("Stopped stream capture for completed task {}", capture_task_id);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if let Some(acceptance_criteria) = params["acceptance_criteria"].as_array() {

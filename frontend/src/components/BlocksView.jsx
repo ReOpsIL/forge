@@ -14,6 +14,7 @@ import {Accordion, AccordionTab} from 'primereact/accordion';
 import Editor, { DiffEditor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import TaskDialog from './TaskDialog';
+import LogsDialog from './LogsDialog';
 import { useBlockTaskOrdering } from '../hooks/useTaskOrdering';
 import './BlocksView.css';
 
@@ -33,8 +34,11 @@ const BlocksView = ({ refreshTrigger }) => {
     const [showAutoCompleteDialog, setShowAutoCompleteDialog] = useState(false);
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [showTaskDialog, setShowTaskDialog] = useState(false);
+    const [showLogsDialog, setShowLogsDialog] = useState(false);
     const [currentTaskData, setCurrentTaskData] = useState(null);
     const [currentTaskBlockId, setCurrentTaskBlockId] = useState(null);
+    const [currentLogsTaskId, setCurrentLogsTaskId] = useState(null);
+    const [currentLogsBlockId, setCurrentLogsBlockId] = useState(null);
     const [currentTaskLog, setCurrentTaskLog] = useState('');
     const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
@@ -934,6 +938,13 @@ const BlocksView = ({ refreshTrigger }) => {
         setShowLogDialog(true);
     };
 
+    // Show task logs in new logs dialog
+    const showTaskLogs = (block_id, taskId) => {
+        setCurrentLogsTaskId(taskId);
+        setCurrentLogsBlockId(block_id);
+        setShowLogsDialog(true);
+    };
+
 
     // Function to handle file selection for importing tasks
     const handleFileSelect = (block_id) => {
@@ -1416,6 +1427,14 @@ const BlocksView = ({ refreshTrigger }) => {
                 onSave={handleSaveTask}
             />
 
+            {/* Logs Dialog */}
+            <LogsDialog
+                visible={showLogsDialog}
+                onHide={() => setShowLogsDialog(false)}
+                taskId={currentLogsTaskId}
+                blockId={currentLogsBlockId}
+            />
+
             {/* New Block Dialog */}
             <Dialog
                 header="Create New Block"
@@ -1799,12 +1818,12 @@ const BlocksView = ({ refreshTrigger }) => {
                                                 onClick={() => {
                                                     const selectedTaskIndices = selectedTasks[block.block_id] || [];
                                                     if (selectedTaskIndices.length === 1) {
-                                                        showTaskLog(block.block_id, selectedTaskIndices[0]);
+                                                        showTaskLogs(block.block_id, selectedTaskIndices[0]);
                                                     } else {
                                                         toastRef.current.show({
                                                             severity: 'warn',
                                                             summary: 'Warning',
-                                                            detail: 'Please select exactly one task to view its log',
+                                                            detail: 'Please select exactly one task to view its logs',
                                                             life: 3000
                                                         });
                                                     }
