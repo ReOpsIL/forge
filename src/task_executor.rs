@@ -765,22 +765,17 @@ impl TaskExecutor {
         Ok(execution_order)
     }
 
-    // Generate a list of source files to include in git operations
-    fn get_source_files_list(project_dir: &str) -> Vec<String> {
-        let mut source_files = Vec::new();
+    // Generate a list of relevant source file extensions found in the project
+    fn get_source_ext_list(project_dir: &str) -> Vec<String> {
+        let mut found_extensions = std::collections::HashSet::new();
         
-        // Always include these core files if they exist
-        let core_files = vec![
-            "Cargo.toml", "Cargo.lock", "package.json", "package-lock.json",
-            "README.md", "LICENSE", ".gitignore",
-            "blocks_config.json", "project_config.json", ".mcp.json"
+        // Always include these core file extensions
+        let core_extensions = vec![
+            "toml", "lock", "json", "md", "gitignore", "mcp"
         ];
         
-        for file in core_files {
-            let file_path = format!("{}/{}", project_dir, file);
-            if Path::new(&file_path).exists() {
-                source_files.push(file.to_string());
-            }
+        for ext in core_extensions {
+            found_extensions.insert(ext.to_string());
         }
         
         // Recursively find source files, excluding build/cache directories
@@ -806,10 +801,10 @@ impl TaskExecutor {
                         }
                         
                         // Recursively process subdirectories
-                        let subdir_files = Self::get_source_files_from_dir(&path, project_dir);
-                        source_files.extend(subdir_files);
+                        let subdir_extensions = Self::get_source_ext_from_dir(&path, project_dir);
+                        found_extensions.extend(subdir_extensions);
                     } else if file_type.is_file() {
-                        // Include source files by extension
+                        // Include source file extensions
                         if let Some(extension) = path.extension() {
                             let ext = extension.to_string_lossy().to_lowercase();
                             let source_extensions = vec![
@@ -820,9 +815,7 @@ impl TaskExecutor {
                             ];
                             
                             if source_extensions.contains(&ext.as_ref()) {
-                                if let Ok(relative_path) = path.strip_prefix(project_dir) {
-                                    source_files.push(relative_path.to_string_lossy().to_string());
-                                }
+                                found_extensions.insert(ext);
                             }
                         }
                     }
@@ -830,12 +823,12 @@ impl TaskExecutor {
             }
         }
         
-        source_files
+        found_extensions.into_iter().collect()
     }
     
     // Helper function to recursively process subdirectories
-    fn get_source_files_from_dir(dir_path: &Path, project_root: &str) -> Vec<String> {
-        let mut files = Vec::new();
+    fn get_source_ext_from_dir(dir_path: &Path, project_root: &str) -> std::collections::HashSet<String> {
+        let mut extensions = std::collections::HashSet::new();
         
         if let Ok(entries) = fs::read_dir(dir_path) {
             for entry in entries.flatten() {
@@ -850,11 +843,11 @@ impl TaskExecutor {
                             ".next", ".nuxt", "coverage", ".nyc_output", "tmp"
                         ];
                         if !excluded_dirs.contains(&file_name.as_ref()) {
-                            let subdir_files = Self::get_source_files_from_dir(&path, project_root);
-                            files.extend(subdir_files);
+                            let subdir_extensions = Self::get_source_ext_from_dir(&path, project_root);
+                            extensions.extend(subdir_extensions);
                         }
                     } else if file_type.is_file() {
-                        // Include source files by extension
+                        // Include source file extensions
                         if let Some(extension) = path.extension() {
                             let ext = extension.to_string_lossy().to_lowercase();
                             let source_extensions = vec![
@@ -865,9 +858,7 @@ impl TaskExecutor {
                             ];
                             
                             if source_extensions.contains(&ext.as_ref()) {
-                                if let Ok(relative_path) = path.strip_prefix(project_root) {
-                                    files.push(relative_path.to_string_lossy().to_string());
-                                }
+                                extensions.insert(ext);
                             }
                         }
                     }
@@ -875,7 +866,7 @@ impl TaskExecutor {
             }
         }
         
-        files
+        extensions
     }
 
     pub fn execute_git_tasks_mcp(
@@ -940,15 +931,15 @@ impl TaskExecutor {
         // Construct the MCP-based prompt for Claude session
         let commit_message = task_opt.description.lines().next().unwrap_or("Task execution").to_string();
         
-        // Generate a dynamic list of source files to include
-        let source_files = Self::get_source_files_list(&project_dir);
-        let files_list = source_files.join("\", \"");
+        // Generate a dynamic list of source file extensions to include
+        let source_extensions = Self::get_source_ext_list(&project_dir);
+        let extensions_info = format!("*.{}", source_extensions.join(", *.")); 
         
         let mcp_prompt = format!(
             r#"I need you to execute a task using the MCP tools available. Here's what you need to do:
 
 1. First, use the git MCP tools to:
-   - Use mcp__git__git_add with files: ["{}"] (IMPORTANT: Only add these specific source files, DO NOT use "." or broad patterns that could include .git, node_modules, target, .env, dist, build)
+   - Use mcp__git__git_add with files for extensions: {} (IMPORTANT: Only add source files with these extensions, DO NOT use "." or broad patterns that could include .git, node_modules, target, .env, dist, build)
    - Use mcp__git__git_commit with message: 'before exec task id: "{}"'
    - Use mcp__git__git_checkout to checkout the main branch: {}
    - Pull latest changes using git MCP tools
@@ -961,7 +952,7 @@ Task Details:
 {}
 
 3. After completing the task, use git MCP tools to:
-   - Use mcp__git__git_add with files: ["{}"] (IMPORTANT: Only add these specific source files, DO NOT use "." or broad patterns that could include .git, node_modules, target, .env, dist, build)
+   - Use mcp__git__git_add with files for extensions: {} (IMPORTANT: Only add source files with these extensions, DO NOT use "." or broad patterns that could include .git, node_modules, target, .env, dist, build)
    - Use mcp__git__git_commit with message: "{}" and remember the commit id
    - Use mcp__forge__update_task to update the task commit_id with the commit id returned from last commit
    - Use mcp__git__git_checkout to switch back to main branch
@@ -977,14 +968,14 @@ IMPORTANT DEBUG INSTRUCTIONS:
 - If any step tries to add files broadly (like using "." or "*"), STOP and explain why this would be dangerous
 - Show the exact parameters you are passing to each git MCP tool
 "#,
-            files_list,
+            extensions_info,
             task_id,
             main_branch,
             task_id,
             block_id,
             task_id,
             task_prompt,
-            files_list,
+            extensions_info,
             commit_message,
         );
 
