@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 use tracing::{error, info};
+use std::fs;
 
 // Singleton task executor that manages a global execution queue
 pub struct TaskExecutor {
@@ -764,6 +765,119 @@ impl TaskExecutor {
         Ok(execution_order)
     }
 
+    // Generate a list of source files to include in git operations
+    fn get_source_files_list(project_dir: &str) -> Vec<String> {
+        let mut source_files = Vec::new();
+        
+        // Always include these core files if they exist
+        let core_files = vec![
+            "Cargo.toml", "Cargo.lock", "package.json", "package-lock.json",
+            "README.md", "LICENSE", ".gitignore",
+            "blocks_config.json", "project_config.json", ".mcp.json"
+        ];
+        
+        for file in core_files {
+            let file_path = format!("{}/{}", project_dir, file);
+            if Path::new(&file_path).exists() {
+                source_files.push(file.to_string());
+            }
+        }
+        
+        // Recursively find source files, excluding build/cache directories
+        if let Ok(entries) = fs::read_dir(project_dir) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    let path = entry.path();
+                    let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+                    
+                    // Skip excluded directories
+                    if file_type.is_dir() {
+                        let excluded_dirs = vec![
+                            "node_modules", "target", "logs", "dist", "build",
+                            ".next", ".nuxt", "coverage", "tmp",
+                            ".nyc_output",
+                            ".git",
+                            ".claude",
+                            ".env",
+                            ".idea"
+                        ];
+                        if excluded_dirs.contains(&file_name.as_ref()) {
+                            continue;
+                        }
+                        
+                        // Recursively process subdirectories
+                        let subdir_files = Self::get_source_files_from_dir(&path, project_dir);
+                        source_files.extend(subdir_files);
+                    } else if file_type.is_file() {
+                        // Include source files by extension
+                        if let Some(extension) = path.extension() {
+                            let ext = extension.to_string_lossy().to_lowercase();
+                            let source_extensions = vec![
+                                "rs", "js", "ts", "jsx", "tsx", "py", "java", "c", "cpp", "h", "hpp",
+                                "go", "php", "rb", "swift", "kt", "scala", "cs", "fs", "vb",
+                                "html", "css", "scss", "sass", "less", "vue", "svelte",
+                                "md", "txt", "yml", "yaml", "toml", "json", "xml", "sh",
+                            ];
+                            
+                            if source_extensions.contains(&ext.as_ref()) {
+                                if let Ok(relative_path) = path.strip_prefix(project_dir) {
+                                    source_files.push(relative_path.to_string_lossy().to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        source_files
+    }
+    
+    // Helper function to recursively process subdirectories
+    fn get_source_files_from_dir(dir_path: &Path, project_root: &str) -> Vec<String> {
+        let mut files = Vec::new();
+        
+        if let Ok(entries) = fs::read_dir(dir_path) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    let path = entry.path();
+                    let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+                    
+                    if file_type.is_dir() {
+                        // Skip excluded subdirectories
+                        let excluded_dirs = vec![
+                            ".git", "node_modules", "target", "dist", "build",
+                            ".next", ".nuxt", "coverage", ".nyc_output", "tmp"
+                        ];
+                        if !excluded_dirs.contains(&file_name.as_ref()) {
+                            let subdir_files = Self::get_source_files_from_dir(&path, project_root);
+                            files.extend(subdir_files);
+                        }
+                    } else if file_type.is_file() {
+                        // Include source files by extension
+                        if let Some(extension) = path.extension() {
+                            let ext = extension.to_string_lossy().to_lowercase();
+                            let source_extensions = vec![
+                                "rs", "js", "ts", "jsx", "tsx", "py", "java", "c", "cpp", "h", "hpp",
+                                "go", "php", "rb", "swift", "kt", "scala", "cs", "fs", "vb",
+                                "html", "css", "scss", "sass", "less", "vue", "svelte",
+                                "md", "txt", "yml", "yaml", "toml", "json", "xml"
+                            ];
+                            
+                            if source_extensions.contains(&ext.as_ref()) {
+                                if let Ok(relative_path) = path.strip_prefix(project_root) {
+                                    files.push(relative_path.to_string_lossy().to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        files
+    }
+
     pub fn execute_git_tasks_mcp(
         &self,
         block_id: &String,
@@ -825,11 +939,16 @@ impl TaskExecutor {
 
         // Construct the MCP-based prompt for Claude session
         let commit_message = task_opt.description.lines().next().unwrap_or("Task execution").to_string();
+        
+        // Generate a dynamic list of source files to include
+        let source_files = Self::get_source_files_list(&project_dir);
+        let files_list = source_files.join("\", \"");
+        
         let mcp_prompt = format!(
             r#"I need you to execute a task using the MCP tools available. Here's what you need to do:
 
 1. First, use the git MCP tools to:
-   - Use mcp__git__git_add to add files (specify appropriate files, avoiding .git, node_modules, target, etc.)
+   - Use mcp__git__git_add with files: ["{}"] (IMPORTANT: Only add these specific source files, DO NOT use "." or broad patterns that could include .git, node_modules, target, .env, dist, build)
    - Use mcp__git__git_commit with message: 'before exec task id: "{}"'
    - Use mcp__git__git_checkout to checkout the main branch: {}
    - Pull latest changes using git MCP tools
@@ -842,7 +961,7 @@ Task Details:
 {}
 
 3. After completing the task, use git MCP tools to:
-   - Use mcp__git__git_add to add files (specify appropriate files, avoiding .git, node_modules, target, etc.)
+   - Use mcp__git__git_add with files: ["{}"] (IMPORTANT: Only add these specific source files, DO NOT use "." or broad patterns that could include .git, node_modules, target, .env, dist, build)
    - Use mcp__git__git_commit with message: "{}" and remember the commit id
    - Use mcp__forge__update_task to update the task commit_id with the commit id returned from last commit
    - Use mcp__git__git_checkout to switch back to main branch
@@ -852,13 +971,20 @@ Task Details:
    - Delete the task branch using git MCP tools
 
 Please handle any errors gracefully and provide detailed feedback about each step.
+
+IMPORTANT DEBUG INSTRUCTIONS:
+- Before calling mcp__git__git_add, explicitly state what files you are adding
+- If any step tries to add files broadly (like using "." or "*"), STOP and explain why this would be dangerous
+- Show the exact parameters you are passing to each git MCP tool
 "#,
+            files_list,
             task_id,
             main_branch,
             task_id,
             block_id,
             task_id,
             task_prompt,
+            files_list,
             commit_message,
         );
 
@@ -885,7 +1011,7 @@ Please handle any errors gracefully and provide detailed feedback about each ste
             // Send prompt to Claude CLI stdin
             if let Ok(stdin_opt) = session.stdin_tx.lock() {
                 if let Some(ref tx) = stdin_opt.as_ref() {
-                    match tx.send(format!("{}\r", mcp_prompt)) {
+                    match tx.send(format!("{}", mcp_prompt)) {
                         Ok(_) => {
                             info!("Successfully sent task exec prompt to Claude CLI session {}", claude_session_id);
                             // The user will see the output streaming through the WebSocket

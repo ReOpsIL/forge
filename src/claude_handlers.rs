@@ -127,7 +127,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClaudeWebSocket {
                     // Send text to PTY stdin if available
                     if let Ok(stdin_opt) = session.stdin_tx.lock() {
                         if let Some(ref tx) = stdin_opt.as_ref() {
-                            if let Err(e) = tx.send(format!("{}\r", text)) {
+                            if let Err(e) = tx.send(format!("{}", text)) {
                                 error!(
                                     "Failed to send message to PTY for session {}: {}",
                                     self.session_id, e
@@ -156,7 +156,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ClaudeWebSocket {
 
                         if let Ok(stdin_opt) = session.stdin_tx.lock() {
                             if let Some(ref tx) = stdin_opt.as_ref() {
-                                if let Err(e) = tx.send(format!("{}\r", text)) {
+                                if let Err(e) = tx.send(format!("{}", text)) {
                                     error!(
                                         "Failed to send binary message to PTY for session {}: {}",
                                         self.session_id, e

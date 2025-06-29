@@ -740,7 +740,7 @@ pub async fn process_specification(
         // Send prompt to Claude CLI stdin
         if let Ok(stdin_opt) = session.stdin_tx.lock() {
             if let Some(ref tx) = stdin_opt.as_ref() {
-                match tx.send(format!("{}\r", combined_prompt)) {
+                match tx.send(format!("{}", combined_prompt)) {
                     Ok(_) => {
                         info!("Successfully sent specification processing prompt to Claude CLI session {}", claude_session_id);
                         // The user will see the output streaming through the WebSocket
