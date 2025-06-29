@@ -829,11 +829,11 @@ impl TaskExecutor {
             r#"I need you to execute a task using the MCP tools available. Here's what you need to do:
 
 1. First, use the git MCP tools to:
-   - Add all changes to current git branch
-   - Commit with message: 'before exec task id: "{}"'
-   - Checkout the main branch: {}
-   - Pull latest changes
-   - Create a new branch: {}
+   - Use mcp__git__git_add to add files (specify appropriate files, avoiding .git, node_modules, target, etc.)
+   - Use mcp__git__git_commit with message: 'before exec task id: "{}"'
+   - Use mcp__git__git_checkout to checkout the main branch: {}
+   - Pull latest changes using git MCP tools
+   - Use mcp__git__git_create_branch to create a new branch: {}
 
 2. Then execute the task:
    - Use the exec_task MCP tool to execute the task with block_id: {} and task_id: {}
@@ -842,14 +842,14 @@ Task Details:
 {}
 
 3. After completing the task, use git MCP tools to:
-   - Add all changes to current git branch
-   - Commit with message: "{}" and remember the commit id
-   - update the task commit_id using update_task MCP tool, specify the commit id returned from last commit.
-   - Switch back to main branch
-   - Merge the task branch into main branch with fast-forward only
-   - commit changes to main branch
-   - push changes to remote main branch
-   - Delete the task branch
+   - Use mcp__git__git_add to add files (specify appropriate files, avoiding .git, node_modules, target, etc.)
+   - Use mcp__git__git_commit with message: "{}" and remember the commit id
+   - Use mcp__forge__update_task to update the task commit_id with the commit id returned from last commit
+   - Use mcp__git__git_checkout to switch back to main branch
+   - Merge the task branch into main branch with fast-forward only using git MCP tools
+   - Commit changes to main branch using mcp__git__git_commit
+   - Push changes to remote main branch using git MCP tools
+   - Delete the task branch using git MCP tools
 
 Please handle any errors gracefully and provide detailed feedback about each step.
 "#,
