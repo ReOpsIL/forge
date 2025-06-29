@@ -788,13 +788,46 @@ impl TaskExecutor {
                     // Skip excluded directories
                     if file_type.is_dir() {
                         let excluded_dirs = vec![
+                            // Build outputs and dependencies
                             "node_modules", "target", "logs", "dist", "build",
                             ".next", ".nuxt", "coverage", "tmp",
                             ".nyc_output",
-                            ".git",
-                            ".claude",
-                            ".env",
-                            ".idea"
+
+                            // Version control
+                            ".git", ".svn", ".hg", ".bzr",
+
+                            // IDE and editor files
+                            ".idea", ".vscode", ".vs", ".sublime-project", ".sublime-workspace",
+
+                            // Environment and config
+                            ".claude", ".env", ".env.local", ".env.production",
+
+                            // Cache directories
+                            ".cache", ".parcel-cache", ".sass-cache", ".pytest_cache",
+                            "__pycache__", ".mypy_cache", ".tox",
+
+                            // OS generated files
+                            ".DS_Store", "Thumbs.db", "desktop.ini",
+
+                            // Language/framework specific
+                            "vendor", "composer", ".bundle", "gems",
+                            "venv", "env", ".venv", "__pycache__",
+                            ".gradle", ".m2", ".ivy2",
+                            "elm-stuff", ".stack-work",
+
+                            // Testing and documentation
+                            "test-results", "playwright-report", "allure-results",
+                            "docs/_build", "_site", ".docusaurus",
+
+                            // Temporary and backup files
+                            "temp", "temporary", "backup", "backups",
+                            ".tmp", ".temp", "*.tmp", "*.bak",
+
+                            // Database files
+                            "*.db", "*.sqlite", "*.sqlite3",
+
+                            // Package manager locks (optional, depending on use case)
+                            // "package-lock.json", "yarn.lock", "Cargo.lock", "Pipfile.lock"
                         ];
                         if excluded_dirs.contains(&file_name.as_ref()) {
                             continue;
@@ -808,10 +841,85 @@ impl TaskExecutor {
                         if let Some(extension) = path.extension() {
                             let ext = extension.to_string_lossy().to_lowercase();
                             let source_extensions = vec![
-                                "rs", "js", "ts", "jsx", "tsx", "py", "java", "c", "cpp", "h", "hpp",
-                                "go", "php", "rb", "swift", "kt", "scala", "cs", "fs", "vb",
-                                "html", "css", "scss", "sass", "less", "vue", "svelte",
-                                "md", "txt", "yml", "yaml", "toml", "json", "xml", "sh",
+                                // Systems programming
+                                "rs", "c", "cpp", "cc", "cxx", "c++", "h", "hpp", "hxx", "h++",
+                                "go", "zig", "odin", "nim", "d", "v",
+
+                                // Web frontend
+                                "js", "ts", "jsx", "tsx", "mjs", "cjs",
+                                "html", "htm", "xhtml",
+                                "css", "scss", "sass", "less", "styl", "stylus",
+                                "vue", "svelte", "astro",
+
+                                // Backend/Server
+                                "py", "pyx", "pyi", "pyw",
+                                "java", "kt", "kts", "scala", "clj", "cljs", "cljc",
+                                "php", "phtml", "php3", "php4", "php5", "php7", "phps",
+                                "rb", "rake", "gemspec",
+                                "go", "mod", "sum",
+
+                                // .NET ecosystem
+                                "cs", "fs", "vb", "csx", "fsx",
+
+                                // Mobile
+                                "swift", "m", "mm", "kt", "kts",
+                                "dart", "flutter",
+
+                                // Functional languages
+                                "hs", "lhs", "elm", "ml", "mli", "ocaml",
+                                "erl", "hrl", "ex", "exs", "gleam",
+                                "rkt", "scm", "ss", "lisp", "cl", "el",
+                                "f90", "f95", "f03", "f08", "for", "ftn",
+
+                                // Scripting
+                                "sh", "bash", "zsh", "fish", "csh", "tcsh",
+                                "ps1", "psm1", "psd1",
+                                "bat", "cmd",
+                                "awk", "sed",
+
+                                // Data/Config
+                                "json", "json5", "jsonc", "yaml", "yml", "toml", "ini", "cfg", "conf",
+                                "xml", "xsd", "xsl", "xslt",
+                                "csv", "tsv",
+
+                                // Database
+                                "sql", "psql", "mysql", "sqlite", "plsql",
+                                "cql", "cypher",
+
+                                // Templates
+                                "hbs", "handlebars", "mustache", "twig", "jinja", "j2",
+                                "erb", "haml", "slim", "pug", "jade",
+                                "razor", "cshtml", "vbhtml",
+
+                                // Documentation
+                                "md", "markdown", "mdown", "mkd", "mdx",
+                                "rst", "adoc", "asciidoc", "org",
+                                "tex", "latex", "txt",
+
+                                // Assembly
+                                "asm", "s", "S", "nasm", "masm",
+
+                                // Other languages
+                                "r", "R", "jl", "nb", "ipynb",
+                                "pl", "pm", "t", "pod",
+                                "lua", "tcl", "tk",
+                                "pas", "pp", "inc",
+                                "cob", "cbl", "cobol",
+                                "ada", "adb", "ads",
+
+                                // Build/Task files
+                                "mk", "makefile", "cmake", "bazel", "bzl",
+                                "gradle", "sbt", "ant",
+                                "rake", "thor",
+                                "gulpfile", "gruntfile",
+
+                                // Protocols/Interface definitions
+                                "proto", "thrift", "avro", "graphql", "gql",
+                                "wsdl", "wadl", "raml", "swagger",
+
+                                // Shaders/Graphics
+                                "glsl", "hlsl", "vert", "frag", "geom", "comp",
+                                "shader", "fx", "effect",
                             ];
                             
                             if source_extensions.contains(&ext.as_ref()) {
