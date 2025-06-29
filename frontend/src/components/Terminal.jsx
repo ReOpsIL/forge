@@ -105,13 +105,14 @@ class TerminalManager {
 
             this.ws.onmessage = (event) => {
                 if (this.xterm) {
-                    const wasAtBottom = this.isAtBottom()
+                    //const wasAtBottom = this.isAtBottom()
                     this.xterm.write(event.data)
                     
                     // Only auto-scroll if user was at bottom or hasn't manually scrolled up
-                    if (wasAtBottom && !this.userScrolledUp) {
-                        this.scrollToBottom()
-                    }
+                    // if (wasAtBottom && !this.userScrolledUp) {
+                    //     this.scrollToBottom()
+                    // }
+                    this.scrollToBottom()
                 }
             }
 
