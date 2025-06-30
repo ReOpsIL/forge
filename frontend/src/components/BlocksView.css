@@ -343,3 +343,58 @@
 .monaco-editor .monaco-editor-background {
     background-color: #1e1e1e;
 }
+
+/* Dynamic section spacing and layout adjustments */
+.block-card .p-card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.block-card .p-card-body > .p-divider {
+    margin: 0.75rem 0;
+}
+
+/* Ensure proper spacing between dynamically shown/hidden panels */
+.block-card .p-panel:not(:last-child) {
+    margin-bottom: 1rem;
+}
+
+/* Remove margin from last panel to prevent orphaned spacing */
+.block-card .p-panel:last-child {
+    margin-bottom: 0;
+}
+
+/* Adjust spacing when sections are conditionally rendered */
+.block-card .p-card-content {
+    padding: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Ensure consistent layout when sections are hidden */
+.block-card .p-panel + .p-panel {
+    margin-top: 0;
+}
+
+/* Dynamic height adjustment for block cards */
+.block-card {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure task list panel takes remaining space */
+.block-card .task-list-container .p-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.block-card .task-list-container .p-panel .p-panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
