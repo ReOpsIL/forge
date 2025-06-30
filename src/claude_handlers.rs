@@ -249,7 +249,8 @@ impl ClaudeWebSocket {
         let (stdin_tx, stdin_rx) = mpsc::unbounded_channel::<String>();
         
         // Create broadcast channel for output (capacity 1000 messages)
-        let (output_tx, _) = tokio::sync::broadcast::channel::<String>(1000);
+        // Using a larger buffer to handle bursts of output
+        let (output_tx, _) = tokio::sync::broadcast::channel::<String>(2000);
 
         // Store channels and child process in the session
         if let Some(session) = self.session_manager.get_session(&self.session_id) {
@@ -308,9 +309,15 @@ impl ClaudeWebSocket {
                         debug!("PTY output: {}", output);
 
                         // Send output to broadcast channel (all connected WebSockets will receive it)
-                        if let Err(e) = output_tx.send(output.clone()) {
-                            warn!("Failed to send PTY output to broadcast channel: {}", e);
-                            // Continue reading even if no receivers are listening
+                        match output_tx.send(output.clone()) {
+                            Ok(_) => {
+                                debug!("Successfully sent PTY output to {} receivers", output_tx.receiver_count());
+                            }
+                            Err(tokio::sync::broadcast::error::SendError(_)) => {
+                                // This is expected when no WebSocket connections are active
+                                debug!("No active WebSocket receivers for session {}, continuing PTY read", session_id_for_output);
+                                // Continue reading - don't break or log as warning
+                            }
                         }
 
                         // Also capture the output for stream logging if there's an active capture
@@ -406,13 +413,30 @@ impl ClaudeWebSocket {
 
                 // Spawn task to forward broadcast messages to this WebSocket
                 tokio::spawn(async move {
-                    while let Ok(output) = output_rx.recv().await {
-                        if addr.try_send(WsMessage(output)).is_err() {
-                            warn!(
-                                "Failed to send broadcast output to WebSocket for session {} - connection may be closed",
-                                session_id_clone
-                            );
-                            break;
+                    loop {
+                        match output_rx.recv().await {
+                            Ok(output) => {
+                                if let Err(e) = addr.try_send(WsMessage(output)) {
+                                    match e {
+                                        actix::prelude::SendError::Full(_) => {
+                                            warn!("WebSocket mailbox full for session {}, dropping message", session_id_clone);
+                                            // Continue trying to send future messages
+                                        }
+                                        actix::prelude::SendError::Closed(_) => {
+                                            info!("WebSocket connection closed for session {}, stopping output forwarding", session_id_clone);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                                info!("Broadcast channel closed for session {}, PTY process ended", session_id_clone);
+                                break;
+                            }
+                            Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                                warn!("WebSocket receiver lagged behind, skipped {} messages for session {}", skipped, session_id_clone);
+                                // Continue receiving - this is recoverable
+                            }
                         }
                     }
                     debug!("Output streaming task ended for session {}", session_id_clone);
