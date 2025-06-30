@@ -60,6 +60,14 @@
 
 .task-list-controls {
     margin-bottom: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.task-list-controls .flex {
+    gap: 0.5rem;
 }
 
 .task-list-scrollable {

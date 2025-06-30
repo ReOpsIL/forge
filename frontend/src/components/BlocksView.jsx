@@ -1559,13 +1559,13 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <div className="flex justify-content-end mt-2">
                                                 <Button
                                                     icon="pi pi-check"
-                                                    className="p-button-sm p-button-success ml-2"
+                                                    className="p-button-sm p-button-success "
                                                     onClick={() => saveBlockName(block.block_id)}
                                                     tooltip="Save name"
                                                 />
                                                 <Button
                                                     icon="pi pi-times"
-                                                    className="p-button-sm p-button-danger ml-2"
+                                                    className="p-button-sm p-button-danger"
                                                     onClick={() => setEditingBlockName({
                                                         ...editingBlockName,
                                                         [block.block_id]: undefined
@@ -1578,18 +1578,18 @@ const BlocksView = ({ refreshTrigger }) => {
                                         <>
                                             <div>
                                                 <span>{block.name}</span>
-                                                <span className="ml-2 text-s text-gray-500">ID: {block.block_id}</span>
+                                                <span className="text-s text-gray-500">ID: {block.block_id}</span>
                                             </div>
                                             <div className="flex">
                                                 <Button
                                                     icon="pi pi-pencil"
-                                                    className="p-button-sm p-button-text ml-2"
+                                                    className="p-button-sm p-button-text "
                                                     onClick={() => startEditingName(block)}
                                                     tooltip="Edit name"
                                                 />
                                                 <Button
                                                     icon="pi pi-trash"
-                                                    className="p-button-sm p-button-text p-button-danger ml-2"
+                                                    className="p-button-sm p-button-text p-button-danger "
                                                     onClick={() => confirmDeleteBlock(block.block_id)}
                                                     tooltip="Delete block"
                                                 />
@@ -1611,31 +1611,31 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <div className="flex justify-content-end mt-2">
                                                 <Button
                                                     icon="pi pi-check-square"
-                                                    className="p-button-sm p-button-success ml-2"
+                                                    className="p-button-sm p-button-success "
                                                     onClick={() => generateTasks(block.block_id)}
                                                     tooltip="Generate tasks"
                                                 />
                                                 <Button
                                                     icon="pi pi-microchip-ai"
-                                                    className="p-button-sm p-button-success ml-2"
+                                                    className="p-button-sm p-button-success "
                                                     onClick={() => enhanceDescription(block.block_id)}
                                                     tooltip="Enhance description"
                                                 />
                                                 <Button
                                                     icon="pi pi-megaphone"
-                                                    className="p-button-sm p-button-success ml-2"
+                                                    className="p-button-sm p-button-success "
                                                     onClick={() => fetchAutoCompleteSuggestion(block.block_id)}
                                                     tooltip="Auto-complete description"
                                                 />
                                                 <Button
                                                     icon="pi pi-check"
-                                                    className="p-button-sm p-button-success ml-2"
+                                                    className="p-button-sm p-button-success "
                                                     onClick={() => saveDescription(block.block_id)}
                                                     tooltip="Save description"
                                                 />
                                                 <Button
                                                     icon="pi pi-times"
-                                                    className="p-button-sm p-button-danger ml-2"
+                                                    className="p-button-sm p-button-danger"
                                                     onClick={() => setEditingDescription({
                                                         ...editingDescription,
                                                         [block.block_id]: undefined
@@ -1651,7 +1651,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                             </div>
                                             <Button
                                                 icon="pi pi-pencil"
-                                                className="p-button-sm p-button-text ml-2"
+                                                className="p-button-sm p-button-text "
                                                 onClick={() => startEditing(block)}
                                                 tooltip="Edit description"
                                             />
@@ -1721,10 +1721,10 @@ const BlocksView = ({ refreshTrigger }) => {
                             <Panel header="Task List" toggleable>
                                 <div className="task-list-container">
                                     {/* Task List Controls */}
-                                    <div className="task-list-controls mb-2 flex justify-content-start">
+                                    <div className="task-list-controls mb-2">
                                             <Button
                                                 icon="pi pi-plus"
-                                                className="p-button-sm ml-2"
+                                                className="p-button-sm"
                                                 onClick={() => openCreateTaskDialog(block.block_id)}
                                                 tooltip="Create new task"
                                                 tooltipOptions={{position: 'top'}}
@@ -1732,13 +1732,13 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <div className="flex align-items-center">
                                                 <Button
                                                     icon="pi pi-hammer"
-                                                    className="p-button-sm p-button-info ml-2"
+                                                    className="p-button-sm p-button-info"
                                                     onClick={() => executeSelectedGitTasks(block.block_id)}
                                                     disabled={areTasksRunning(block.block_id)}
                                                     tooltip="Run Tasks"
                                                     tooltipOptions={{position: 'top'}}
                                                 />
-                                                <div className="ml-2 flex align-items-center">
+                                                <div className="flex align-items-center">
                                                     <Checkbox
                                                         inputId="resolve-dependencies"
                                                         checked={resolveDependencies}
@@ -1748,7 +1748,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                                     />
                                                     <label htmlFor="resolve-dependencies" className="ml-1 text-sm">Dep</label>
                                                 </div>
-                                                <div className="ml-2 flex align-items-center">
+                                                <div className="flex align-items-center">
                                                     <Checkbox
                                                         inputId="force-completed"
                                                         checked={forceCompleted}
@@ -1761,7 +1761,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                             </div>
                                             <Button
                                                 icon="pi pi-sitemap"
-                                                className="p-button-sm p-button-info ml-2"
+                                                className="p-button-sm p-button-info"
                                                 onClick={() => {
                                                     setCurrentDependencyBlock(block.block_id);
                                                     setShowDependencyTreeDialog(true);
@@ -1772,14 +1772,14 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <Button
                                                 icon="pi pi-exclamation-triangle"
                                                 tooltip="Stop tasks execution"
-                                                className="p-button-sm p-button-warning ml-2"
+                                                className="p-button-sm p-button-warning"
                                                 onClick={() => stopAllTasks(block.block_id)}
                                                 disabled={!areTasksRunning(block.block_id)}
                                             />
                                             <Button
                                                 icon="pi pi-check-square"
                                                 tooltip="Select all tasks"
-                                                className="p-button-sm p-button-danger ml-2"
+                                                className="p-button-sm p-button-danger"
                                                 onClick={() => {
                                                     const stableTasks = getStableTasksForBlock(block.block_id);
                                                     setSelectedTasks({
@@ -1791,7 +1791,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <Button
                                                 icon="pi pi-stop"
                                                 tooltip="Unselect all tasks"
-                                                className="p-button-sm p-button-danger ml-2"
+                                                className="p-button-sm p-button-danger"
                                                 onClick={() => {
                                                     setSelectedTasks({
                                                         ...selectedTasks,
@@ -1802,7 +1802,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <Button
                                                 icon="pi pi-trash"
                                                 tooltip="Delete task"
-                                                className="p-button-sm p-button-danger ml-2"
+                                                className="p-button-sm p-button-danger"
                                                 onClick={() => {
                                                     const tasksToDelete = selectedTasks[block.block_id] || [];
                                                     if (tasksToDelete.length > 0) {
@@ -1814,7 +1814,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                             <Button
                                                 icon="pi pi-book"
                                                 tooltip="Show task logs"
-                                                className="p-button-sm p-button-info ml-2"
+                                                className="p-button-sm p-button-info"
                                                 onClick={() => {
                                                     const selectedTaskIndices = selectedTasks[block.block_id] || [];
                                                     if (selectedTaskIndices.length === 1) {
@@ -1832,14 +1832,14 @@ const BlocksView = ({ refreshTrigger }) => {
                                             />
                                             <Button
                                                 icon="pi pi-file-import"
-                                                className="p-button-sm p-button-help ml-2"
+                                                className="p-button-sm p-button-help"
                                                 onClick={() => handleFileSelect(block.block_id)}
                                                 tooltip="Import tasks from markdown file"
                                                 tooltipOptions={{position: 'top'}}
                                             />
                                             <Button
                                                 icon="pi pi-file-export"
-                                                className="p-button-sm p-button-help ml-2"
+                                                className="p-button-sm p-button-help"
                                                 onClick={() => exportTasksAsMarkdown(block)}
                                                 tooltip="Export tasks to markdown file"
                                                 tooltipOptions={{position: 'top'}}
@@ -1860,13 +1860,13 @@ const BlocksView = ({ refreshTrigger }) => {
                                             />
                                             <Button
                                                 icon="pi pi-check"
-                                                className="p-button-sm p-button-success ml-2"
+                                                className="p-button-sm p-button-success "
                                                 onClick={() => addNewTask(block.block_id)}
                                                 disabled={!newTaskText[block.block_id]?.trim()}
                                             />
                                             <Button
                                                 icon="pi pi-times"
-                                                className="p-button-sm p-button-danger ml-2"
+                                                className="p-button-sm p-button-danger"
                                                 onClick={() => setNewTaskText({
                                                     ...newTaskText,
                                                     [block.block_id]: undefined
@@ -1911,13 +1911,13 @@ const BlocksView = ({ refreshTrigger }) => {
                                                                         <div className="flex justify-content-end mt-2 gap-2">
                                                                             <Button
                                                                                 icon="pi pi-check"
-                                                                                className="p-button-sm p-button-success ml-2"
+                                                                                className="p-button-sm p-button-success "
                                                                                 onClick={() => saveEditedTask(block.block_id, todo.task_id)}
                                                                                 disabled={!editingTaskText[`${block.block_id}-${todo.task_id}`]?.trim()}
                                                                             />
                                                                             <Button
                                                                                 icon="pi pi-times"
-                                                                                className="p-button-sm p-button-danger ml-2"
+                                                                                className="p-button-sm p-button-danger"
                                                                                 onClick={cancelEditingTask}
                                                                             />
                                                                         </div>
