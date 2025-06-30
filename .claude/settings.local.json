@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo:*)",
+      "Bash(flutter create:*)",
+      "mcp__forge__create_directory",
+      "mcp__forge__write_file"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "forge",
+    "git"
+  ]
+}
