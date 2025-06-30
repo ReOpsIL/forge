@@ -1268,6 +1268,14 @@ const BlocksView = ({ refreshTrigger }) => {
         });
     };
 
+    // Helper function to check if block has connections
+    const hasConnections = (connections) => {
+        if (!connections) return false;
+        const hasInputConnections = connections.input_connections && connections.input_connections.length > 0;
+        const hasOutputConnections = connections.output_connections && connections.output_connections.length > 0;
+        return hasInputConnections || hasOutputConnections;
+    };
+
     if (loading) {
         return <div>Loading blocks...</div>;
     }
@@ -1753,41 +1761,43 @@ const BlocksView = ({ refreshTrigger }) => {
                                 </div>
                             </Panel>
 
-                            <Panel header="Connections" toggleable>
-                                <div className="mb-3">
-                                    <h4 style={{fontSize: '1.0rem'}}>Input Connections:</h4>
-                                    {block.connections.input_connections.length > 0 ? (
-                                        <ul className="m-0 p-0 list-none">
-                                            {block.connections.input_connections.map((conn, index) => (
-                                                <li key={index} className="mb-2">
-                                                    <div>From: <strong>{conn.from_module}</strong></div>
-                                                    <div>Type: <strong>{conn.output_type}</strong></div>
-                                                    <div>ID: <strong>{conn.unique_id}</strong></div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <h4 style={{fontSize: '0.7rem'}}>No input connections</h4>
-                                    )}
-                                </div>
+                            {hasConnections(block.connections) && (
+                                <Panel header="Connections" toggleable>
+                                    <div className="mb-3">
+                                        <h4 style={{fontSize: '1.0rem'}}>Input Connections:</h4>
+                                        {block.connections.input_connections.length > 0 ? (
+                                            <ul className="m-0 p-0 list-none">
+                                                {block.connections.input_connections.map((conn, index) => (
+                                                    <li key={index} className="mb-2">
+                                                        <div>From: <strong>{conn.from_module}</strong></div>
+                                                        <div>Type: <strong>{conn.output_type}</strong></div>
+                                                        <div>ID: <strong>{conn.unique_id}</strong></div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <h4 style={{fontSize: '0.7rem'}}>No input connections</h4>
+                                        )}
+                                    </div>
 
-                                <div>
-                                    <h4 style={{fontSize: '1.0rem'}}>Output Connections:</h4>
-                                    {block.connections.output_connections.length > 0 ? (
-                                        <ul className="m-0 p-0 list-none">
-                                            {block.connections.output_connections.map((conn, index) => (
-                                                <li key={index} className="mb-2">
-                                                    <div>To: <strong>{conn.to_module}</strong></div>
-                                                    <div>Type: <strong>{conn.input_type}</strong></div>
-                                                    <div>ID: <strong>{conn.unique_id}</strong></div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <h4 style={{fontSize: '0.7rem'}}>No output connections</h4>
-                                    )}
-                                </div>
-                            </Panel>
+                                    <div>
+                                        <h4 style={{fontSize: '1.0rem'}}>Output Connections:</h4>
+                                        {block.connections.output_connections.length > 0 ? (
+                                            <ul className="m-0 p-0 list-none">
+                                                {block.connections.output_connections.map((conn, index) => (
+                                                    <li key={index} className="mb-2">
+                                                        <div>To: <strong>{conn.to_module}</strong></div>
+                                                        <div>Type: <strong>{conn.input_type}</strong></div>
+                                                        <div>ID: <strong>{conn.unique_id}</strong></div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <h4 style={{fontSize: '0.7rem'}}>No output connections</h4>
+                                        )}
+                                    </div>
+                                </Panel>
+                            )}
 
                             <Panel header="Task List" toggleable>
                                 <div className="task-list-container">
