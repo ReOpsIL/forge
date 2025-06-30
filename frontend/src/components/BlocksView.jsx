@@ -1276,6 +1276,13 @@ const BlocksView = ({ refreshTrigger }) => {
         return hasInputConnections || hasOutputConnections;
     };
 
+    // Helper function to check if block has inputs or outputs
+    const hasInputsOrOutputs = (inputs, outputs) => {
+        const hasInputs = inputs && inputs.length > 0;
+        const hasOutputs = outputs && outputs.length > 0;
+        return hasInputs || hasOutputs;
+    };
+
     if (loading) {
         return <div>Loading blocks...</div>;
     }
@@ -1741,25 +1748,27 @@ const BlocksView = ({ refreshTrigger }) => {
                         >
                             <Divider/>
 
-                            <Panel header="Inputs & Outputs" toggleable>
-                                <div className="mb-3">
-                                    <h4 style={{fontSize: '1.0rem'}}>Inputs:</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {block.inputs.map((input, index) => (
-                                            <Chip key={index} label={input.name}/>
-                                        ))}
+                            {hasInputsOrOutputs(block.inputs, block.outputs) && (
+                                <Panel header="Inputs & Outputs" toggleable>
+                                    <div className="mb-3">
+                                        <h4 style={{fontSize: '1.0rem'}}>Inputs:</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {block.inputs.map((input, index) => (
+                                                <Chip key={index} label={input.name}/>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div>
-                                    <h4 style={{fontSize: '1.0rem'}}>Outputs:</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {block.outputs.map((output, index) => (
-                                            <Chip key={index} label={output.name}/>
-                                        ))}
+                                    <div>
+                                        <h4 style={{fontSize: '1.0rem'}}>Outputs:</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                            {block.outputs.map((output, index) => (
+                                                <Chip key={index} label={output.name}/>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            </Panel>
+                                </Panel>
+                            )}
 
                             {hasConnections(block.connections) && (
                                 <Panel header="Connections" toggleable>
