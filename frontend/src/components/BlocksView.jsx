@@ -46,6 +46,8 @@ const BlocksView = ({ refreshTrigger }) => {
     const [resolveDependencies, setResolveDependencies] = useState(false);
     const [forceCompleted, setForceCompleted] = useState(false);
     const [currentDependencyBlock, setCurrentDependencyBlock] = useState(null);
+    const [showEmptyTasksDialog, setShowEmptyTasksDialog] = useState(false);
+    const [currentEmptyTasksBlockId, setCurrentEmptyTasksBlockId] = useState(null);
     const fileInputRef = useRef(null);
     const [newBlock, setNewBlock] = useState({
         block_id: '',
@@ -885,6 +887,42 @@ const BlocksView = ({ refreshTrigger }) => {
         }
     };
 
+    // Check if a block has executable tasks
+    const hasExecutableTasks = (block_id) => {
+        const stableTasks = getStableTasksForBlock(block_id);
+        if (!stableTasks || stableTasks.length === 0) {
+            return false;
+        }
+        
+        // Check if all tasks are completed
+        const allCompleted = stableTasks.every(task => 
+            task.status === 'COMPLETED' || task.status === '[COMPLETED]'
+        );
+        
+        return !allCompleted;
+    };
+
+    // Handle execution with empty tasks check
+    const handleExecuteWithEmptyTasksCheck = (block_id) => {
+        if (!hasExecutableTasks(block_id)) {
+            setCurrentEmptyTasksBlockId(block_id);
+            setShowEmptyTasksDialog(true);
+        } else {
+            executeSelectedGitTasks(block_id);
+        }
+    };
+
+    // Handle empty tasks dialog response
+    const handleEmptyTasksResponse = (shouldGenerateTasks) => {
+        setShowEmptyTasksDialog(false);
+        
+        if (shouldGenerateTasks && currentEmptyTasksBlockId) {
+            // Generate tasks for the block
+            generateTasks(currentEmptyTasksBlockId);
+        }
+        
+        setCurrentEmptyTasksBlockId(null);
+    };
 
     // Execute selected tasks with Git integration
     const executeSelectedGitTasks = (block_id) => {
@@ -1299,6 +1337,39 @@ const BlocksView = ({ refreshTrigger }) => {
                         <div className="p-2 border-1 surface-border border-round mt-2" style={{backgroundColor: '#FFFFFF19'}}>
                             <ReactMarkdown>{autoCompleteSuggestion}</ReactMarkdown>
                         </div>
+                    </div>
+                </div>
+            </Dialog>
+
+            {/* Empty Tasks Confirmation Dialog */}
+            <Dialog
+                header="No Tasks"
+                visible={showEmptyTasksDialog}
+                style={{width: '400px'}}
+                onHide={() => handleEmptyTasksResponse(false)}
+                footer={
+                    <div>
+                        <Button
+                            label="No"
+                            icon="pi pi-times"
+                            className="p-button-text"
+                            onClick={() => handleEmptyTasksResponse(false)}
+                            size="small"
+                        />
+                        <Button
+                            label="Yes"
+                            icon="pi pi-check"
+                            className="p-button-success"
+                            onClick={() => handleEmptyTasksResponse(true)}
+                            size="small"
+                        />
+                    </div>
+                }
+            >
+                <div className="p-fluid">
+                    <div className="field">
+                        <p>This block has no executable tasks.</p>
+                        <p>Should I first generate the tasks?</p>
                     </div>
                 </div>
             </Dialog>
@@ -1733,7 +1804,7 @@ const BlocksView = ({ refreshTrigger }) => {
                                                 <Button
                                                     icon="pi pi-hammer"
                                                     className="p-button-sm p-button-info"
-                                                    onClick={() => executeSelectedGitTasks(block.block_id)}
+                                                    onClick={() => handleExecuteWithEmptyTasksCheck(block.block_id)}
                                                     disabled={areTasksRunning(block.block_id)}
                                                     tooltip="Run Tasks"
                                                     tooltipOptions={{position: 'top'}}
