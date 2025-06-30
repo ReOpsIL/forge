@@ -15,58 +15,69 @@ const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
 
     // Initialize xterm.js terminal with same config as Terminal.jsx
     useEffect(() => {
-        if (visible && terminalRef.current && !xtermRef.current) {
-            // Create XTerm instance with same theme as Terminal.jsx
-            xtermRef.current = new XTerm({
-                theme: {
-                    background: '#1e1e1e',
-                    foreground: '#ffffff',
-                    cursor: '#ffffff',
-                    selection: 'rgba(255, 255, 255, 0.3)',
-                    black: '#000000',
-                    red: '#ff5555',
-                    green: '#50fa7b',
-                    yellow: '#f1fa8c',
-                    blue: '#bd93f9',
-                    magenta: '#ff79c6',
-                    cyan: '#8be9fd',
-                    white: '#bfbfbf',
-                    brightBlack: '#4d4d4d',
-                    brightRed: '#ff6e67',
-                    brightGreen: '#5af78e',
-                    brightYellow: '#f4f99d',
-                    brightBlue: '#caa9fa',
-                    brightMagenta: '#ff92d0',
-                    brightCyan: '#9aedfe',
-                    brightWhite: '#e6e6e6'
-                },
-                fontSize: 14,
-                fontFamily: 'Monaco, Menlo, "Ubuntu Mono", "Consolas", "DejaVu Sans Mono", monospace',
-                cursorBlink: false,
-                convertEol: true,
-                scrollback: 1000,
-                allowTransparency: false,
-                disableStdin: true, // Read-only for logs
-                cols: 120,
-                rows: 30,
-                lineHeight: 1.0,
-                letterSpacing: 0,
-                allowProposedApi: true
-            });
+        if (!visible) return;
 
-            // Add fit addon
-            fitAddonRef.current = new FitAddon();
-            xtermRef.current.loadAddon(fitAddonRef.current);
+        // Use a small delay to ensure the DOM is ready
+        const initTerminal = () => {
+            if (terminalRef.current && !xtermRef.current) {
+                // Create XTerm instance with same theme as Terminal.jsx
+                xtermRef.current = new XTerm({
+                    theme: {
+                        background: '#1e1e1e',
+                        foreground: '#ffffff',
+                        cursor: '#ffffff',
+                        selection: 'rgba(255, 255, 255, 0.3)',
+                        black: '#000000',
+                        red: '#ff5555',
+                        green: '#50fa7b',
+                        yellow: '#f1fa8c',
+                        blue: '#bd93f9',
+                        magenta: '#ff79c6',
+                        cyan: '#8be9fd',
+                        white: '#bfbfbf',
+                        brightBlack: '#4d4d4d',
+                        brightRed: '#ff6e67',
+                        brightGreen: '#5af78e',
+                        brightYellow: '#f4f99d',
+                        brightBlue: '#caa9fa',
+                        brightMagenta: '#ff92d0',
+                        brightCyan: '#9aedfe',
+                        brightWhite: '#e6e6e6'
+                    },
+                    fontSize: 14,
+                    fontFamily: 'Monaco, Menlo, "Ubuntu Mono", "Consolas", "DejaVu Sans Mono", monospace',
+                    cursorBlink: false,
+                    convertEol: true,
+                    scrollback: 1000,
+                    allowTransparency: false,
+                    disableStdin: true, // Read-only for logs
+                    cols: 160,
+                    rows: 48,
+                    lineHeight: 1.0,
+                    letterSpacing: 0,
+                    allowProposedApi: true
+                });
 
-            // Open terminal in the container
-            xtermRef.current.open(terminalRef.current);
-            
-            // Fit terminal to container
-            setTimeout(() => {
-                if (fitAddonRef.current) {
-                    fitAddonRef.current.fit();
-                }
-            }, 100);
+                // Add fit addon
+                fitAddonRef.current = new FitAddon();
+                xtermRef.current.loadAddon(fitAddonRef.current);
+
+                // Open terminal in the container
+                xtermRef.current.open(terminalRef.current);
+                
+                // Fit terminal to container
+                setTimeout(() => {
+                    if (fitAddonRef.current && xtermRef.current) {
+                        fitAddonRef.current.fit();
+                    }
+                }, 100);
+            }
+        };
+
+        // Try immediately, then with a small delay if needed
+        initTerminal();
+        if (!xtermRef.current) {
+            setTimeout(initTerminal, 50);
         }
 
         return () => {
@@ -102,37 +113,16 @@ const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
             // Use the log task ID format that matches the backend
             const logTaskId = `${blockId}:${taskId}`;
             
-            // Use EventSource for proper SSE handling
-            const eventSource = new EventSource(`/api/logs/stream/${logTaskId}`);
-            let logContent = '';
-            let timeoutId;
-
-            // Set a timeout to stop listening after 5 seconds
-            timeoutId = setTimeout(() => {
-                eventSource.close();
-                setLogs(logContent || 'No logs available for this task.');
-                setLoading(false);
-            }, 5000);
-
-            eventSource.onmessage = (event) => {
-                const data = event.data;
-                if (data === 'keep-alive') {
-                    return; // Ignore keep-alive messages
-                }
-                logContent += data + '\n';
-            };
-
-            eventSource.onerror = () => {
-                clearTimeout(timeoutId);
-                eventSource.close();
-                setLogs(logContent || 'Error loading logs or no logs available.');
-                setLoading(false);
-            };
-
-            eventSource.onopen = () => {
-                // Connection opened successfully
-                console.log('Log stream connection opened for task:', logTaskId);
-            };
+            // Use simple fetch for HTTP response
+            const response = await fetch(`/api/logs/stream/${logTaskId}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const logContent = await response.text();
+            setLogs(logContent || 'No logs available for this task.');
+            setLoading(false);
 
         } catch (error) {
             console.error('Error fetching logs:', error);

@@ -4,10 +4,12 @@ use actix_web::{HttpResponse, Responder, web};
 use futures::stream::StreamExt;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tokio::sync::mpsc;
-use tokio::time::interval;
 use tokio_stream::wrappers::ReceiverStream;
+use std::path::PathBuf;
+use tokio::fs;
+use regex::Regex;
 
 // Structure to hold log entries for each task
 #[derive(Debug, Clone)]
@@ -71,58 +73,92 @@ pub fn get_log_storage() -> Arc<LogStorage> {
     LOG_STORAGE.clone()
 }
 
+// Function to read task logs from file system
+async fn read_task_logs_from_file(block_id: &str, task_id: &str) -> Result<String, std::io::Error> {
+    // Construct the log directory path: ./logs/{block_id}/{block_id}{task_id}/
+    let log_dir = PathBuf::from("./logs")
+        .join(block_id)
+        .join(format!("{}{}", block_id, task_id));
+    
+    if !log_dir.exists() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Log directory not found"
+        ));
+    }
+    
+    // Read all .log files in the directory
+    let mut entries = fs::read_dir(&log_dir).await?;
+    let mut log_files = Vec::new();
+    
+    while let Some(entry) = entries.next_entry().await? {
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) == Some("log") {
+            log_files.push(path);
+        }
+    }
+    
+    if log_files.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "No log files found"
+        ));
+    }
+    
+    // Sort log files by name (timestamp in filename) to get them in chronological order
+    log_files.sort();
+    
+    // Read the latest log file (last in sorted order)
+    let latest_log_file = log_files.last().unwrap();
+    let content = fs::read_to_string(latest_log_file).await?;
+    
+    Ok(content)
+}
+
+// Function to strip ANSI escape sequences from log content
+fn strip_ansi_codes(content: &str) -> String {
+    lazy_static::lazy_static! {
+        static ref ANSI_REGEX: Regex = Regex::new(r"\x1b\[[0-9;]*[a-zA-Z]").unwrap();
+    }
+    ANSI_REGEX.replace_all(content, "").to_string()
+}
+
 // Handler for streaming logs for a specific task
 pub async fn stream_logs(task_id: web::Path<String>) -> impl Responder {
     let task_id = task_id.into_inner();
-    let log_storage = get_log_storage();
-
-    // Create a channel for sending log updates
-    let (tx, rx) = mpsc::channel(100);
-    let rx_stream = ReceiverStream::new(rx);
-
-    // Spawn a task to send log updates
-    tokio::spawn(async move {
-        let mut last_log_count = 0;
-        let mut interval = interval(Duration::from_millis(500));
-
-        loop {
-            interval.tick().await;
-
-            // Get the current logs
+    
+    // Parse the task_id in format "block_id:task_id"
+    let parts: Vec<&str> = task_id.split(':').collect();
+    if parts.len() != 2 {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Invalid task ID format. Expected 'block_id:task_id'"
+        }));
+    }
+    
+    let block_id = parts[0];
+    let actual_task_id = parts[1];
+    
+    // Try to read from file system first
+    let log_content = match read_task_logs_from_file(block_id, actual_task_id).await {
+        Ok(content) => content,
+        Err(_) => {
+            // Fallback to in-memory storage
+            let log_storage = get_log_storage();
             let logs = log_storage.get_logs(&task_id);
-
-            // If there are new logs, send them
-            if logs.len() > last_log_count {
-                for i in last_log_count..logs.len() {
-                    if tx
-                        .send(format!("data: {}\n\n", logs[i].content))
-                        .await
-                        .is_err()
-                    {
-                        // Client disconnected
-                        return;
-                    }
-                }
-                last_log_count = logs.len();
-            }
-
-            // Send a keep-alive message every 15 seconds
-            if last_log_count % 30 == 0 {
-                if tx.send(format!("data: keep-alive\n\n")).await.is_err() {
-                    // Client disconnected
-                    return;
-                }
-            }
+            logs.iter().map(|log| log.content.clone()).collect::<Vec<_>>().join("\n")
         }
-    });
+    };
 
-    // Return a streaming response
+    if log_content.is_empty() {
+        return HttpResponse::Ok()
+            .insert_header(ContentType::plaintext())
+            .body("No logs available for this task.");
+    }
+
+    // Return log content directly as HTTP response
     HttpResponse::Ok()
         .insert_header(ContentType::plaintext())
-        .insert_header((CACHE_CONTROL, "no-cache"))
-        .insert_header(("Connection", "keep-alive"))
-        .insert_header(("Content-Type", "text/event-stream"))
-        .streaming(rx_stream.map(|item| Ok::<Bytes, actix_web::Error>(Bytes::from(item))))
+        .body(log_content)
 }
 
 // Handler for getting all task IDs with logs
