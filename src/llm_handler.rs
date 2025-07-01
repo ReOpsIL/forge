@@ -188,30 +188,7 @@ impl LLMProviderImpl {
             }
         }
     }
-
-    pub async fn send_prompt(
-        &self,
-        system_prompt: &str,
-        user_prompt: &str,
-    ) -> Result<String, String> {
-        match self.provider_type {
-            LLMProvider::OpenRouter => {
-                self.send_openrouter_prompt(system_prompt, user_prompt)
-                    .await
-            }
-            LLMProvider::Gemini => self.send_gemini_prompt(system_prompt, user_prompt).await,
-            LLMProvider::Anthropic => self.send_anthropic_prompt(system_prompt, user_prompt).await,
-            LLMProvider::ClaudeCode => {
-                self.send_claudecode_prompt(system_prompt, user_prompt)
-                    .await
-            }
-            LLMProvider::GeminiCode => {
-                self.send_geminicode_prompt(system_prompt, user_prompt)
-                    .await
-            }
-        }
-    }
-
+    
     async fn send_openrouter_prompt(
         &self,
         system_prompt: &str,

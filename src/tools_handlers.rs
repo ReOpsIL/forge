@@ -7,6 +7,7 @@ use std::process::Command;
 use std::sync::Arc;
 
 use crate::block_config::BlockConfigManager;
+use crate::block_handlers::AppState;
 use crate::project_config::ProjectConfigManager;
 use crate::task_executor_wrapper::enqueue_task;
 
@@ -51,7 +52,7 @@ pub struct BranchesResponse {
     pub branches: Vec<String>,
 }
 
-pub async fn get_branches_handler(data: web::Data<ToolsAppState>) -> impl Responder {
+pub async fn get_branches_handler(data: web::Data<AppState>) -> impl Responder {
     // Get the project home directory
     let project_config = match data.project_manager.get_config() {
         Ok(config) => config,

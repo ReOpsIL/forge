@@ -31,7 +31,6 @@ const BlocksView = ({ refreshTrigger }) => {
     const [showNewBlockDialog, setShowNewBlockDialog] = useState(false);
     const [showMarkdownEditorDialog, setShowMarkdownEditorDialog] = useState(false);
     const [showLoadingDialog, setShowLoadingDialog] = useState(false);
-    const [showAutoCompleteDialog, setShowAutoCompleteDialog] = useState(false);
     const [showLogDialog, setShowLogDialog] = useState(false);
     const [showTaskDialog, setShowTaskDialog] = useState(false);
     const [showLogsDialog, setShowLogsDialog] = useState(false);
@@ -40,7 +39,6 @@ const BlocksView = ({ refreshTrigger }) => {
     const [currentLogsTaskId, setCurrentLogsTaskId] = useState(null);
     const [currentLogsBlockId, setCurrentLogsBlockId] = useState(null);
     const [currentTaskLog, setCurrentTaskLog] = useState('');
-    const [autoCompleteSuggestion, setAutoCompleteSuggestion] = useState('');
     const [currentEditingBlock, setCurrentEditingBlock] = useState(null);
     const [currentImportBlock, setCurrentImportBlock] = useState(null);
     const [resolveDependencies, setResolveDependencies] = useState(false);
@@ -90,83 +88,6 @@ const BlocksView = ({ refreshTrigger }) => {
 
     // Create a ref for the toast
     const toastRef = useRef(null);
-
-    // Function to fetch auto-complete suggestions
-    const fetchAutoCompleteSuggestion = async (block_id) => {
-
-        // Find the block to update
-        const blockToEnhance = blocks.find(block => block.block_id === block_id);
-        if (!blockToEnhance) return;
-
-        // Show loading dialog
-        setShowLoadingDialog(true);
-
-        if (!blockToEnhance.description || blockToEnhance.description.trim() === '') return;
-
-        setIsAutoCompleteLoading(true);
-        try {
-            const response = await fetch('/api/blocks/auto-complete', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(blockToEnhance.description ),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch auto-complete suggestion');
-            }
-
-            setShowLoadingDialog(false);
-
-            const data = await response.json();
-            setAutoCompleteSuggestion(data.suggestion);
-            setShowAutoCompleteDialog(true);
-        } catch (error) {
-            setShowLoadingDialog(false);
-            console.error('Error fetching auto-complete suggestion:', error);
-            if (toastRef.current) {
-                toastRef.current.show({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Failed to fetch auto-complete suggestion',
-                    life: 3000
-                });
-            }
-
-        } finally {
-            setIsAutoCompleteLoading(false);
-            setShowLoadingDialog(false);
-        }
-    };
-
-    // Function to accept the auto-complete suggestion
-    const acceptAutoCompleteSuggestion = useCallback(() => {
-        if (currentEditingBlock && autoCompleteSuggestion) {
-            setEditingDescription({
-                ...editingDescription,
-                [currentEditingBlock.block_id]: autoCompleteSuggestion
-            });
-            setShowAutoCompleteDialog(false);
-            setAutoCompleteSuggestion('');
-
-            // Show success message
-            if (toastRef.current) {
-                toastRef.current.show({
-                    severity: 'success',
-                    summary: 'Success',
-                    detail: 'Auto-complete suggestion applied',
-                    life: 3000
-                });
-            }
-        }
-    }, [currentEditingBlock, autoCompleteSuggestion, editingDescription]);
-
-    // Function to reject the auto-complete suggestion
-    const rejectAutoCompleteSuggestion = useCallback(() => {
-        setShowAutoCompleteDialog(false);
-        setAutoCompleteSuggestion('');
-    }, []);
 
     const handleDescriptionChange = (block_id, newDescription) => {
         setEditingDescription({
@@ -1321,41 +1242,6 @@ const BlocksView = ({ refreshTrigger }) => {
                 </div>
             </Dialog>
 
-            {/* Auto-Complete Dialog */}
-            <Dialog
-                header="Auto-Complete Suggestion"
-                visible={showAutoCompleteDialog}
-                style={{width: '60vw'}}
-                onHide={rejectAutoCompleteSuggestion}
-                footer={
-                    <div>
-                        <Button
-                            label="Reject"
-                            icon="pi pi-times"
-                            className="p-button-text"
-                            onClick={rejectAutoCompleteSuggestion}
-                            size="small"
-                        />
-                        <Button
-                            label="Accept"
-                            icon="pi pi-check"
-                            className="p-button-success"
-                            onClick={acceptAutoCompleteSuggestion}
-                            size="small"
-                        />
-                    </div>
-                }
-            >
-                <div className="p-fluid">
-                    <div className="field">
-                        <label>The AI suggests the following enhanced description:</label>
-                        <div className="p-2 border-1 surface-border border-round mt-2" style={{backgroundColor: '#FFFFFF19'}}>
-                            <ReactMarkdown>{autoCompleteSuggestion}</ReactMarkdown>
-                        </div>
-                    </div>
-                </div>
-            </Dialog>
-
             {/* Empty Tasks Confirmation Dialog */}
             <Dialog
                 header="No Tasks"
@@ -1696,22 +1582,10 @@ const BlocksView = ({ refreshTrigger }) => {
                                             />
                                             <div className="flex justify-content-end mt-2">
                                                 <Button
-                                                    icon="pi pi-check-square"
-                                                    className="p-button-sm p-button-success "
-                                                    onClick={() => generateTasks(block.block_id)}
-                                                    tooltip="Generate tasks"
-                                                />
-                                                <Button
                                                     icon="pi pi-microchip-ai"
                                                     className="p-button-sm p-button-success "
                                                     onClick={() => enhanceDescription(block.block_id)}
                                                     tooltip="Enhance description"
-                                                />
-                                                <Button
-                                                    icon="pi pi-megaphone"
-                                                    className="p-button-sm p-button-success "
-                                                    onClick={() => fetchAutoCompleteSuggestion(block.block_id)}
-                                                    tooltip="Auto-complete description"
                                                 />
                                                 <Button
                                                     icon="pi pi-check"

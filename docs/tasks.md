@@ -269,7 +269,6 @@ This document provides a comprehensive task breakdown for implementing the featu
 - **Description**: Add terminal interface to the IDE
 - **Acceptance Criteria**:
   - Full terminal emulation in browser
-  - Command history and autocomplete
   - Multiple terminal tabs
   - Terminal theming options
 - **Files Affected**: New `frontend/src/components/Terminal.jsx` (extend existing)

@@ -27,11 +27,11 @@ mod task_queue;
 
 mod mcp;
 use crate::block_handlers::{generate_tasks_block_handler, get_blocks_from_file_handler, process_specification_handler};
-use block_config::{BlockConfigManager, DEFAULT_BLOCK_CONFIG_FILE, generate_sample_config};
+use block_config::{BlockConfigManager, generate_sample_config};
 use block_handlers::{
-    AppState, BLOCK_CONFIG_FILE, add_block_handler, add_task_handler, auto_complete_handler,
+    AppState, BLOCK_CONFIG_FILE, add_block_handler, add_task_handler,
     delete_block_handler, enhance_block_handler, generate_sample_config_handler,
-    get_block_dependencies_handler, get_blocks_handler, process_markdown_handler,
+    get_block_dependencies_handler, process_markdown_handler,
     remove_task_handler, update_block_handler,
 };
 use tools_handlers::{
@@ -296,6 +296,7 @@ async fn run_http_server(
             .service(
                 web::scope("/api")
                     // Block routes
+                    .route("/git/branches", web::get().to(get_branches_handler))
                     .route("/blocks", web::get().to(get_blocks_from_file_handler))
                     .route("/blocks", web::post().to(add_block_handler))
                     .route("/blocks", web::put().to(update_block_handler))
@@ -312,10 +313,6 @@ async fn run_http_server(
                     .route(
                         "/blocks/{block_id}/generate-tasks",
                         web::put().to(generate_tasks_block_handler),
-                    )
-                    .route(
-                        "/blocks/auto-complete",
-                        web::post().to(auto_complete_handler),
                     )
                     .route(
                         "/blocks/process-markdown",

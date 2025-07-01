@@ -24,12 +24,6 @@ pub struct TaskDependency {
     pub dependencies: Vec<String>,
 }
 
-// Define a response type for auto-complete suggestions
-#[derive(Serialize)]
-pub struct AutoCompleteResponse {
-    pub suggestion: String,
-}
-
 #[derive(Serialize)]
 pub struct ExecuteTaskResponse {
     pub status: String,
@@ -386,39 +380,6 @@ pub async fn generate_sample_config_handler() -> impl Responder {
     }
 }
 
-// API endpoint for auto-complete suggestions
-pub async fn auto_complete_handler(
-    description: web::Json<String>,
-    data: web::Data<AppState>,
-) -> impl Responder {
-    let description = description.into_inner();
-
-    // Get the project configuration to get the LLM provider setting
-    let project_config = match data.project_manager.get_config() {
-        Ok(config) => config,
-        Err(e) => {
-            println!("Failed to get project config: {}", e);
-            return HttpResponse::InternalServerError()
-                .body(format!("Failed to get project config: {}", e));
-        }
-    };
-
-    match auto_complete_description(&description, project_config.llm_provider).await {
-        Ok(enhanced_description) => {
-            let response = AutoCompleteResponse {
-                suggestion: enhanced_description,
-            };
-            HttpResponse::Ok().json(response)
-        }
-        Err(e) => {
-            println!("Failed to generate auto-complete suggestion: {}", e);
-            HttpResponse::InternalServerError().body(format!(
-                "Failed to generate auto-complete suggestion: {}",
-                e
-            ))
-        }
-    }
-}
 
 // API endpoint to process a markdown file and generate tasks
 pub async fn process_markdown_handler(
