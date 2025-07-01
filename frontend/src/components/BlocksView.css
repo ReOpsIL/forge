@@ -187,8 +187,13 @@
 
 /* Make buttons in task list more compact */
 .task-list-controls .p-button.p-button-sm {
-    padding: 0.25rem 0.5rem;
+    padding: 0;
+    margin: 0;
     font-size: 0.875rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
 }
 
 /* Add some spacing between task list items */
@@ -211,9 +216,10 @@
 /* Make all buttons in Block cards half size */
 .block-card .p-button {
     font-size: 0.5rem;
-    padding: 0.25rem 0.25rem;
+    padding: 0;
+    margin: 0;
     height: auto;
-    min-height: 1.5rem;
+    min-height: 1.2rem;
 }
 
 .block-card .p-button .p-button-icon {
@@ -222,8 +228,9 @@
 
 .block-card .p-button-sm {
     font-size: 0.5rem;
-    padding: 0.25rem 0.25rem;
-    min-height: 1.25rem;
+    padding: 0;
+    margin: 0;
+    min-height: 1rem;
 }
 
 /* Task edit textarea styles */

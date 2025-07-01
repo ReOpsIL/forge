@@ -10,96 +10,6 @@
       "output_connections": []
     },
     "todo_list": {
-      "RvuVfu": {
-        "task_id": "RvuVfu",
-        "task_name": "Analyze Current Prompt Structure for Input/Output Types",
-        "description": "Examine the existing MCP prompts in project_config.rs to understand how input/output types and block connections are currently handled. Document gaps in the current prompts regarding input/output type specifications and inter-block connections.",
-        "acceptance_criteria": [
-          "Complete analysis of DEFAULT_PROCESS_MARKDOWN_SPEC_*_MCP prompts",
-          "Complete analysis of DEFAULT_GENERATE_TASKS_*_MCP prompts",
-          "Document current limitations in input/output type specifications",
-          "Document current limitations in block connection specifications",
-          "Identify specific areas for improvement in prompt engineering"
-        ],
-        "dependencies": [],
-        "estimated_effort": "small",
-        "files_affected": [
-          "src/project_config.rs",
-          "src/models.rs",
-          "src/llm_handler.rs"
-        ],
-        "function_signatures": [],
-        "testing_requirements": [
-          "Review existing prompt outputs to validate analysis",
-          "Compare with BlockConnection and Block data structures"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "F6ppAC": {
-        "task_id": "F6ppAC",
-        "task_name": "Update Task Generation System Prompt",
-        "description": "Enhance the DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP to include guidance for considering input/output types and block connections when breaking down components into tasks.",
-        "acceptance_criteria": [
-          "Add instructions for identifying data flow requirements in task breakdown",
-          "Include guidance for creating tasks that implement input/output interfaces",
-          "Add requirements for connection validation and testing tasks",
-          "Include instructions for dependency management based on data flow",
-          "Ensure tasks consider type compatibility and validation",
-          "Maintain focus on granular, executable task creation"
-        ],
-        "dependencies": [
-          "qQbFRv"
-        ],
-        "estimated_effort": "medium",
-        "files_affected": [
-          "src/project_config.rs"
-        ],
-        "function_signatures": [],
-        "testing_requirements": [
-          "Test with components having complex data flow requirements",
-          "Validate tasks include proper interface implementation",
-          "Ensure connection testing tasks are generated appropriately"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "o73wnz": {
-        "task_id": "o73wnz",
-        "task_name": "Integration Testing and Validation",
-        "description": "Perform comprehensive integration testing of the enhanced prompt system to ensure all components work together correctly and produce improved block and task specifications with proper input/output types and connections.",
-        "acceptance_criteria": [
-          "Test complete workflow from specification processing to task generation",
-          "Validate enhanced prompts produce better structured outputs",
-          "Test with various complexity levels and domains",
-          "Ensure backward compatibility with existing projects",
-          "Validate connection validation logic works correctly",
-          "Test MCP tool integration with enhanced features",
-          "Performance testing with large specifications"
-        ],
-        "dependencies": [
-          "ZzHvlm"
-        ],
-        "estimated_effort": "large",
-        "files_affected": [
-          "tests/integration/",
-          "tests/fixtures/",
-          "src/main.rs"
-        ],
-        "function_signatures": [],
-        "testing_requirements": [
-          "End-to-end integration tests",
-          "Performance benchmarks",
-          "Regression testing against existing functionality",
-          "User acceptance testing scenarios",
-          "Error handling and edge case testing"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
       "Qv0Sjv": {
         "task_id": "Qv0Sjv",
         "task_name": "Update Task Generation User Prompt",
@@ -158,35 +68,6 @@
           "Validate output quality for each profession type",
           "Ensure profession-specific patterns are correctly applied",
           "Test integration with enhanced base prompt system"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "ZgOpOP": {
-        "task_id": "ZgOpOP",
-        "task_name": "Update Specification Processing System Prompt",
-        "description": "Enhance the DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP to include comprehensive guidance for identifying and specifying input/output types and inter-block connections when processing specifications.",
-        "acceptance_criteria": [
-          "Add guidance for identifying data flow patterns in specifications",
-          "Include instructions for specifying input/output types with validation rules",
-          "Add requirements for defining block connections and dependencies",
-          "Include examples of complex type specifications",
-          "Maintain existing MCP tool integration approach",
-          "Ensure prompt guides users to think about data architecture"
-        ],
-        "dependencies": [
-          "qQbFRv"
-        ],
-        "estimated_effort": "medium",
-        "files_affected": [
-          "src/project_config.rs"
-        ],
-        "function_signatures": [],
-        "testing_requirements": [
-          "Test prompt with sample specifications containing complex data flows",
-          "Validate that enhanced prompts produce better structured blocks",
-          "Ensure backward compatibility with existing workflow"
         ],
         "log": "",
         "commit_id": "",
@@ -262,33 +143,28 @@
         "commit_id": "",
         "status": "TODO"
       },
-      "qQbFRv": {
-        "task_id": "qQbFRv",
-        "task_name": "Define Enhanced Input/Output Type Specification Format",
-        "description": "Design a comprehensive format for specifying input/output types in blocks that includes data types, validation rules, format specifications, and connection requirements. This should extend the current BlockConnection structure with more detailed type information.",
+      "RvuVfu": {
+        "task_id": "RvuVfu",
+        "task_name": "Analyze Current Prompt Structure for Input/Output Types",
+        "description": "Examine the existing MCP prompts in project_config.rs to understand how input/output types and block connections are currently handled. Document gaps in the current prompts regarding input/output type specifications and inter-block connections.",
         "acceptance_criteria": [
-          "Define standard data type categories (primitives, objects, arrays, etc.)",
-          "Specify format for complex data structures and nested types",
-          "Include validation requirements in type specifications",
-          "Define connection compatibility rules between block inputs/outputs",
-          "Create examples for common data flow patterns",
-          "Ensure backward compatibility with existing BlockConnection structure"
+          "Complete analysis of DEFAULT_PROCESS_MARKDOWN_SPEC_*_MCP prompts",
+          "Complete analysis of DEFAULT_GENERATE_TASKS_*_MCP prompts",
+          "Document current limitations in input/output type specifications",
+          "Document current limitations in block connection specifications",
+          "Identify specific areas for improvement in prompt engineering"
         ],
-        "dependencies": [
-          "RvuVfu"
-        ],
-        "estimated_effort": "medium",
+        "dependencies": [],
+        "estimated_effort": "small",
         "files_affected": [
+          "src/project_config.rs",
           "src/models.rs",
           "src/llm_handler.rs"
         ],
-        "function_signatures": [
-          "pub struct EnhancedBlockConnection { name: String, ctype: String, data_format: String, validation_rules: Vec<String>, description: String }"
-        ],
+        "function_signatures": [],
         "testing_requirements": [
-          "Create test cases for various data type specifications",
-          "Validate type compatibility checking logic",
-          "Test complex nested type definitions"
+          "Review existing prompt outputs to validate analysis",
+          "Compare with BlockConnection and Block data structures"
         ],
         "log": "",
         "commit_id": "",
@@ -357,6 +233,130 @@
         "log": "",
         "commit_id": "",
         "status": "TODO"
+      },
+      "qQbFRv": {
+        "task_id": "qQbFRv",
+        "task_name": "Define Enhanced Input/Output Type Specification Format",
+        "description": "Design a comprehensive format for specifying input/output types in blocks that includes data types, validation rules, format specifications, and connection requirements. This should extend the current BlockConnection structure with more detailed type information.",
+        "acceptance_criteria": [
+          "Define standard data type categories (primitives, objects, arrays, etc.)",
+          "Specify format for complex data structures and nested types",
+          "Include validation requirements in type specifications",
+          "Define connection compatibility rules between block inputs/outputs",
+          "Create examples for common data flow patterns",
+          "Ensure backward compatibility with existing BlockConnection structure"
+        ],
+        "dependencies": [
+          "RvuVfu"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/models.rs",
+          "src/llm_handler.rs"
+        ],
+        "function_signatures": [
+          "pub struct EnhancedBlockConnection { name: String, ctype: String, data_format: String, validation_rules: Vec<String>, description: String }"
+        ],
+        "testing_requirements": [
+          "Create test cases for various data type specifications",
+          "Validate type compatibility checking logic",
+          "Test complex nested type definitions"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "o73wnz": {
+        "task_id": "o73wnz",
+        "task_name": "Integration Testing and Validation",
+        "description": "Perform comprehensive integration testing of the enhanced prompt system to ensure all components work together correctly and produce improved block and task specifications with proper input/output types and connections.",
+        "acceptance_criteria": [
+          "Test complete workflow from specification processing to task generation",
+          "Validate enhanced prompts produce better structured outputs",
+          "Test with various complexity levels and domains",
+          "Ensure backward compatibility with existing projects",
+          "Validate connection validation logic works correctly",
+          "Test MCP tool integration with enhanced features",
+          "Performance testing with large specifications"
+        ],
+        "dependencies": [
+          "ZzHvlm"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "tests/integration/",
+          "tests/fixtures/",
+          "src/main.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "End-to-end integration tests",
+          "Performance benchmarks",
+          "Regression testing against existing functionality",
+          "User acceptance testing scenarios",
+          "Error handling and edge case testing"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "ZgOpOP": {
+        "task_id": "ZgOpOP",
+        "task_name": "Update Specification Processing System Prompt",
+        "description": "Enhance the DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP to include comprehensive guidance for identifying and specifying input/output types and inter-block connections when processing specifications.",
+        "acceptance_criteria": [
+          "Add guidance for identifying data flow patterns in specifications",
+          "Include instructions for specifying input/output types with validation rules",
+          "Add requirements for defining block connections and dependencies",
+          "Include examples of complex type specifications",
+          "Maintain existing MCP tool integration approach",
+          "Ensure prompt guides users to think about data architecture"
+        ],
+        "dependencies": [
+          "qQbFRv"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/project_config.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Test prompt with sample specifications containing complex data flows",
+          "Validate that enhanced prompts produce better structured blocks",
+          "Ensure backward compatibility with existing workflow"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "F6ppAC": {
+        "task_id": "F6ppAC",
+        "task_name": "Update Task Generation System Prompt",
+        "description": "Enhance the DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP to include guidance for considering input/output types and block connections when breaking down components into tasks.",
+        "acceptance_criteria": [
+          "Add instructions for identifying data flow requirements in task breakdown",
+          "Include guidance for creating tasks that implement input/output interfaces",
+          "Add requirements for connection validation and testing tasks",
+          "Include instructions for dependency management based on data flow",
+          "Ensure tasks consider type compatibility and validation",
+          "Maintain focus on granular, executable task creation"
+        ],
+        "dependencies": [
+          "qQbFRv"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/project_config.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Test with components having complex data flow requirements",
+          "Validate tasks include proper interface implementation",
+          "Ensure connection testing tasks are generated appropriately"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
       }
     }
   },
@@ -419,74 +419,6 @@
       "output_connections": []
     },
     "todo_list": {
-      "dpIUnY": {
-        "task_id": "dpIUnY",
-        "task_name": "Real-time Collaboration",
-        "description": "Implement multi-user block editing with conflict resolution, live cursor tracking, change broadcasting, and team workspace management",
-        "acceptance_criteria": [
-          "Multiple users can edit blocks simultaneously",
-          "Real-time conflict resolution for concurrent edits",
-          "Live cursor tracking shows user positions",
-          "Change broadcasting updates all connected clients",
-          "Team workspace isolation and permissions"
-        ],
-        "dependencies": [],
-        "estimated_effort": "large",
-        "files_affected": [
-          "src/collaboration/",
-          "frontend/src/components/Collaboration.jsx",
-          "src/websocket/collaboration.rs",
-          "src/models/collaboration.rs"
-        ],
-        "function_signatures": [
-          "start_collaboration_session(workspace_id: String) -> Result<SessionId>",
-          "broadcast_change(session_id: SessionId, change: Change)",
-          "resolve_conflict(change1: Change, change2: Change) -> Change"
-        ],
-        "testing_requirements": [
-          "Multi-user simulation tests",
-          "Conflict resolution algorithm tests",
-          "WebSocket connection tests",
-          "Workspace isolation tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "e9b19b": {
-        "task_id": "e9b19b",
-        "task_name": "Multi-Language Code Generation",
-        "description": "Implement auto-generation of boilerplate code from block specifications with support for multiple frameworks (React, FastAPI, Express, etc.) and a template system for different project types",
-        "acceptance_criteria": [
-          "Code templates can be generated from block descriptions",
-          "Support for React, FastAPI, Express, and other popular frameworks",
-          "Template system allows custom project scaffolding",
-          "Generated code follows framework best practices",
-          "Integration with existing block architecture"
-        ],
-        "dependencies": [],
-        "estimated_effort": "large",
-        "files_affected": [
-          "src/code_generator.rs",
-          "src/templates/",
-          "frontend/src/components/CodeGeneration.jsx",
-          "src/mcp/tools/codegen.rs"
-        ],
-        "function_signatures": [
-          "generate_code_from_block(block: &Block, framework: &str) -> Result<String>",
-          "load_template(template_name: &str) -> Result<Template>",
-          "apply_template(template: Template, context: Context) -> String"
-        ],
-        "testing_requirements": [
-          "Unit tests for code generation functions",
-          "Integration tests with different frameworks",
-          "Template validation tests",
-          "End-to-end tests for code generation workflow"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
       "68X8Sg": {
         "task_id": "68X8Sg",
         "task_name": "Documentation Generator",
@@ -516,210 +448,6 @@
           "Diagram export format tests",
           "Markdown sync accuracy tests",
           "Template rendering tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "yfnYaY": {
-        "task_id": "yfnYaY",
-        "task_name": "Performance Analytics",
-        "description": "Implement task execution metrics, block dependency analysis, and resource usage tracking with visualization dashboards",
-        "acceptance_criteria": [
-          "Task execution time and performance metrics",
-          "Block dependency analysis and optimization suggestions",
-          "Resource usage monitoring and alerts",
-          "Performance dashboard with charts and graphs",
-          "Historical performance data storage"
-        ],
-        "dependencies": [],
-        "estimated_effort": "medium",
-        "files_affected": [
-          "src/analytics/",
-          "src/metrics_collector.rs",
-          "frontend/src/components/Analytics.jsx",
-          "src/performance_monitor.rs"
-        ],
-        "function_signatures": [
-          "collect_execution_metrics(task_id: String) -> Metrics",
-          "analyze_dependencies(blocks: Vec<Block>) -> DependencyReport",
-          "track_resource_usage() -> ResourceMetrics"
-        ],
-        "testing_requirements": [
-          "Metrics collection accuracy tests",
-          "Dependency analysis tests",
-          "Resource monitoring tests",
-          "Dashboard rendering tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "JdotCA": {
-        "task_id": "JdotCA",
-        "task_name": "Advanced Debugging Tools",
-        "description": "Implement visual execution flow debugging, breakpoint management across blocks, and runtime variable inspection capabilities",
-        "acceptance_criteria": [
-          "Visual execution flow with step-through debugging",
-          "Breakpoint setting and management across blocks",
-          "Runtime variable inspection and modification",
-          "Call stack visualization",
-          "Debug session persistence"
-        ],
-        "dependencies": [],
-        "estimated_effort": "large",
-        "files_affected": [
-          "src/debugger/",
-          "frontend/src/components/Debugger.jsx",
-          "src/execution_tracer.rs",
-          "src/breakpoint_manager.rs"
-        ],
-        "function_signatures": [
-          "start_debug_session(block_id: String) -> DebugSession",
-          "set_breakpoint(location: CodeLocation) -> Result<()>",
-          "inspect_variable(name: &str) -> Variable"
-        ],
-        "testing_requirements": [
-          "Debug session lifecycle tests",
-          "Breakpoint functionality tests",
-          "Variable inspection accuracy tests",
-          "Multi-block debugging tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "ckCbTh": {
-        "task_id": "ckCbTh",
-        "task_name": "Enhanced Visual Editor",
-        "description": "Implement drag-and-drop component library, custom block templates, minimap for large architectures, and block grouping/nesting capabilities",
-        "acceptance_criteria": [
-          "Drag-and-drop component palette",
-          "Custom block template creation and management",
-          "Minimap navigation for large block diagrams",
-          "Block grouping and hierarchical nesting",
-          "Improved visual layout algorithms"
-        ],
-        "dependencies": [],
-        "estimated_effort": "medium",
-        "files_affected": [
-          "frontend/src/components/VisualEditor/",
-          "frontend/src/components/BlockPalette.jsx",
-          "frontend/src/components/Minimap.jsx",
-          "frontend/src/utils/layout.js"
-        ],
-        "function_signatures": [
-          "createBlockTemplate(template: BlockTemplate) -> Result<String>",
-          "groupBlocks(blockIds: Vec<String>) -> BlockGroup",
-          "generateMinimap(blocks: Vec<Block>) -> MinimapData"
-        ],
-        "testing_requirements": [
-          "Drag-and-drop interaction tests",
-          "Template creation and validation tests",
-          "Minimap rendering tests",
-          "Block grouping functionality tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "pRK6UT": {
-        "task_id": "pRK6UT",
-        "task_name": "Environment Management",
-        "description": "Implement Docker integration for isolated execution, multiple environment configurations, and deployment pipeline automation",
-        "acceptance_criteria": [
-          "Docker containerization for block execution environments",
-          "Multiple environment configuration management (dev, staging, prod)",
-          "Deployment pipeline automation and orchestration",
-          "Environment isolation and security",
-          "Configuration synchronization across environments"
-        ],
-        "dependencies": [],
-        "estimated_effort": "large",
-        "files_affected": [
-          "src/environments/",
-          "docker/",
-          "src/deployment/",
-          "frontend/src/components/EnvironmentManager.jsx"
-        ],
-        "function_signatures": [
-          "create_environment(config: EnvironmentConfig) -> Result<Environment>",
-          "deploy_to_environment(blocks: Vec<Block>, env: Environment) -> Result<()>",
-          "manage_containers(action: ContainerAction) -> Result<()>"
-        ],
-        "testing_requirements": [
-          "Docker integration tests",
-          "Environment configuration tests",
-          "Deployment pipeline tests",
-          "Container management tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "D4CDBD": {
-        "task_id": "D4CDBD",
-        "task_name": "Plugin Ecosystem",
-        "description": "Create third-party block marketplace, custom tool integration APIs, and extension development framework",
-        "acceptance_criteria": [
-          "Third-party block marketplace with search and discovery",
-          "Custom tool integration API for external services",
-          "Extension development framework with documentation",
-          "Plugin sandboxing and security",
-          "Plugin versioning and dependency management"
-        ],
-        "dependencies": [],
-        "estimated_effort": "large",
-        "files_affected": [
-          "src/plugins/",
-          "src/marketplace/",
-          "frontend/src/components/Marketplace.jsx",
-          "src/extension_api.rs"
-        ],
-        "function_signatures": [
-          "load_plugin(plugin_path: &str) -> Result<Plugin>",
-          "register_tool(tool: CustomTool) -> Result<()>",
-          "publish_to_marketplace(block: Block) -> Result<String>"
-        ],
-        "testing_requirements": [
-          "Plugin loading and execution tests",
-          "Marketplace functionality tests",
-          "Security sandboxing tests",
-          "API integration tests"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "zdsxxM": {
-        "task_id": "zdsxxM",
-        "task_name": "Smart Autocomplete",
-        "description": "Implement context-aware block suggestions, dependency recommendation engine, and pattern recognition for common architectures",
-        "acceptance_criteria": [
-          "Context-aware block suggestions based on current architecture",
-          "Intelligent dependency recommendations",
-          "Pattern recognition for common architectural patterns",
-          "Learning from user behavior and preferences",
-          "Integration with existing block creation workflow"
-        ],
-        "dependencies": [],
-        "estimated_effort": "medium",
-        "files_affected": [
-          "src/autocomplete/",
-          "src/pattern_recognition.rs",
-          "frontend/src/components/SmartSuggestions.jsx",
-          "src/recommendation_engine.rs"
-        ],
-        "function_signatures": [
-          "suggest_blocks(context: BlockContext) -> Vec<BlockSuggestion>",
-          "recommend_dependencies(block: &Block) -> Vec<String>",
-          "recognize_patterns(architecture: &Architecture) -> Vec<Pattern>"
-        ],
-        "testing_requirements": [
-          "Suggestion accuracy tests",
-          "Dependency recommendation tests",
-          "Pattern recognition tests",
-          "User behavior learning tests"
         ],
         "log": "",
         "commit_id": "",
@@ -759,6 +487,108 @@
         "commit_id": "",
         "status": "TODO"
       },
+      "pRK6UT": {
+        "task_id": "pRK6UT",
+        "task_name": "Environment Management",
+        "description": "Implement Docker integration for isolated execution, multiple environment configurations, and deployment pipeline automation",
+        "acceptance_criteria": [
+          "Docker containerization for block execution environments",
+          "Multiple environment configuration management (dev, staging, prod)",
+          "Deployment pipeline automation and orchestration",
+          "Environment isolation and security",
+          "Configuration synchronization across environments"
+        ],
+        "dependencies": [],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/environments/",
+          "docker/",
+          "src/deployment/",
+          "frontend/src/components/EnvironmentManager.jsx"
+        ],
+        "function_signatures": [
+          "create_environment(config: EnvironmentConfig) -> Result<Environment>",
+          "deploy_to_environment(blocks: Vec<Block>, env: Environment) -> Result<()>",
+          "manage_containers(action: ContainerAction) -> Result<()>"
+        ],
+        "testing_requirements": [
+          "Docker integration tests",
+          "Environment configuration tests",
+          "Deployment pipeline tests",
+          "Container management tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "ckCbTh": {
+        "task_id": "ckCbTh",
+        "task_name": "Enhanced Visual Editor",
+        "description": "Implement drag-and-drop component library, custom block templates, minimap for large architectures, and block grouping/nesting capabilities",
+        "acceptance_criteria": [
+          "Drag-and-drop component palette",
+          "Custom block template creation and management",
+          "Minimap navigation for large block diagrams",
+          "Block grouping and hierarchical nesting",
+          "Improved visual layout algorithms"
+        ],
+        "dependencies": [],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "frontend/src/components/VisualEditor/",
+          "frontend/src/components/BlockPalette.jsx",
+          "frontend/src/components/Minimap.jsx",
+          "frontend/src/utils/layout.js"
+        ],
+        "function_signatures": [
+          "createBlockTemplate(template: BlockTemplate) -> Result<String>",
+          "groupBlocks(blockIds: Vec<String>) -> BlockGroup",
+          "generateMinimap(blocks: Vec<Block>) -> MinimapData"
+        ],
+        "testing_requirements": [
+          "Drag-and-drop interaction tests",
+          "Template creation and validation tests",
+          "Minimap rendering tests",
+          "Block grouping functionality tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "D4CDBD": {
+        "task_id": "D4CDBD",
+        "task_name": "Plugin Ecosystem",
+        "description": "Create third-party block marketplace, custom tool integration APIs, and extension development framework",
+        "acceptance_criteria": [
+          "Third-party block marketplace with search and discovery",
+          "Custom tool integration API for external services",
+          "Extension development framework with documentation",
+          "Plugin sandboxing and security",
+          "Plugin versioning and dependency management"
+        ],
+        "dependencies": [],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/plugins/",
+          "src/marketplace/",
+          "frontend/src/components/Marketplace.jsx",
+          "src/extension_api.rs"
+        ],
+        "function_signatures": [
+          "load_plugin(plugin_path: &str) -> Result<Plugin>",
+          "register_tool(tool: CustomTool) -> Result<()>",
+          "publish_to_marketplace(block: Block) -> Result<String>"
+        ],
+        "testing_requirements": [
+          "Plugin loading and execution tests",
+          "Marketplace functionality tests",
+          "Security sandboxing tests",
+          "API integration tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
       "fotK1U": {
         "task_id": "fotK1U",
         "task_name": "AI-Powered Code Review",
@@ -788,6 +618,40 @@
           "Security scanning effectiveness tests",
           "Performance suggestion validation tests",
           "Integration tests with LLM providers"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "JdotCA": {
+        "task_id": "JdotCA",
+        "task_name": "Advanced Debugging Tools",
+        "description": "Implement visual execution flow debugging, breakpoint management across blocks, and runtime variable inspection capabilities",
+        "acceptance_criteria": [
+          "Visual execution flow with step-through debugging",
+          "Breakpoint setting and management across blocks",
+          "Runtime variable inspection and modification",
+          "Call stack visualization",
+          "Debug session persistence"
+        ],
+        "dependencies": [],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/debugger/",
+          "frontend/src/components/Debugger.jsx",
+          "src/execution_tracer.rs",
+          "src/breakpoint_manager.rs"
+        ],
+        "function_signatures": [
+          "start_debug_session(block_id: String) -> DebugSession",
+          "set_breakpoint(location: CodeLocation) -> Result<()>",
+          "inspect_variable(name: &str) -> Variable"
+        ],
+        "testing_requirements": [
+          "Debug session lifecycle tests",
+          "Breakpoint functionality tests",
+          "Variable inspection accuracy tests",
+          "Multi-block debugging tests"
         ],
         "log": "",
         "commit_id": "",
@@ -826,6 +690,142 @@
         "log": "",
         "commit_id": "",
         "status": "TODO"
+      },
+      "dpIUnY": {
+        "task_id": "dpIUnY",
+        "task_name": "Real-time Collaboration",
+        "description": "Implement multi-user block editing with conflict resolution, live cursor tracking, change broadcasting, and team workspace management",
+        "acceptance_criteria": [
+          "Multiple users can edit blocks simultaneously",
+          "Real-time conflict resolution for concurrent edits",
+          "Live cursor tracking shows user positions",
+          "Change broadcasting updates all connected clients",
+          "Team workspace isolation and permissions"
+        ],
+        "dependencies": [],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/collaboration/",
+          "frontend/src/components/Collaboration.jsx",
+          "src/websocket/collaboration.rs",
+          "src/models/collaboration.rs"
+        ],
+        "function_signatures": [
+          "start_collaboration_session(workspace_id: String) -> Result<SessionId>",
+          "broadcast_change(session_id: SessionId, change: Change)",
+          "resolve_conflict(change1: Change, change2: Change) -> Change"
+        ],
+        "testing_requirements": [
+          "Multi-user simulation tests",
+          "Conflict resolution algorithm tests",
+          "WebSocket connection tests",
+          "Workspace isolation tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "yfnYaY": {
+        "task_id": "yfnYaY",
+        "task_name": "Performance Analytics",
+        "description": "Implement task execution metrics, block dependency analysis, and resource usage tracking with visualization dashboards",
+        "acceptance_criteria": [
+          "Task execution time and performance metrics",
+          "Block dependency analysis and optimization suggestions",
+          "Resource usage monitoring and alerts",
+          "Performance dashboard with charts and graphs",
+          "Historical performance data storage"
+        ],
+        "dependencies": [],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/analytics/",
+          "src/metrics_collector.rs",
+          "frontend/src/components/Analytics.jsx",
+          "src/performance_monitor.rs"
+        ],
+        "function_signatures": [
+          "collect_execution_metrics(task_id: String) -> Metrics",
+          "analyze_dependencies(blocks: Vec<Block>) -> DependencyReport",
+          "track_resource_usage() -> ResourceMetrics"
+        ],
+        "testing_requirements": [
+          "Metrics collection accuracy tests",
+          "Dependency analysis tests",
+          "Resource monitoring tests",
+          "Dashboard rendering tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "e9b19b": {
+        "task_id": "e9b19b",
+        "task_name": "Multi-Language Code Generation",
+        "description": "Implement auto-generation of boilerplate code from block specifications with support for multiple frameworks (React, FastAPI, Express, etc.) and a template system for different project types",
+        "acceptance_criteria": [
+          "Code templates can be generated from block descriptions",
+          "Support for React, FastAPI, Express, and other popular frameworks",
+          "Template system allows custom project scaffolding",
+          "Generated code follows framework best practices",
+          "Integration with existing block architecture"
+        ],
+        "dependencies": [],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/code_generator.rs",
+          "src/templates/",
+          "frontend/src/components/CodeGeneration.jsx",
+          "src/mcp/tools/codegen.rs"
+        ],
+        "function_signatures": [
+          "generate_code_from_block(block: &Block, framework: &str) -> Result<String>",
+          "load_template(template_name: &str) -> Result<Template>",
+          "apply_template(template: Template, context: Context) -> String"
+        ],
+        "testing_requirements": [
+          "Unit tests for code generation functions",
+          "Integration tests with different frameworks",
+          "Template validation tests",
+          "End-to-end tests for code generation workflow"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "zdsxxM": {
+        "task_id": "zdsxxM",
+        "task_name": "Smart Autocomplete",
+        "description": "Implement context-aware block suggestions, dependency recommendation engine, and pattern recognition for common architectures",
+        "acceptance_criteria": [
+          "Context-aware block suggestions based on current architecture",
+          "Intelligent dependency recommendations",
+          "Pattern recognition for common architectural patterns",
+          "Learning from user behavior and preferences",
+          "Integration with existing block creation workflow"
+        ],
+        "dependencies": [],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/autocomplete/",
+          "src/pattern_recognition.rs",
+          "frontend/src/components/SmartSuggestions.jsx",
+          "src/recommendation_engine.rs"
+        ],
+        "function_signatures": [
+          "suggest_blocks(context: BlockContext) -> Vec<BlockSuggestion>",
+          "recommend_dependencies(block: &Block) -> Vec<String>",
+          "recognize_patterns(architecture: &Architecture) -> Vec<Pattern>"
+        ],
+        "testing_requirements": [
+          "Suggestion accuracy tests",
+          "Dependency recommendation tests",
+          "Pattern recognition tests",
+          "User behavior learning tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
       }
     }
   },
@@ -840,6 +840,37 @@
       "output_connections": []
     },
     "todo_list": {
+      "YFjZ5G": {
+        "task_id": "YFjZ5G",
+        "task_name": "Update Block card styling for dynamic sections",
+        "description": "Update CSS styles for the Block card component to ensure proper spacing and layout when sections are conditionally hidden. This includes adjusting margins, padding, and flex properties to maintain visual consistency regardless of which sections are visible. [COMPLETED]",
+        "acceptance_criteria": [
+          "Block card maintains consistent spacing when sections are hidden",
+          "No orphaned margins or padding when sections are removed",
+          "Card height adjusts smoothly based on visible content",
+          "Consistent visual hierarchy is maintained",
+          "Responsive design works across different screen sizes"
+        ],
+        "dependencies": [
+          "1VaCga",
+          "3EsF9M"
+        ],
+        "estimated_effort": "small",
+        "files_affected": [
+          "frontend/src/components/BlockCard.css",
+          "frontend/src/components/BlockCard.scss"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Visual regression tests for various section combinations",
+          "Responsive design tests on different screen sizes",
+          "Cross-browser compatibility tests",
+          "Accessibility tests for layout changes"
+        ],
+        "log": "Step 1: Pulling latest main branch YFjZ5G\nStep 2: Creating task-specific branch using task ID YFjZ5G\nStep 3: Executing task YFjZ5G\n",
+        "commit_id": "8494f48cf60f5fa8a63781188398ff4242b63fee",
+        "status": "COMPLETED"
+      },
       "1VaCga": {
         "task_id": "1VaCga",
         "task_name": "Add conditional rendering logic for Inputs & Outputs section",
@@ -901,37 +932,6 @@
         "log": "",
         "commit_id": "00144692ec0efcae302c1ae319ed892995477ffa",
         "status": "COMPLETED"
-      },
-      "YFjZ5G": {
-        "task_id": "YFjZ5G",
-        "task_name": "Update Block card styling for dynamic sections",
-        "description": "Update CSS styles for the Block card component to ensure proper spacing and layout when sections are conditionally hidden. This includes adjusting margins, padding, and flex properties to maintain visual consistency regardless of which sections are visible. [COMPLETED]",
-        "acceptance_criteria": [
-          "Block card maintains consistent spacing when sections are hidden",
-          "No orphaned margins or padding when sections are removed",
-          "Card height adjusts smoothly based on visible content",
-          "Consistent visual hierarchy is maintained",
-          "Responsive design works across different screen sizes"
-        ],
-        "dependencies": [
-          "1VaCga",
-          "3EsF9M"
-        ],
-        "estimated_effort": "small",
-        "files_affected": [
-          "frontend/src/components/BlockCard.css",
-          "frontend/src/components/BlockCard.scss"
-        ],
-        "function_signatures": [],
-        "testing_requirements": [
-          "Visual regression tests for various section combinations",
-          "Responsive design tests on different screen sizes",
-          "Cross-browser compatibility tests",
-          "Accessibility tests for layout changes"
-        ],
-        "log": "Step 1: Pulling latest main branch YFjZ5G\nStep 2: Creating task-specific branch using task ID YFjZ5G\nStep 3: Executing task YFjZ5G\n",
-        "commit_id": "8494f48cf60f5fa8a63781188398ff4242b63fee",
-        "status": "COMPLETED"
       }
     }
   },
@@ -984,106 +984,37 @@
         "commit_id": "",
         "status": "TODO"
       },
-      "z1nx5n": {
-        "task_id": "z1nx5n",
-        "task_name": "Verify update_task MCP tool function signature and parameters",
-        "description": "Examine the update_task MCP tool implementation to verify its function signature, required parameters, optional parameters, and return values. Document the current behavior and identify any issues with parameter handling or validation.",
+      "RF2O0c": {
+        "task_id": "RF2O0c",
+        "task_name": "Test update_task with valid task update scenarios",
+        "description": "Create comprehensive tests for the update_task MCP tool using valid task update scenarios including status changes, description updates, adding acceptance criteria, updating dependencies, and modifying effort estimates. Verify that all updates are correctly applied and persisted.",
         "acceptance_criteria": [
-          "Function signature is documented and matches implementation",
-          "All required parameters are properly validated",
-          "Optional parameters have appropriate default values",
-          "Return values are consistent and well-defined",
-          "Parameter types are correctly enforced"
-        ],
-        "dependencies": [],
-        "estimated_effort": "small",
-        "files_affected": [
-          "src/mcp/tools/mod.rs",
-          "src/mcp/tools/update_task.rs"
-        ],
-        "function_signatures": [
-          "pub fn update_task(block_id: String, task_id: String, updates: TaskUpdate) -> Result<TaskResponse, McpError>"
-        ],
-        "testing_requirements": [
-          "Manual inspection of function signature",
-          "Parameter validation testing",
-          "Documentation review"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "rMAoT2": {
-        "task_id": "rMAoT2",
-        "task_name": "Test update_task error handling and edge cases",
-        "description": "Create comprehensive tests for error scenarios and edge cases in the update_task MCP tool including invalid block_id, non-existent task_id, invalid status transitions, malformed parameters, and concurrent update conflicts. Ensure proper error messages and handling.",
-        "acceptance_criteria": [
-          "Invalid block_id returns appropriate error",
-          "Non-existent task_id returns not found error",
-          "Invalid status values are rejected",
-          "Malformed parameters trigger validation errors",
-          "Concurrent updates are handled gracefully",
-          "Error messages are clear and actionable",
-          "No data corruption occurs on failures"
+          "Status updates (TODO -> IN_PROGRESS -> COMPLETED) work correctly",
+          "Description updates are properly saved",
+          "Acceptance criteria can be added, modified, and removed",
+          "Dependencies can be updated with valid task IDs",
+          "Effort estimation updates are correctly applied",
+          "All updates are persisted to storage",
+          "Updated task data is returned in response"
         ],
         "dependencies": [
           "z1nx5n"
         ],
         "estimated_effort": "medium",
         "files_affected": [
-          "tests/mcp/update_task_error_test.rs",
+          "tests/mcp/update_task_test.rs",
           "src/mcp/tools/update_task.rs"
         ],
         "function_signatures": [
-          "fn test_update_task_invalid_block_id()",
-          "fn test_update_task_nonexistent_task()",
-          "fn test_update_task_invalid_status()"
+          "fn test_update_task_status()",
+          "fn test_update_task_description()",
+          "fn test_update_task_acceptance_criteria()"
         ],
         "testing_requirements": [
-          "Error case unit tests",
-          "Edge case integration tests",
-          "Concurrent access testing",
-          "Error message validation",
-          "Data integrity verification"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "WqHLM5": {
-        "task_id": "WqHLM5",
-        "task_name": "Test update_task field-specific validations",
-        "description": "Create comprehensive tests for field-specific validations in the update_task MCP tool including task name length limits, description format validation, status value constraints, dependency ID validation, effort estimation formats, and acceptance criteria structure validation.",
-        "acceptance_criteria": [
-          "Task name length limits are enforced",
-          "Status values are restricted to valid enum values",
-          "Dependency IDs are validated for existence",
-          "Effort estimation accepts only valid formats",
-          "Acceptance criteria array validation works",
-          "Testing requirements format is validated",
-          "Function signatures syntax is checked",
-          "Files affected paths are validated"
-        ],
-        "dependencies": [
-          "z1nx5n"
-        ],
-        "estimated_effort": "medium",
-        "files_affected": [
-          "tests/mcp/field_validation_test.rs",
-          "src/mcp/tools/update_task.rs",
-          "src/models/task.rs"
-        ],
-        "function_signatures": [
-          "fn test_task_name_validation()",
-          "fn test_status_validation()",
-          "fn test_dependency_validation()",
-          "fn test_effort_validation()"
-        ],
-        "testing_requirements": [
-          "Field-specific validation tests",
-          "Boundary value testing",
-          "Input format validation",
-          "Constraint enforcement tests"
+          "Unit tests for each update field",
+          "Integration tests with real database",
+          "Verification of data persistence",
+          "Response validation tests"
         ],
         "log": "",
         "commit_id": "",
@@ -1128,79 +1059,40 @@
         "commit_id": "",
         "status": "TODO"
       },
-      "KAyZx1": {
-        "task_id": "KAyZx1",
-        "task_name": "Document update_task testing results and create test report",
-        "description": "Compile comprehensive documentation of all update_task MCP tool testing results including test coverage analysis, performance benchmarks, identified issues, recommendations for improvements, and a final validation report confirming the tool's functionality and reliability.",
+      "WqHLM5": {
+        "task_id": "WqHLM5",
+        "task_name": "Test update_task field-specific validations",
+        "description": "Create comprehensive tests for field-specific validations in the update_task MCP tool including task name length limits, description format validation, status value constraints, dependency ID validation, effort estimation formats, and acceptance criteria structure validation.",
         "acceptance_criteria": [
-          "Test coverage report shows >90% coverage",
-          "All test results are documented with pass/fail status",
-          "Performance benchmarks are recorded and analyzed",
-          "Identified issues are documented with severity levels",
-          "Recommendations for improvements are provided",
-          "Final validation report confirms tool reliability",
-          "Documentation is well-structured and comprehensive",
-          "Testing methodology is clearly explained"
-        ],
-        "dependencies": [
-          "RF2O0c",
-          "rMAoT2",
-          "8GssNn",
-          "r4Vm82",
-          "ebktC6",
-          "WqHLM5",
-          "rDL6j3"
-        ],
-        "estimated_effort": "small",
-        "files_affected": [
-          "docs/testing/update_task_test_report.md",
-          "docs/testing/test_coverage_analysis.md"
-        ],
-        "function_signatures": [
-          "fn generate_test_coverage_report()",
-          "fn compile_performance_benchmarks()"
-        ],
-        "testing_requirements": [
-          "Test coverage analysis",
-          "Results compilation and documentation",
-          "Performance metrics analysis",
-          "Final validation report generation"
-        ],
-        "log": "",
-        "commit_id": "",
-        "status": "TODO"
-      },
-      "RF2O0c": {
-        "task_id": "RF2O0c",
-        "task_name": "Test update_task with valid task update scenarios",
-        "description": "Create comprehensive tests for the update_task MCP tool using valid task update scenarios including status changes, description updates, adding acceptance criteria, updating dependencies, and modifying effort estimates. Verify that all updates are correctly applied and persisted.",
-        "acceptance_criteria": [
-          "Status updates (TODO -> IN_PROGRESS -> COMPLETED) work correctly",
-          "Description updates are properly saved",
-          "Acceptance criteria can be added, modified, and removed",
-          "Dependencies can be updated with valid task IDs",
-          "Effort estimation updates are correctly applied",
-          "All updates are persisted to storage",
-          "Updated task data is returned in response"
+          "Task name length limits are enforced",
+          "Status values are restricted to valid enum values",
+          "Dependency IDs are validated for existence",
+          "Effort estimation accepts only valid formats",
+          "Acceptance criteria array validation works",
+          "Testing requirements format is validated",
+          "Function signatures syntax is checked",
+          "Files affected paths are validated"
         ],
         "dependencies": [
           "z1nx5n"
         ],
         "estimated_effort": "medium",
         "files_affected": [
-          "tests/mcp/update_task_test.rs",
-          "src/mcp/tools/update_task.rs"
+          "tests/mcp/field_validation_test.rs",
+          "src/mcp/tools/update_task.rs",
+          "src/models/task.rs"
         ],
         "function_signatures": [
-          "fn test_update_task_status()",
-          "fn test_update_task_description()",
-          "fn test_update_task_acceptance_criteria()"
+          "fn test_task_name_validation()",
+          "fn test_status_validation()",
+          "fn test_dependency_validation()",
+          "fn test_effort_validation()"
         ],
         "testing_requirements": [
-          "Unit tests for each update field",
-          "Integration tests with real database",
-          "Verification of data persistence",
-          "Response validation tests"
+          "Field-specific validation tests",
+          "Boundary value testing",
+          "Input format validation",
+          "Constraint enforcement tests"
         ],
         "log": "",
         "commit_id": "",
@@ -1274,6 +1166,114 @@
           "Transaction rollback tests",
           "Data consistency verification",
           "System restart recovery tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "rMAoT2": {
+        "task_id": "rMAoT2",
+        "task_name": "Test update_task error handling and edge cases",
+        "description": "Create comprehensive tests for error scenarios and edge cases in the update_task MCP tool including invalid block_id, non-existent task_id, invalid status transitions, malformed parameters, and concurrent update conflicts. Ensure proper error messages and handling.",
+        "acceptance_criteria": [
+          "Invalid block_id returns appropriate error",
+          "Non-existent task_id returns not found error",
+          "Invalid status values are rejected",
+          "Malformed parameters trigger validation errors",
+          "Concurrent updates are handled gracefully",
+          "Error messages are clear and actionable",
+          "No data corruption occurs on failures"
+        ],
+        "dependencies": [
+          "z1nx5n"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "tests/mcp/update_task_error_test.rs",
+          "src/mcp/tools/update_task.rs"
+        ],
+        "function_signatures": [
+          "fn test_update_task_invalid_block_id()",
+          "fn test_update_task_nonexistent_task()",
+          "fn test_update_task_invalid_status()"
+        ],
+        "testing_requirements": [
+          "Error case unit tests",
+          "Edge case integration tests",
+          "Concurrent access testing",
+          "Error message validation",
+          "Data integrity verification"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "KAyZx1": {
+        "task_id": "KAyZx1",
+        "task_name": "Document update_task testing results and create test report",
+        "description": "Compile comprehensive documentation of all update_task MCP tool testing results including test coverage analysis, performance benchmarks, identified issues, recommendations for improvements, and a final validation report confirming the tool's functionality and reliability.",
+        "acceptance_criteria": [
+          "Test coverage report shows >90% coverage",
+          "All test results are documented with pass/fail status",
+          "Performance benchmarks are recorded and analyzed",
+          "Identified issues are documented with severity levels",
+          "Recommendations for improvements are provided",
+          "Final validation report confirms tool reliability",
+          "Documentation is well-structured and comprehensive",
+          "Testing methodology is clearly explained"
+        ],
+        "dependencies": [
+          "RF2O0c",
+          "rMAoT2",
+          "8GssNn",
+          "r4Vm82",
+          "ebktC6",
+          "WqHLM5",
+          "rDL6j3"
+        ],
+        "estimated_effort": "small",
+        "files_affected": [
+          "docs/testing/update_task_test_report.md",
+          "docs/testing/test_coverage_analysis.md"
+        ],
+        "function_signatures": [
+          "fn generate_test_coverage_report()",
+          "fn compile_performance_benchmarks()"
+        ],
+        "testing_requirements": [
+          "Test coverage analysis",
+          "Results compilation and documentation",
+          "Performance metrics analysis",
+          "Final validation report generation"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "z1nx5n": {
+        "task_id": "z1nx5n",
+        "task_name": "Verify update_task MCP tool function signature and parameters",
+        "description": "Examine the update_task MCP tool implementation to verify its function signature, required parameters, optional parameters, and return values. Document the current behavior and identify any issues with parameter handling or validation.",
+        "acceptance_criteria": [
+          "Function signature is documented and matches implementation",
+          "All required parameters are properly validated",
+          "Optional parameters have appropriate default values",
+          "Return values are consistent and well-defined",
+          "Parameter types are correctly enforced"
+        ],
+        "dependencies": [],
+        "estimated_effort": "small",
+        "files_affected": [
+          "src/mcp/tools/mod.rs",
+          "src/mcp/tools/update_task.rs"
+        ],
+        "function_signatures": [
+          "pub fn update_task(block_id: String, task_id: String, updates: TaskUpdate) -> Result<TaskResponse, McpError>"
+        ],
+        "testing_requirements": [
+          "Manual inspection of function signature",
+          "Parameter validation testing",
+          "Documentation review"
         ],
         "log": "",
         "commit_id": "",
@@ -1369,37 +1369,39 @@
       "output_connections": []
     },
     "todo_list": {
-      "8AnVsE": {
-        "task_id": "8AnVsE",
-        "task_name": "Build Technology Stack Detection System",
-        "description": "Develop a comprehensive technology stack detection system that identifies all technologies, frameworks, libraries, and tools used in the project. This should create a technology profile that helps generate tasks using appropriate tools, libraries, and patterns specific to the detected stack.",
+      "0yx79e": {
+        "task_id": "0yx79e",
+        "task_name": "Create Project-Aware Task Generation Engine",
+        "description": "Build an intelligent task generation engine that uses project context and codebase analysis to generate tasks that are specifically relevant to the target project. This should enhance existing LLM prompts with project-specific context and ensure generated tasks align with project architecture, patterns, and requirements.",
         "acceptance_criteria": [
-          "Detects programming languages and versions",
-          "Identifies frameworks and libraries in use",
-          "Maps build tools and development environments",
-          "Recognizes testing frameworks and tools",
-          "Creates comprehensive technology profile",
-          "Supports detection across multiple ecosystems (npm, cargo, pip, etc.)"
+          "Integrates project metadata into task generation",
+          "Uses codebase context for task alignment",
+          "Enhances LLM prompts with project-specific information",
+          "Generates tasks that follow project conventions",
+          "Validates task relevance against project requirements",
+          "Supports context injection for different project types"
         ],
         "dependencies": [
-          "sSb5LV"
+          "sSb5LV",
+          "qfi3Bv"
         ],
-        "estimated_effort": "medium",
+        "estimated_effort": "large",
         "files_affected": [
-          "src/tech_stack_detector.rs",
-          "src/package_analyzers.rs",
-          "src/models.rs"
+          "src/task_generation.rs",
+          "src/context_injection.rs",
+          "src/project_config.rs",
+          "src/claude_handlers.rs"
         ],
         "function_signatures": [
-          "pub fn detect_technology_stack(project_path: &str) -> Result<TechStack, DetectionError>",
-          "pub fn analyze_package_files(config_files: &[ConfigFile]) -> Vec<Technology>",
-          "pub fn identify_frameworks(dependencies: &[Dependency]) -> Vec<Framework>"
+          "pub fn generate_project_aware_tasks(block_desc: &str, project_context: &ProjectContext) -> Result<Vec<Task>, GenerationError>",
+          "pub fn inject_project_context(base_prompt: &str, context: &ProjectContext) -> String",
+          "pub fn validate_task_relevance(task: &Task, project_context: &ProjectContext) -> RelevanceScore"
         ],
         "testing_requirements": [
-          "Multi-ecosystem detection tests",
-          "Version detection accuracy tests",
-          "Framework identification tests",
-          "Complex project stack detection tests"
+          "Context injection accuracy tests",
+          "Task relevance validation tests",
+          "Integration tests with LLM providers",
+          "Multi-project type compatibility tests"
         ],
         "log": "",
         "commit_id": "",
@@ -1441,39 +1443,35 @@
         "commit_id": "",
         "status": "TODO"
       },
-      "0yx79e": {
-        "task_id": "0yx79e",
-        "task_name": "Create Project-Aware Task Generation Engine",
-        "description": "Build an intelligent task generation engine that uses project context and codebase analysis to generate tasks that are specifically relevant to the target project. This should enhance existing LLM prompts with project-specific context and ensure generated tasks align with project architecture, patterns, and requirements.",
+      "Xlg609": {
+        "task_id": "Xlg609",
+        "task_name": "Implement Project Documentation Parser",
+        "description": "Create a documentation parser that can extract project requirements, architectural decisions, and existing documentation (README, docs, comments) to provide additional context for task generation. This should understand project goals, constraints, and existing implementation details.",
         "acceptance_criteria": [
-          "Integrates project metadata into task generation",
-          "Uses codebase context for task alignment",
-          "Enhances LLM prompts with project-specific information",
-          "Generates tasks that follow project conventions",
-          "Validates task relevance against project requirements",
-          "Supports context injection for different project types"
+          "Parses README and documentation files",
+          "Extracts project requirements and goals",
+          "Identifies architectural decisions and constraints",
+          "Processes inline code comments and documentation",
+          "Creates structured documentation context",
+          "Supports markdown, text, and code comment parsing"
         ],
-        "dependencies": [
-          "sSb5LV",
-          "qfi3Bv"
-        ],
-        "estimated_effort": "large",
+        "dependencies": [],
+        "estimated_effort": "medium",
         "files_affected": [
-          "src/task_generation.rs",
-          "src/context_injection.rs",
-          "src/project_config.rs",
-          "src/claude_handlers.rs"
+          "src/documentation_parser.rs",
+          "src/requirement_extractor.rs",
+          "src/models.rs"
         ],
         "function_signatures": [
-          "pub fn generate_project_aware_tasks(block_desc: &str, project_context: &ProjectContext) -> Result<Vec<Task>, GenerationError>",
-          "pub fn inject_project_context(base_prompt: &str, context: &ProjectContext) -> String",
-          "pub fn validate_task_relevance(task: &Task, project_context: &ProjectContext) -> RelevanceScore"
+          "pub fn parse_project_documentation(project_path: &str) -> Result<DocumentationContext, ParseError>",
+          "pub fn extract_requirements(doc_content: &str) -> Vec<Requirement>",
+          "pub fn parse_architectural_decisions(docs: &[String]) -> Vec<ArchitecturalDecision>"
         ],
         "testing_requirements": [
-          "Context injection accuracy tests",
-          "Task relevance validation tests",
-          "Integration tests with LLM providers",
-          "Multi-project type compatibility tests"
+          "Documentation format compatibility tests",
+          "Requirement extraction accuracy tests",
+          "Multi-format parsing tests",
+          "Edge case handling for malformed docs"
         ],
         "log": "",
         "commit_id": "",
@@ -1513,35 +1511,37 @@
         "commit_id": "",
         "status": "TODO"
       },
-      "Xlg609": {
-        "task_id": "Xlg609",
-        "task_name": "Implement Project Documentation Parser",
-        "description": "Create a documentation parser that can extract project requirements, architectural decisions, and existing documentation (README, docs, comments) to provide additional context for task generation. This should understand project goals, constraints, and existing implementation details.",
+      "8AnVsE": {
+        "task_id": "8AnVsE",
+        "task_name": "Build Technology Stack Detection System",
+        "description": "Develop a comprehensive technology stack detection system that identifies all technologies, frameworks, libraries, and tools used in the project. This should create a technology profile that helps generate tasks using appropriate tools, libraries, and patterns specific to the detected stack.",
         "acceptance_criteria": [
-          "Parses README and documentation files",
-          "Extracts project requirements and goals",
-          "Identifies architectural decisions and constraints",
-          "Processes inline code comments and documentation",
-          "Creates structured documentation context",
-          "Supports markdown, text, and code comment parsing"
+          "Detects programming languages and versions",
+          "Identifies frameworks and libraries in use",
+          "Maps build tools and development environments",
+          "Recognizes testing frameworks and tools",
+          "Creates comprehensive technology profile",
+          "Supports detection across multiple ecosystems (npm, cargo, pip, etc.)"
         ],
-        "dependencies": [],
+        "dependencies": [
+          "sSb5LV"
+        ],
         "estimated_effort": "medium",
         "files_affected": [
-          "src/documentation_parser.rs",
-          "src/requirement_extractor.rs",
+          "src/tech_stack_detector.rs",
+          "src/package_analyzers.rs",
           "src/models.rs"
         ],
         "function_signatures": [
-          "pub fn parse_project_documentation(project_path: &str) -> Result<DocumentationContext, ParseError>",
-          "pub fn extract_requirements(doc_content: &str) -> Vec<Requirement>",
-          "pub fn parse_architectural_decisions(docs: &[String]) -> Vec<ArchitecturalDecision>"
+          "pub fn detect_technology_stack(project_path: &str) -> Result<TechStack, DetectionError>",
+          "pub fn analyze_package_files(config_files: &[ConfigFile]) -> Vec<Technology>",
+          "pub fn identify_frameworks(dependencies: &[Dependency]) -> Vec<Framework>"
         ],
         "testing_requirements": [
-          "Documentation format compatibility tests",
-          "Requirement extraction accuracy tests",
-          "Multi-format parsing tests",
-          "Edge case handling for malformed docs"
+          "Multi-ecosystem detection tests",
+          "Version detection accuracy tests",
+          "Framework identification tests",
+          "Complex project stack detection tests"
         ],
         "log": "",
         "commit_id": "",
@@ -1595,6 +1595,807 @@
       "input_connections": [],
       "output_connections": []
     },
-    "todo_list": {}
+    "todo_list": {
+      "n80kio": {
+        "task_id": "n80kio",
+        "task_name": "Register New MCP Tools in Tool Registry",
+        "description": "Register the new enhance_block_description and auto_complete_block_description MCP tools in the MCP server tool registry so they are discoverable and callable by MCP clients.",
+        "acceptance_criteria": [
+          "enhance_block_description tool is registered in MCP registry",
+          "auto_complete_block_description tool is registered in MCP registry",
+          "Tools appear in MCP tools list",
+          "Tools have proper metadata and descriptions",
+          "Tools have correct parameter schemas",
+          "Tools are callable via MCP protocol",
+          "Registry initialization includes new tools"
+        ],
+        "dependencies": [
+          "JghQ7W",
+          "UD81Zi"
+        ],
+        "estimated_effort": "small",
+        "files_affected": [
+          "src/mcp/server.rs",
+          "src/mcp/registry.rs"
+        ],
+        "function_signatures": [
+          "pub fn register_description_tools(registry: &mut ToolRegistry)"
+        ],
+        "testing_requirements": [
+          "Test tool registration process",
+          "Test tool discovery via MCP protocol",
+          "Test tool metadata accuracy",
+          "Integration tests for tool invocation"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "UD81Zi": {
+        "task_id": "UD81Zi",
+        "task_name": "Implement Block Description Auto-Complete MCP Tool",
+        "description": "Create a new MCP tool function that auto-completes incomplete block descriptions using AI. The tool should take a block_id, retrieve the current partial description, and use the configured system and user prompts to generate a completed version via LLM API call.",
+        "acceptance_criteria": [
+          "MCP tool function is registered and accessible",
+          "Tool accepts block_id as parameter",
+          "Tool retrieves current block description",
+          "Tool constructs proper prompts using auto_complete configuration",
+          "Tool makes LLM API call with system and user prompts",
+          "Tool returns completed description",
+          "Tool handles errors gracefully",
+          "Tool validates input parameters",
+          "Tool detects incomplete descriptions appropriately"
+        ],
+        "dependencies": [
+          "pW2vhk"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/mcp/tools.rs",
+          "src/mcp/block_tools.rs"
+        ],
+        "function_signatures": [
+          "pub async fn auto_complete_block_description(block_id: &str) -> Result<String, McpError>"
+        ],
+        "testing_requirements": [
+          "Unit tests for auto-completion logic",
+          "Integration tests with mock LLM responses",
+          "Error handling tests for invalid block_id",
+          "Tests for detecting incomplete descriptions",
+          "Configuration validation tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "k5CSoz": {
+        "task_id": "k5CSoz",
+        "task_name": "Add Error Handling and Validation for Description Tools",
+        "description": "Implement comprehensive error handling and input validation for the description enhancement and auto-completion tools. This includes parameter validation, LLM response validation, and proper error messaging.",
+        "acceptance_criteria": [
+          "Validate block_id parameter exists and is valid",
+          "Validate block has description content",
+          "Handle LLM API failures gracefully",
+          "Validate LLM response quality and format",
+          "Provide meaningful error messages to users",
+          "Log errors for debugging and monitoring",
+          "Handle timeout scenarios",
+          "Implement retry logic for transient failures"
+        ],
+        "dependencies": [
+          "JghQ7W",
+          "UD81Zi",
+          "O49NiA"
+        ],
+        "estimated_effort": "small",
+        "files_affected": [
+          "src/mcp/validation.rs",
+          "src/mcp/error.rs",
+          "src/mcp/block_tools.rs"
+        ],
+        "function_signatures": [
+          "pub fn validate_block_id(block_id: &str) -> Result<(), ValidationError>",
+          "pub fn validate_description_content(content: &str) -> Result<(), ValidationError>"
+        ],
+        "testing_requirements": [
+          "Unit tests for all validation functions",
+          "Error handling tests for each failure scenario",
+          "Integration tests with invalid inputs",
+          "LLM response validation tests",
+          "Timeout and retry tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "WvxFAV": {
+        "task_id": "WvxFAV",
+        "task_name": "Implement Block Description Update Functionality",
+        "description": "Create functionality to safely update block descriptions in the data store after enhancement or auto-completion. This includes validation, backup, and atomic updates to prevent data corruption.",
+        "acceptance_criteria": [
+          "Function to update block description in data store",
+          "Validation of new description content",
+          "Atomic update operations to prevent corruption",
+          "Backup of original description before update",
+          "Transaction rollback on failure",
+          "Concurrent access protection",
+          "Audit logging of description changes",
+          "Return updated block information"
+        ],
+        "dependencies": [
+          "JghQ7W",
+          "UD81Zi"
+        ],
+        "estimated_effort": "small",
+        "files_affected": [
+          "src/storage/blocks.rs",
+          "src/models/block.rs"
+        ],
+        "function_signatures": [
+          "pub async fn update_block_description(block_id: &str, new_description: &str) -> Result<Block, StorageError>",
+          "pub fn backup_description(block_id: &str, description: &str) -> Result<(), StorageError>"
+        ],
+        "testing_requirements": [
+          "Unit tests for description update logic",
+          "Transaction rollback tests",
+          "Concurrent access tests",
+          "Validation tests for description content",
+          "Backup and restore tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "OKMG2L": {
+        "task_id": "OKMG2L",
+        "task_name": "Add Integration Tests for Description Enhancement Tools",
+        "description": "Create comprehensive integration tests that verify the end-to-end functionality of both description enhancement and auto-completion tools, including configuration loading, LLM API calls, and block updates.",
+        "acceptance_criteria": [
+          "Integration test for complete enhancement workflow",
+          "Integration test for complete auto-completion workflow",
+          "Test configuration loading and usage",
+          "Test LLM API integration with real/mock responses",
+          "Test block description updates in data store",
+          "Test error scenarios and recovery",
+          "Test tool invocation via MCP protocol",
+          "Performance tests for tool execution time"
+        ],
+        "dependencies": [
+          "n80kio",
+          "WvxFAV",
+          "k5CSoz"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "tests/integration/description_tools.rs",
+          "tests/mcp/block_tools.rs",
+          "tests/fixtures/mod.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "End-to-end workflow tests",
+          "Mock LLM API setup for testing",
+          "Test data fixtures for blocks",
+          "Error scenario testing",
+          "Performance benchmark tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "O49NiA": {
+        "task_id": "O49NiA",
+        "task_name": "Add LLM Client Integration for Description Processing",
+        "description": "Implement or enhance LLM client functionality to support the description enhancement and auto-completion features. This includes setting up API calls, handling authentication, managing rate limits, and processing responses.",
+        "acceptance_criteria": [
+          "LLM client can make API calls with custom system prompts",
+          "LLM client can make API calls with custom user prompts",
+          "Client handles authentication properly",
+          "Client implements rate limiting and retry logic",
+          "Client processes and validates LLM responses",
+          "Client handles API errors gracefully",
+          "Client supports async operations",
+          "Client logs API usage for monitoring"
+        ],
+        "dependencies": [
+          "pW2vhk"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/llm/client.rs",
+          "src/llm/mod.rs",
+          "src/config.rs"
+        ],
+        "function_signatures": [
+          "pub async fn generate_with_prompts(system_prompt: &str, user_prompt: &str) -> Result<String, LlmError>",
+          "pub async fn enhance_text(text: &str, system_prompt: &str, user_prompt: &str) -> Result<String, LlmError>"
+        ],
+        "testing_requirements": [
+          "Unit tests for LLM client methods",
+          "Integration tests with mock LLM API",
+          "Error handling tests for API failures",
+          "Rate limiting tests",
+          "Authentication tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "JghQ7W": {
+        "task_id": "JghQ7W",
+        "task_name": "Implement Block Description Enhancement MCP Tool",
+        "description": "Create a new MCP tool function that enhances block descriptions using AI. The tool should take a block_id, retrieve the current description, and use the configured system and user prompts to generate an enhanced version via LLM API call.",
+        "acceptance_criteria": [
+          "MCP tool function is registered and accessible",
+          "Tool accepts block_id as parameter",
+          "Tool retrieves current block description",
+          "Tool constructs proper prompts using configuration",
+          "Tool makes LLM API call with system and user prompts",
+          "Tool returns enhanced description",
+          "Tool handles errors gracefully",
+          "Tool validates input parameters"
+        ],
+        "dependencies": [
+          "pW2vhk"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/mcp/tools.rs",
+          "src/mcp/block_tools.rs"
+        ],
+        "function_signatures": [
+          "pub async fn enhance_block_description(block_id: &str) -> Result<String, McpError>"
+        ],
+        "testing_requirements": [
+          "Unit tests for enhancement logic",
+          "Integration tests with mock LLM responses",
+          "Error handling tests for invalid block_id",
+          "Configuration validation tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "ZKzfR9": {
+        "task_id": "ZKzfR9",
+        "task_name": "Update Documentation and Configuration Examples",
+        "description": "Create documentation and configuration examples for the new description enhancement and auto-completion MCP tools, including usage instructions, configuration options, and best practices.",
+        "acceptance_criteria": [
+          "Documentation for enhance_block_description tool",
+          "Documentation for auto_complete_block_description tool",
+          "Configuration examples with sample prompts",
+          "Usage examples and best practices",
+          "API reference documentation",
+          "Troubleshooting guide for common issues",
+          "Performance and rate limiting guidance",
+          "Integration examples with MCP clients"
+        ],
+        "dependencies": [
+          "OKMG2L"
+        ],
+        "estimated_effort": "small",
+        "files_affected": [
+          "docs/mcp-tools.md",
+          "docs/configuration.md",
+          "examples/config.toml",
+          "README.md"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Validate documentation examples work correctly",
+          "Test configuration examples",
+          "Verify all links and references",
+          "Review documentation for completeness"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "pW2vhk": {
+        "task_id": "pW2vhk",
+        "task_name": "Add Configuration Schema for Description Enhancement",
+        "description": "Define configuration schema to support the new description enhancement and auto-completion prompts. Add fields for enhance_description_system_prompt, enhance_description_user_prompt, auto_complete_system_prompt, and auto_complete_user_prompt to the configuration structure.",
+        "acceptance_criteria": [
+          "Configuration schema includes enhance_description_system_prompt field",
+          "Configuration schema includes enhance_description_user_prompt field",
+          "Configuration schema includes auto_complete_system_prompt field",
+          "Configuration schema includes auto_complete_user_prompt field",
+          "All new fields have appropriate data types and validation",
+          "Configuration can be loaded and parsed successfully"
+        ],
+        "dependencies": [],
+        "estimated_effort": "small",
+        "files_affected": [
+          "src/config.rs",
+          "src/types.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Unit tests for configuration schema validation",
+          "Test loading configuration with new fields",
+          "Test default values for optional fields"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      }
+    }
+  },
+  {
+    "name": "MCP Tool box",
+    "block_id": "Fx8Qi4",
+    "description": "I want to integrate the [MCP Toolbox](https://github.com/googleapis/genai-toolbox?tab=readme-ov-file) to enable a user-friendly task creation interface. As a user, I should be able to **forge tasks** that interact with the MCP Toolbox to query BigQuery using plain English instructions. These tasks will use **Claude Code** to generate and execute queries via MCP. Subsequent tasks will process the results and output them in various formats—such as downloadable CSVs, interactive web pages with graphs, or other visualizations.\n\n",
+    "inputs": [],
+    "outputs": [],
+    "connections": {
+      "input_connections": [],
+      "output_connections": []
+    },
+    "todo_list": {
+      "lvMoiR": {
+        "task_id": "lvMoiR",
+        "task_name": "Implement Claude Code Integration for Query Generation",
+        "description": "Create an integration layer that uses Claude Code to generate optimized BigQuery SQL from parsed natural language instructions, with support for query optimization and validation.",
+        "acceptance_criteria": [
+          "Claude Code API integration is functional",
+          "Natural language is converted to valid BigQuery SQL",
+          "Generated queries are optimized for performance",
+          "Query validation and syntax checking is implemented",
+          "Support for complex query patterns and best practices"
+        ],
+        "dependencies": [
+          "29p68K"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/services/claude-integration.ts",
+          "src/utils/query-optimizer.ts",
+          "src/validators/sql-validator.ts"
+        ],
+        "function_signatures": [
+          "async generateSqlFromNaturalLanguage(parsedQuery: ParsedQuery): Promise<string>",
+          "optimizeQuery(sql: string): Promise<string>",
+          "validateSql(sql: string): ValidationResult"
+        ],
+        "testing_requirements": [
+          "Unit tests for Claude Code integration",
+          "SQL generation accuracy tests",
+          "Query optimization tests",
+          "Validation and error handling tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "1jPCIV": {
+        "task_id": "1jPCIV",
+        "task_name": "Build User-Friendly Task Creation Interface",
+        "description": "Create an intuitive web interface that allows users to forge tasks for BigQuery operations using natural language. The interface should include input validation, query preview, execution controls, and result display options with a guided workflow for new users.",
+        "acceptance_criteria": [
+          "Natural language input field with syntax highlighting",
+          "Real-time query preview and validation",
+          "Template library for common BigQuery operations",
+          "Step-by-step guided workflow for beginners",
+          "Task execution progress tracking",
+          "Integrated help and documentation"
+        ],
+        "dependencies": [
+          "29p68K",
+          "lvMoiR"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "frontend/src/components/TaskCreator.tsx",
+          "frontend/src/components/QueryBuilder.tsx",
+          "frontend/src/styles/task-creator.css"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "Gbe2f6": {
+        "task_id": "Gbe2f6",
+        "task_name": "Research and Setup MCP Toolbox Integration",
+        "description": "Research the MCP Toolbox repository, understand its API structure, authentication requirements, and BigQuery integration capabilities. Set up the necessary dependencies and configuration for integration with the forge system.",
+        "acceptance_criteria": [
+          "MCP Toolbox repository is thoroughly analyzed and documented",
+          "Integration requirements and dependencies are identified",
+          "Authentication flow for BigQuery access is understood",
+          "Configuration files are prepared for MCP Toolbox connection",
+          "Initial project structure is set up for integration"
+        ],
+        "dependencies": [],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "package.json",
+          "src/config/mcp-toolbox.ts",
+          "docs/mcp-toolbox-integration.md"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [
+          "Verify MCP Toolbox API connectivity",
+          "Test authentication flow",
+          "Validate configuration setup"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "rssXT5": {
+        "task_id": "rssXT5",
+        "task_name": "Implement MCP Toolbox Client Service",
+        "description": "Create a service layer to handle communication with the MCP Toolbox API, including connection management, authentication, and basic query execution capabilities.",
+        "acceptance_criteria": [
+          "MCP client service can establish connection to MCP Toolbox",
+          "Authentication with BigQuery is properly handled",
+          "Basic query execution through MCP is functional",
+          "Error handling and retry logic is implemented",
+          "Connection pooling and resource management is in place"
+        ],
+        "dependencies": [
+          "Gbe2f6"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/services/mcp-client.ts",
+          "src/types/mcp-types.ts",
+          "src/utils/connection-pool.ts"
+        ],
+        "function_signatures": [
+          "export class McpClient { constructor(config: McpConfig) }",
+          "async connect(): Promise<void>",
+          "async executeQuery(query: string): Promise<QueryResult>",
+          "async disconnect(): Promise<void>"
+        ],
+        "testing_requirements": [
+          "Unit tests for MCP client service",
+          "Integration tests with MCP Toolbox",
+          "Error handling and edge case tests",
+          "Connection management tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "29p68K": {
+        "task_id": "29p68K",
+        "task_name": "Create Natural Language Query Parser",
+        "description": "Implement a natural language processing component that can parse plain English instructions and convert them into structured query parameters for BigQuery operations via Claude Code.",
+        "acceptance_criteria": [
+          "Natural language instructions are parsed into structured query objects",
+          "Common query patterns are recognized and handled",
+          "Query validation and error checking is implemented",
+          "Support for complex queries with joins, aggregations, and filters",
+          "Integration with Claude Code for query generation"
+        ],
+        "dependencies": [
+          "rssXT5"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/services/query-parser.ts",
+          "src/types/query-types.ts",
+          "src/utils/nlp-helpers.ts"
+        ],
+        "function_signatures": [
+          "export interface ParsedQuery { intent: string; entities: Entity[]; parameters: QueryParams }",
+          "async parseNaturalLanguage(input: string): Promise<ParsedQuery>",
+          "validateQuery(query: ParsedQuery): ValidationResult"
+        ],
+        "testing_requirements": [
+          "Unit tests for query parsing logic",
+          "Test cases for various natural language patterns",
+          "Validation tests for generated queries",
+          "Integration tests with Claude Code"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "Ug0XqK": {
+        "task_id": "Ug0XqK",
+        "task_name": "Implement BigQuery Result Processing Engine",
+        "description": "Create a robust result processing engine that can handle BigQuery query results in various formats. This should include data transformation, validation, error handling, and preparation for different output formats (CSV, JSON, HTML tables, etc.).",
+        "acceptance_criteria": [
+          "Result processor can handle various BigQuery data types",
+          "Support for pagination and large result sets",
+          "Data validation and error handling implemented",
+          "Memory-efficient processing for large datasets",
+          "Configurable output format transformations"
+        ],
+        "dependencies": [],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/services/result_processor.rs",
+          "src/models/query_result.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "nsk7Rc": {
+        "task_id": "nsk7Rc",
+        "task_name": "Develop Interactive Web Visualization Components",
+        "description": "Create interactive web components for displaying BigQuery results as charts, graphs, and data tables. Implement support for various chart types (bar, line, pie, scatter) with filtering and drill-down capabilities using modern web visualization libraries.",
+        "acceptance_criteria": [
+          "Support for multiple chart types (bar, line, pie, scatter, heatmap)",
+          "Interactive filtering and sorting capabilities",
+          "Responsive design for different screen sizes",
+          "Real-time data updates when query results change",
+          "Export visualization as images (PNG, SVG)",
+          "Configurable color schemes and styling"
+        ],
+        "dependencies": [
+          "Ug0XqK"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "frontend/src/components/DataVisualization.tsx",
+          "frontend/src/services/chartService.ts",
+          "frontend/src/hooks/useVisualization.ts"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "Tb4WPq": {
+        "task_id": "Tb4WPq",
+        "task_name": "Create CSV Export and Download System",
+        "description": "Implement a system that converts BigQuery results into downloadable CSV files with proper formatting, headers, and data type handling. Include support for streaming large datasets and customizable CSV formatting options.",
+        "acceptance_criteria": [
+          "CSV export handles all BigQuery data types correctly",
+          "Support for streaming large result sets to CSV",
+          "Customizable CSV formatting (delimiters, headers, encoding)",
+          "Proper file download mechanism through web interface",
+          "Progress indicators for large exports"
+        ],
+        "dependencies": [
+          "Ug0XqK"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/services/csv_exporter.rs",
+          "src/handlers/download_handler.rs"
+        ],
+        "function_signatures": [],
+        "testing_requirements": [],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "M43bxF": {
+        "task_id": "M43bxF",
+        "task_name": "Implement Query History and Management System",
+        "description": "Create a system to track, store, and manage user query history with BigQuery operations. Include features like query bookmarking, sharing, categorization, and performance metrics tracking.",
+        "acceptance_criteria": [
+          "Query history is stored persistently with timestamps",
+          "Users can bookmark frequently used queries",
+          "Query sharing functionality allows team collaboration",
+          "Query categorization system for organization",
+          "Performance metrics tracking for query optimization",
+          "Search and filter capabilities for query history",
+          "Query execution statistics and analytics",
+          "Export/import functionality for query collections"
+        ],
+        "dependencies": [
+          "rssXT5",
+          "Ug0XqK"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/services/query-history.ts",
+          "src/models/query-history.rs",
+          "frontend/src/components/QueryHistory.tsx",
+          "src/storage/query-storage.rs",
+          "frontend/src/components/QueryBookmarks.tsx"
+        ],
+        "function_signatures": [
+          "async saveQueryToHistory(query: string, metadata: QueryMetadata): Promise<string>",
+          "async getQueryHistory(filters: QueryFilters): Promise<QueryHistoryItem[]>",
+          "async bookmarkQuery(queryId: string, name: string): Promise<void>",
+          "async shareQuery(queryId: string, users: string[]): Promise<ShareLink>",
+          "async categorizeQuery(queryId: string, category: string): Promise<void>"
+        ],
+        "testing_requirements": [
+          "Unit tests for query storage and retrieval",
+          "Integration tests for bookmarking system",
+          "Performance tests for large query histories",
+          "Tests for sharing and collaboration features",
+          "Database migration tests for query history schema"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "GdEu0V": {
+        "task_id": "GdEu0V",
+        "task_name": "Build User-Friendly Task Creation Interface",
+        "description": "Create an intuitive web interface that allows users to forge tasks for BigQuery operations using natural language.",
+        "acceptance_criteria": [
+          "Natural language input field with real-time validation",
+          "Interactive query builder with drag-and-drop components",
+          "Template library for common BigQuery operations",
+          "Step-by-step guided workflow for beginners",
+          "Task execution progress tracking with visual indicators",
+          "Integrated help system and documentation",
+          "Auto-completion for BigQuery functions and syntax",
+          "Preview mode showing generated SQL before execution"
+        ],
+        "dependencies": [
+          "29p68K",
+          "lvMoiR",
+          "M43bxF"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "frontend/src/components/TaskCreator.tsx",
+          "frontend/src/components/QueryBuilder.tsx",
+          "frontend/src/components/NaturalLanguageInput.tsx",
+          "frontend/src/styles/task-creator.css",
+          "frontend/src/hooks/useQueryBuilder.ts",
+          "frontend/src/utils/queryTemplates.ts"
+        ],
+        "function_signatures": [
+          "interface TaskCreatorProps { onTaskCreate: (task: Task) => void }",
+          "const useQueryBuilder: () => QueryBuilderHook",
+          "const parseNaturalLanguage: (input: string) => ParsedQuery",
+          "const validateQuery: (query: string) => ValidationResult",
+          "const generateQueryPreview: (nlInput: string) => Promise<string>"
+        ],
+        "testing_requirements": [
+          "Component tests for TaskCreator interface",
+          "Integration tests for natural language processing",
+          "User experience tests for guided workflow",
+          "Accessibility tests for interface components",
+          "Cross-browser compatibility tests"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "wkU8Kw": {
+        "task_id": "wkU8Kw",
+        "task_name": "Create Authentication and Security Layer",
+        "description": "Implement secure authentication for BigQuery access with proper credential management.",
+        "acceptance_criteria": [
+          "OAuth 2.0 integration for Google Cloud authentication",
+          "Secure credential storage and management",
+          "Role-based access control for BigQuery resources",
+          "Session management with automatic token refresh",
+          "Audit logging for all authentication events",
+          "Encryption for stored credentials and tokens",
+          "Multi-factor authentication support",
+          "Secure credential rotation and expiration handling"
+        ],
+        "dependencies": [
+          "Gbe2f6",
+          "rssXT5"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "src/auth/oauth-provider.ts",
+          "src/auth/credential-manager.rs",
+          "src/middleware/auth-middleware.ts",
+          "src/security/encryption.rs",
+          "src/models/user-session.rs",
+          "frontend/src/components/AuthenticationFlow.tsx"
+        ],
+        "function_signatures": [
+          "async authenticateWithGoogle(): Promise<AuthResult>",
+          "async refreshAccessToken(refreshToken: string): Promise<TokenResult>",
+          "async validateBigQueryPermissions(credentials: Credentials): Promise<PermissionResult>",
+          "async encryptCredentials(credentials: Credentials): Promise<EncryptedCredentials>",
+          "async auditAuthEvent(event: AuthEvent): Promise<void>"
+        ],
+        "testing_requirements": [
+          "Unit tests for OAuth flow implementation",
+          "Security tests for credential encryption",
+          "Integration tests with Google Cloud APIs",
+          "Tests for role-based access control",
+          "Penetration testing for authentication vulnerabilities"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "QRGkBV": {
+        "task_id": "QRGkBV",
+        "task_name": "Implement Error Handling and Retry Logic",
+        "description": "Create robust error handling for BigQuery operations with intelligent retry mechanisms.",
+        "acceptance_criteria": [
+          "Comprehensive error classification and handling",
+          "Exponential backoff retry strategy for transient errors",
+          "Circuit breaker pattern for failing services",
+          "User-friendly error messages and recovery suggestions",
+          "Detailed error logging and monitoring",
+          "Timeout handling for long-running queries",
+          "Rate limiting compliance with BigQuery quotas",
+          "Graceful degradation for partial service failures"
+        ],
+        "dependencies": [
+          "rssXT5",
+          "wkU8Kw"
+        ],
+        "estimated_effort": "medium",
+        "files_affected": [
+          "src/error-handling/bigquery-errors.ts",
+          "src/retry/retry-strategy.rs",
+          "src/monitoring/error-monitor.ts",
+          "src/utils/circuit-breaker.ts",
+          "src/middleware/error-middleware.ts"
+        ],
+        "function_signatures": [
+          "async retryWithBackoff<T>(operation: () => Promise<T>, config: RetryConfig): Promise<T>",
+          "classifyBigQueryError(error: Error): ErrorType",
+          "async handleQueryTimeout(queryJob: QueryJob): Promise<QueryResult>",
+          "async checkRateLimits(): Promise<RateLimitStatus>",
+          "const circuitBreaker: CircuitBreaker"
+        ],
+        "testing_requirements": [
+          "Unit tests for retry logic and backoff strategies",
+          "Integration tests with simulated BigQuery errors",
+          "Load tests for rate limiting compliance",
+          "Tests for circuit breaker functionality",
+          "Error recovery scenario testing"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      },
+      "Tp8agJ": {
+        "task_id": "Tp8agJ",
+        "task_name": "Add Comprehensive Testing Suite",
+        "description": "Create unit tests, integration tests, and end-to-end tests for all MCP Toolbox functionality.",
+        "acceptance_criteria": [
+          "Unit test coverage above 90% for all modules",
+          "Integration tests for MCP Toolbox API interactions",
+          "End-to-end tests for complete user workflows",
+          "Performance benchmarks for query execution",
+          "Mock implementations for external services",
+          "Test data factories and fixtures",
+          "Continuous integration pipeline setup",
+          "Test reporting and coverage analysis"
+        ],
+        "dependencies": [
+          "M43bxF",
+          "GdEu0V",
+          "wkU8Kw",
+          "QRGkBV"
+        ],
+        "estimated_effort": "large",
+        "files_affected": [
+          "tests/unit/query-history.test.ts",
+          "tests/integration/mcp-toolbox.test.ts",
+          "tests/e2e/user-workflows.test.ts",
+          "tests/performance/query-benchmarks.test.ts",
+          "tests/mocks/bigquery-mock.ts",
+          "tests/fixtures/test-data.ts",
+          ".github/workflows/ci.yml"
+        ],
+        "function_signatures": [
+          "describe('Query History System', () => void)",
+          "describe('MCP Toolbox Integration', () => void)",
+          "describe('Authentication Flow', () => void)",
+          "const mockBigQueryService: MockBigQueryService",
+          "const testDataFactory: TestDataFactory"
+        ],
+        "testing_requirements": [
+          "Comprehensive test suite execution",
+          "Code coverage reporting",
+          "Performance benchmark validation",
+          "Test environment setup automation",
+          "Mock service validation"
+        ],
+        "log": "",
+        "commit_id": "",
+        "status": "TODO"
+      }
+    }
   }
 ]
