@@ -3,9 +3,12 @@
 ## Project Overview
 
 ### Purpose
-Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that enables deep integration between the visual development platform and Claude Code, transforming task execution from basic CLI invocation to intelligent, context-aware development assistance.
+
+Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that enables deep integration between the visual development platform and Claude Code, transforming task execution from basic CLI invocation to intelligent,
+context-aware development assistance.
 
 ### Goals
+
 - Replace basic HTTP API with full MCP protocol implementation
 - Enable bidirectional communication between Forge and Claude Code during task execution
 - Provide rich project context and intelligent code generation capabilities
@@ -13,6 +16,7 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - Establish quality assurance and performance monitoring integration
 
 ### Success Metrics
+
 - 90% reduction in task execution errors due to improved context awareness
 - 50% improvement in code generation accuracy
 - Real-time task progress tracking with <1 second latency
@@ -22,12 +26,14 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ## Technical Architecture
 
 ### Current State
+
 - Forge uses external Claude CLI process invocation via `task_executor.rs:157`
 - Basic HTTP endpoints in `claude_mcp_server.rs` for chat functionality
 - No context sharing during task execution
 - Limited to single-session development
 
 ### Target Architecture
+
 ```
 ┌─────────────────┐    MCP Protocol    ┌──────────────────┐
 │   Claude Code   │ ◄─────────────────► │   Forge MCP      │
@@ -48,19 +54,23 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ### Phase 1: Core MCP Integration (4 weeks)
 
 #### Epic 1.1: MCP Protocol Implementation
+
 **Objective**: Replace HTTP API with proper MCP server
 
 **User Stories**:
+
 - As a developer, I want Claude Code to connect to Forge via MCP protocol for better integration
 - As a developer, I want to maintain backward compatibility with existing HTTP endpoints during transition
 
 **Technical Tasks**:
 
 ##### Task 1.1.1: MCP Server Infrastructure
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 1 week
 **Dependencies**: None
 **Acceptance Criteria**:
+
 - [ ] Create new `src/mcp/mod.rs` module structure
 - [ ] Implement MCP protocol handlers (JSON-RPC over WebSocket/HTTP)
 - [ ] Add MCP dependency to `Cargo.toml` (e.g., `mcp-rs` or custom implementation)
@@ -70,6 +80,7 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Create unit tests for MCP protocol implementation
 
 **Files to Create/Modify**:
+
 - `src/mcp/mod.rs` (new)
 - `src/mcp/server.rs` (new)
 - `src/mcp/tools.rs` (new)
@@ -78,10 +89,12 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - `Cargo.toml` (modify)
 
 ##### Task 1.1.2: MCP Tool Registration System
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 3 days
 **Dependencies**: Task 1.1.1
 **Acceptance Criteria**:
+
 - [ ] Implement tool registration and discovery mechanism
 - [ ] Create tool metadata structure (name, description, parameters, schema)
 - [ ] Add tool validation and parameter checking
@@ -90,18 +103,22 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Add support for async tool execution
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools.rs` (modify)
 - `src/mcp/registry.rs` (new)
 - `src/mcp/types.rs` (new)
 
 #### Epic 1.2: Project Context Tools
+
 **Objective**: Provide Claude Code with comprehensive project understanding
 
 ##### Task 1.2.1: Project Information Tools
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 1.1.2
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_get_project_info` tool
 - [ ] Implement `forge_get_project_structure` tool
 - [ ] Implement `forge_get_configuration` tool
@@ -141,14 +158,17 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/project.rs` (new)
 - `src/project_config.rs` (modify - add MCP integration)
 
 ##### Task 1.2.2: Block Management Tools
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 1.1.2
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_get_blocks` tool with filtering and search
 - [ ] Implement `forge_get_block_details` tool with comprehensive block info
 - [ ] Implement `forge_get_block_dependencies` tool with dependency graph
@@ -197,18 +217,22 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/blocks.rs` (new)
 - `src/block_config.rs` (modify - add MCP integration)
 - `src/models.rs` (modify - add serialization for MCP responses)
 
 #### Epic 1.3: Task Management Integration
+
 **Objective**: Enable intelligent task creation, management, and execution
 
 ##### Task 1.3.1: Task Query and Management Tools
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 1.2.2
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_get_tasks` tool with advanced filtering
 - [ ] Implement `forge_create_task` tool with dependency resolution
 - [ ] Implement `forge_update_task` tool with status management
@@ -259,15 +283,18 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/tasks.rs` (new)
 - `src/task_executor.rs` (modify - add MCP integration)
 - `src/models.rs` (modify - extend Task model)
 
 ##### Task 1.3.2: Task Execution Context Tools
+
 **Priority**: P1 (High)
 **Estimated Effort**: 5 days
 **Dependencies**: Task 1.3.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_get_execution_context` tool
 - [ ] Implement `forge_prepare_task_environment` tool
 - [ ] Add file context analysis for task execution
@@ -276,19 +303,23 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Add environment variable and configuration context
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/execution.rs` (new)
 - `src/task_executor.rs` (modify - add context preparation)
 
 ### Phase 2: Advanced Integration (4 weeks)
 
 #### Epic 2.1: Real-time Task Execution
+
 **Objective**: Enable streaming task execution with real-time progress updates
 
 ##### Task 2.1.1: Task Execution Streaming
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1.5 weeks
 **Dependencies**: Task 1.3.2
 **Acceptance Criteria**:
+
 - [ ] Replace CLI invocation with MCP-based task execution
 - [ ] Implement `forge_execute_task_stream` tool
 - [ ] Add real-time progress reporting via MCP notifications
@@ -324,15 +355,18 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/execution_stream.rs` (new)
 - `src/task_executor.rs` (major refactor - replace CLI calls)
 - `src/mcp/notifications.rs` (new)
 
 ##### Task 2.1.2: Progress Tracking and Notifications
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 2.1.1
 **Acceptance Criteria**:
+
 - [ ] Implement MCP notification system for progress updates
 - [ ] Add execution stage tracking (planning, coding, testing, etc.)
 - [ ] Create progress estimation and ETA calculation
@@ -341,18 +375,22 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Add performance metrics collection
 
 **Files to Create/Modify**:
+
 - `src/mcp/notifications.rs` (modify)
 - `src/mcp/progress.rs` (new)
 - `src/task_executor.rs` (modify - add progress tracking)
 
 #### Epic 2.2: Intelligent Code Generation
+
 **Objective**: Provide AI-powered code generation based on block architecture
 
 ##### Task 2.2.1: Code Template Generation
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1.5 weeks
 **Dependencies**: Task 2.1.2
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_generate_code_template` tool
 - [ ] Add support for multiple programming languages (Rust, JS, Python, Go)
 - [ ] Create template system based on block types and patterns
@@ -391,16 +429,19 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/codegen.rs` (new)
 - `src/mcp/templates/` (new directory)
 - `src/mcp/templates/rust.rs` (new)
 - `src/mcp/templates/javascript.rs` (new)
 
 ##### Task 2.2.2: Code Analysis and Suggestions
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 2.2.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_analyze_code_patterns` tool
 - [ ] Implement `forge_suggest_refactoring` tool
 - [ ] Add code quality analysis and recommendations
@@ -409,17 +450,21 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Support for custom analysis rules
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/analysis.rs` (new)
 - `src/mcp/analyzers/` (new directory)
 
 #### Epic 2.3: Git Integration Enhancement
+
 **Objective**: Intelligent Git operations with context awareness
 
 ##### Task 2.3.1: Smart Git Operations
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 2.1.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_create_smart_branch` tool
 - [ ] Implement `forge_generate_commit_message` tool
 - [ ] Implement `forge_analyze_diff` tool
@@ -470,19 +515,23 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/git.rs` (new)
 - `src/git_handlers.rs` (modify - add MCP integration)
 
 ### Phase 3: Collaboration & Quality Assurance (3 weeks)
 
 #### Epic 3.1: Multi-Session Support
+
 **Objective**: Enable multiple Claude instances and developers to work simultaneously
 
 ##### Task 3.1.1: Session Management
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1.5 weeks
 **Dependencies**: Task 2.1.2
 **Acceptance Criteria**:
+
 - [ ] Implement session tracking and management
 - [ ] Add conflict detection and resolution
 - [ ] Create session-aware tool execution
@@ -491,15 +540,18 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Support for session persistence and recovery
 
 **Files to Create/Modify**:
+
 - `src/mcp/session.rs` (new)
 - `src/mcp/locks.rs` (new)
 - `src/mcp/server.rs` (modify - add session support)
 
 ##### Task 3.1.2: Collaboration Tools
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 3.1.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_share_context` tool
 - [ ] Implement `forge_get_active_sessions` tool
 - [ ] Add real-time collaboration notifications
@@ -508,17 +560,21 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Support for team-based task assignment
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/collaboration.rs` (new)
 - `src/mcp/workspace.rs` (new)
 
 #### Epic 3.2: Quality Assurance Integration
+
 **Objective**: Automated testing, code review, and quality monitoring
 
 ##### Task 3.2.1: Testing Integration
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 2.2.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_run_tests` tool with context awareness
 - [ ] Implement `forge_generate_tests` tool
 - [ ] Add test coverage analysis and reporting
@@ -555,14 +611,17 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ```
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/testing.rs` (new)
 - `src/mcp/quality/` (new directory)
 
 ##### Task 3.2.2: Code Quality and Security
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 0.5 weeks
 **Dependencies**: Task 3.2.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_check_code_quality` tool
 - [ ] Implement `forge_security_scan` tool
 - [ ] Add linting integration with multiple tools
@@ -571,19 +630,23 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Support for custom quality rules
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/quality.rs` (new)
 - `src/mcp/security/` (new directory)
 
 ### Phase 4: Performance & Monitoring (2 weeks)
 
 #### Epic 4.1: Performance Monitoring
+
 **Objective**: Real-time performance tracking and optimization
 
 ##### Task 4.1.1: Performance Metrics
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 3.2.2
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_get_performance_metrics` tool
 - [ ] Add real-time performance monitoring
 - [ ] Create performance baseline establishment
@@ -592,14 +655,17 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Support for custom performance metrics
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/performance.rs` (new)
 - `src/mcp/monitoring/` (new directory)
 
 ##### Task 4.1.2: Optimization Suggestions
+
 **Priority**: P3 (Low)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 4.1.1
 **Acceptance Criteria**:
+
 - [ ] Implement `forge_suggest_optimizations` tool
 - [ ] Add AI-powered performance analysis
 - [ ] Create optimization recommendation engine
@@ -608,24 +674,28 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 - [ ] Integration with profiling tools
 
 **Files to Create/Modify**:
+
 - `src/mcp/tools/optimization.rs` (new)
 - `src/mcp/ai/performance.rs` (new)
 
 ## Testing Strategy
 
 ### Unit Testing Requirements
+
 - [ ] All MCP tools must have comprehensive unit tests (>90% coverage)
 - [ ] Mock external dependencies (Git, filesystem, databases)
 - [ ] Test error handling and edge cases
 - [ ] Performance benchmarks for all tools
 
 ### Integration Testing Requirements
+
 - [ ] End-to-end MCP protocol testing
 - [ ] Multi-session concurrent testing
 - [ ] Git integration testing with real repositories
 - [ ] Task execution pipeline validation
 
 ### Performance Testing Requirements
+
 - [ ] Load testing with multiple concurrent MCP connections
 - [ ] Memory usage profiling for long-running sessions
 - [ ] Response time benchmarking for all tools
@@ -634,6 +704,7 @@ Create a comprehensive MCP (Model Context Protocol) server for Forge IDE that en
 ## Configuration Management
 
 ### MCP Server Configuration
+
 ```toml
 # In Cargo.toml
 [dependencies]
@@ -645,6 +716,7 @@ uuid = "1.0"
 ```
 
 ### Environment Variables
+
 ```bash
 # MCP Server Configuration
 FORGE_MCP_HOST=127.0.0.1
@@ -660,6 +732,7 @@ FORGE_MCP_ENABLE_TRACING=true
 ```
 
 ### Tool Configuration
+
 ```json
 {
   "mcp_tools": {
@@ -685,18 +758,21 @@ FORGE_MCP_ENABLE_TRACING=true
 ## Documentation Requirements
 
 ### Technical Documentation
+
 - [ ] MCP Protocol Implementation Guide
 - [ ] Tool Development Guidelines
 - [ ] API Reference Documentation
 - [ ] Architecture Decision Records (ADRs)
 
 ### User Documentation
+
 - [ ] MCP Server Setup Guide
 - [ ] Claude Code Integration Tutorial
 - [ ] Tool Usage Examples
 - [ ] Troubleshooting Guide
 
 ### Developer Documentation
+
 - [ ] Contributing Guidelines
 - [ ] Code Style Guide
 - [ ] Testing Guidelines
@@ -705,36 +781,40 @@ FORGE_MCP_ENABLE_TRACING=true
 ## Risk Assessment & Mitigation
 
 ### Technical Risks
+
 1. **MCP Protocol Complexity**
-   - Risk: Implementing full MCP protocol may be complex
-   - Mitigation: Start with core protocol, iterate on advanced features
+    - Risk: Implementing full MCP protocol may be complex
+    - Mitigation: Start with core protocol, iterate on advanced features
 
 2. **Performance Impact**
-   - Risk: MCP server may impact Forge performance
-   - Mitigation: Implement async operations, connection pooling, caching
+    - Risk: MCP server may impact Forge performance
+    - Mitigation: Implement async operations, connection pooling, caching
 
 3. **Backward Compatibility**
-   - Risk: Breaking existing HTTP API functionality
-   - Mitigation: Maintain dual support during transition period
+    - Risk: Breaking existing HTTP API functionality
+    - Mitigation: Maintain dual support during transition period
 
 ### Project Risks
+
 1. **Scope Creep**
-   - Risk: Adding too many features in initial release
-   - Mitigation: Strict adherence to phased approach
+    - Risk: Adding too many features in initial release
+    - Mitigation: Strict adherence to phased approach
 
 2. **Integration Complexity**
-   - Risk: Deep integration with existing codebase may introduce bugs
-   - Mitigation: Comprehensive testing strategy, feature flags
+    - Risk: Deep integration with existing codebase may introduce bugs
+    - Mitigation: Comprehensive testing strategy, feature flags
 
 ## Success Criteria
 
 ### MVP Success Criteria (Phase 1)
+
 - [ ] Claude Code can connect via MCP protocol
 - [ ] All basic project and block information tools working
 - [ ] Task creation and management through MCP
 - [ ] Zero breaking changes to existing functionality
 
 ### Full Implementation Success Criteria
+
 - [ ] Complete replacement of HTTP API with MCP
 - [ ] Real-time task execution with streaming updates
 - [ ] Multi-session collaboration support
@@ -744,22 +824,24 @@ FORGE_MCP_ENABLE_TRACING=true
 
 ## Timeline Summary
 
-| Phase | Duration | Key Deliverables |
-|-------|----------|-----------------|
-| Phase 1 | 4 weeks | Core MCP integration, project context tools, basic task management |
-| Phase 2 | 4 weeks | Real-time execution, code generation, enhanced Git integration |
-| Phase 3 | 3 weeks | Multi-session support, quality assurance integration |
-| Phase 4 | 2 weeks | Performance monitoring, optimization tools |
-| **Total** | **13 weeks** | **Complete MCP server with all features** |
+| Phase     | Duration     | Key Deliverables                                                   |
+|-----------|--------------|--------------------------------------------------------------------|
+| Phase 1   | 4 weeks      | Core MCP integration, project context tools, basic task management |
+| Phase 2   | 4 weeks      | Real-time execution, code generation, enhanced Git integration     |
+| Phase 3   | 3 weeks      | Multi-session support, quality assurance integration               |
+| Phase 4   | 2 weeks      | Performance monitoring, optimization tools                         |
+| **Total** | **13 weeks** | **Complete MCP server with all features**                          |
 
 ## Resources Required
 
 ### Development Team
+
 - 1 Senior Rust Developer (MCP protocol implementation)
 - 1 Full-stack Developer (integration and testing)
 - 1 DevOps Engineer (deployment and monitoring)
 
 ### Infrastructure
+
 - Development environment with Git repositories
 - Testing infrastructure for multi-session scenarios
 - Performance testing environment

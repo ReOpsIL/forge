@@ -1,6 +1,6 @@
 use crate::profession_prompts::{self, ProfessionCategory};
-use crate::project_config::{ProjectConfig, ProjectConfigManager, test_git_connection};
-use actix_web::{HttpResponse, Responder, web};
+use crate::project_config::{test_git_connection, ProjectConfig, ProjectConfigManager};
+use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 

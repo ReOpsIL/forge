@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
-import { Terminal as XTerm } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
+import React, {useEffect, useRef, useState} from 'react';
+import {Dialog} from 'primereact/dialog';
+import {Button} from 'primereact/button';
+import {Terminal as XTerm} from '@xterm/xterm';
+import {FitAddon} from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import './LogsDialog.css';
 
-const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
+const LogsDialog = ({visible, onHide, taskId, blockId}) => {
     const terminalRef = useRef(null);
     const xtermRef = useRef(null);
     const fitAddonRef = useRef(null);
@@ -64,7 +64,7 @@ const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
 
                 // Open terminal in the container
                 xtermRef.current.open(terminalRef.current);
-                
+
                 // Fit terminal to container
                 setTimeout(() => {
                     if (fitAddonRef.current && xtermRef.current) {
@@ -112,14 +112,14 @@ const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
         try {
             // Use the log task ID format that matches the backend
             const logTaskId = `${blockId}:${taskId}`;
-            
+
             // Use simple fetch for HTTP response
             const response = await fetch(`/api/logs/stream/${logTaskId}`);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const logContent = await response.text();
             setLogs(logContent || 'No logs available for this task.');
             setLoading(false);
@@ -155,7 +155,7 @@ const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
         <Dialog
             header={`Task Logs - ${taskId}`}
             visible={visible}
-            style={{ width: '80vw', height: '70vh' }}
+            style={{width: '80vw', height: '70vh'}}
             onHide={handleDialogHide}
             onShow={handleResize}
             maximizable
@@ -173,15 +173,15 @@ const LogsDialog = ({ visible, onHide, taskId, blockId }) => {
             <div className="logs-dialog-content">
                 {loading && (
                     <div className="logs-loading">
-                        <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem', marginRight: '0.5rem' }}></i>
+                        <i className="pi pi-spin pi-spinner" style={{fontSize: '2rem', marginRight: '0.5rem'}}></i>
                         <span>Loading logs...</span>
                     </div>
                 )}
-                <div 
+                <div
                     className="logs-terminal-container"
                     ref={terminalRef}
-                    style={{ 
-                        width: '100%', 
+                    style={{
+                        width: '100%',
                         height: '500px',
                         display: loading ? 'none' : 'block'
                     }}

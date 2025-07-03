@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use tokio::fs;
 use tracing::debug;
@@ -96,8 +96,8 @@ impl MCPTool for ListDirectoryTool {
                     ("entries_count".to_string(), json!(entries.len())),
                     ("recursive".to_string(), json!(recursive)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 

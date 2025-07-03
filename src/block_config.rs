@@ -1,7 +1,7 @@
 use crate::llm_handler::BlockConnection;
 use crate::models::{Block, Connections, InputConnection, OutputConnection, Task};
 use lazy_static::lazy_static;
-use rand::{Rng, distributions::Alphanumeric};
+use rand::{distributions::Alphanumeric, Rng};
 use serde_json;
 use std::collections::HashMap;
 use std::fs;
@@ -104,12 +104,12 @@ impl BlockConfigManager {
 
         Ok(blocks_lock.clone())
     }
-    
+
     pub fn get_block_by_id(&self, block_id: &str) -> Option<Block> {
         let blocks_lock = match self.blocks.lock() {
             Ok(lock) => lock,
             Err(_) => return None
-            };
+        };
         blocks_lock.iter().find(|b| b.block_id == block_id).cloned()
     }
 

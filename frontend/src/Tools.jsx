@@ -1,7 +1,4 @@
-import { useState, useRef } from 'react'
-import { Dialog } from 'primereact/dialog'
-import { Button } from 'primereact/button'
-import { InputText } from 'primereact/inputtext'
+import {useState} from 'react'
 
 // Custom hook for Git functionality
 export const useTools = (toastRef, projectConfigured) => {

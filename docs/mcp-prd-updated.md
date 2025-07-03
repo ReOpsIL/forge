@@ -1,20 +1,25 @@
 # MCP Server Product Requirements Document (PRD) - UPDATED
+
 ## Complete Implementation Guide with Architecture Analysis
 
 ## Project Overview
 
 ### Purpose
+
 Transform Forge IDE from a basic CLI-driven development platform into a sophisticated MCP-enabled development environment with bidirectional communication, intelligent task orchestration, and comprehensive project awareness.
 
 ### Critical Issues Addressed
+
 Based on architectural analysis, this implementation addresses:
+
 1. **CLI Subprocess Limitations**: Replace brittle Claude CLI invocation with robust MCP communication
-2. **State Management Fragmentation**: Unify multiple app states into cohesive MCP-aware architecture  
+2. **State Management Fragmentation**: Unify multiple app states into cohesive MCP-aware architecture
 3. **Limited Context Sharing**: Enable rich context propagation across tools and sessions
 4. **Output Parsing Brittleness**: Replace text parsing with structured tool responses
 5. **Sequential Task Execution**: Enable parallel and orchestrated task workflows
 
 ### Success Metrics
+
 - **100% elimination** of CLI subprocess errors through structured MCP communication
 - **75% reduction** in task execution time through parallel tool usage
 - **Real-time progress tracking** with <100ms latency for tool status updates
@@ -24,6 +29,7 @@ Based on architectural analysis, this implementation addresses:
 ## Enhanced Technical Architecture
 
 ### Current Architecture Problems (Identified)
+
 ```rust
 // Problem 1: Direct subprocess management (task_executor.rs:157)
 Command::new("claude").arg("--dangerously-skip-permissions")
@@ -39,6 +45,7 @@ if line.contains("🚀 FORGE_TASK_START") { self.has_started = true; }
 ```
 
 ### Target MCP-Enhanced Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Claude Code (MCP Client)                     │
@@ -91,6 +98,7 @@ if line.contains("🚀 FORGE_TASK_START") { self.has_started = true; }
 #### Epic 1.1: MCP Infrastructure & Protocol Implementation
 
 ##### Task 1.1.1: MCP Transport and Protocol Layer
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 2 weeks
 **Dependencies**: None
@@ -98,6 +106,7 @@ if line.contains("🚀 FORGE_TASK_START") { self.has_started = true; }
 **Detailed Implementation**:
 
 **Files to Create**:
+
 ```rust
 // src/mcp/mod.rs - Main MCP module
 pub mod transport;
@@ -140,6 +149,7 @@ pub struct MCPError {
 ```
 
 **Integration with Existing Code**:
+
 ```rust
 // Modify src/main.rs to include MCP server
 use crate::mcp::server::MCPServer;
@@ -156,6 +166,7 @@ let mcp_server = MCPServer::new(
 ```
 
 **Acceptance Criteria**:
+
 - [ ] MCP transport layer supports WebSocket, stdio, and HTTP
 - [ ] JSON-RPC 2.0 message protocol fully implemented
 - [ ] Connection management with automatic reconnection
@@ -165,11 +176,13 @@ let mcp_server = MCPServer::new(
 - [ ] Performance benchmarks (<10ms message round-trip)
 
 ##### Task 1.1.2: Tool Registry and Management System
+
 **Priority**: P0 (Critical)  
 **Estimated Effort**: 1 week
 **Dependencies**: Task 1.1.1
 
 **Detailed Implementation**:
+
 ```rust
 // src/mcp/tools/registry.rs
 pub struct ToolRegistry {
@@ -205,6 +218,7 @@ pub struct ToolResult {
 ```
 
 **Integration Points**:
+
 - **Replace llm_handler.rs fragmentation**: Unify all LLM providers under single tool interface
 - **Enhance task_executor.rs**: Replace direct CLI calls with tool orchestration
 - **Extend project_config.rs**: Add tool-specific configuration management
@@ -212,6 +226,7 @@ pub struct ToolResult {
 #### Epic 1.2: Core Tool Implementation
 
 ##### Task 1.2.1: File System and Project Tools
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 1.5 weeks  
 **Dependencies**: Task 1.1.2
@@ -271,6 +286,7 @@ pub struct ToolResult {
 ```
 
 **Implementation Details**:
+
 ```rust
 // src/mcp/tools/filesystem.rs
 pub struct FileSystemTool {
@@ -316,6 +332,7 @@ impl MCPTool for FileSystemTool {
 ```
 
 ##### Task 1.2.2: Enhanced Block and Task Management Tools
+
 **Priority**: P0 (Critical)
 **Estimated Effort**: 1.5 weeks
 **Dependencies**: Task 1.2.1
@@ -387,6 +404,7 @@ impl MCPTool for FileSystemTool {
 ```
 
 **Integration with Existing Models**:
+
 ```rust
 // Extend src/models.rs with MCP-aware structures
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -437,11 +455,13 @@ pub struct TaskHealthMetrics {
 #### Epic 2.1: Enhanced Task Execution with MCP Tools
 
 ##### Task 2.1.1: MCP-Based Task Execution Engine
+
 **Priority**: P1 (High)
 **Estimated Effort**: 2 weeks
 **Dependencies**: Task 1.2.2
 
 **Complete Replacement of CLI Approach**:
+
 ```rust
 // src/mcp/execution/orchestrator.rs - Replace task_executor.rs CLI calls
 pub struct TaskExecutionOrchestrator {
@@ -505,6 +525,7 @@ impl TaskExecutionOrchestrator {
 ```
 
 **Tool Specifications for Task Execution**:
+
 ```rust
 // Tool: forge_execute_task_orchestrated
 {
@@ -557,11 +578,13 @@ impl TaskExecutionOrchestrator {
 ```
 
 ##### Task 2.1.2: Advanced Git Integration with MCP Tools
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 2.1.1
 
 **Enhanced Git Tool Specifications**:
+
 ```rust
 // Tool: forge_git_smart_branch_management
 {
@@ -618,6 +641,7 @@ impl TaskExecutionOrchestrator {
 ```
 
 **Integration with Existing Git Handlers**:
+
 ```rust
 // Enhance src/tools_handlers with MCP integration
 pub struct MCPGitHandler {
@@ -673,11 +697,13 @@ impl MCPGitHandler {
 #### Epic 2.2: LLM Handler Integration and Code Generation
 
 ##### Task 2.2.1: Unified LLM Provider Integration
+
 **Priority**: P1 (High)  
 **Estimated Effort**: 1 week
 **Dependencies**: Task 2.1.1
 
 **Complete Refactoring of llm_handler.rs**:
+
 ```rust
 // src/mcp/llm/unified_provider.rs - Replace fragmented llm_handler.rs
 pub struct UnifiedLLMProvider {
@@ -751,11 +777,13 @@ impl UnifiedLLMProvider {
 ```
 
 ##### Task 2.2.2: Advanced Code Generation and Analysis Tools
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1 week  
 **Dependencies**: Task 2.2.1
 
 **Comprehensive Code Generation Tools**:
+
 ```rust
 // Tool: forge_generate_code_with_analysis
 {
@@ -837,12 +865,14 @@ impl UnifiedLLMProvider {
 
 #### Epic 3.1: Advanced Session Management and Multi-User Collaboration
 
-##### Task 3.1.1: Sophisticated Session Management  
+##### Task 3.1.1: Sophisticated Session Management
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1.5 weeks
 **Dependencies**: Task 2.2.2
 
 **Session Management Architecture**:
+
 ```rust
 // src/mcp/session/manager.rs
 pub struct SessionManager {
@@ -877,6 +907,7 @@ pub struct SessionContext {
 ```
 
 **Session Management Tools**:
+
 ```rust
 // Tool: forge_session_create_with_context
 {
@@ -941,11 +972,13 @@ pub struct SessionContext {
 ```
 
 ##### Task 3.1.2: Real-time Collaboration Features
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 3.1.1
 
 **Collaboration Tools and Features**:
+
 ```rust
 // Tool: forge_collaboration_share_context
 {
@@ -1018,11 +1051,13 @@ pub struct SessionContext {
 #### Epic 3.2: Comprehensive Quality Assurance and Testing Integration
 
 ##### Task 3.2.1: Advanced Testing Integration
+
 **Priority**: P1 (High)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 3.1.2
 
 **Testing Tools with Framework Detection**:
+
 ```rust
 // Tool: forge_test_comprehensive_execution
 {
@@ -1105,6 +1140,7 @@ pub struct SessionContext {
 ```
 
 **Integration with Existing Testing Infrastructure**:
+
 ```rust
 // Enhance testing capabilities in src/mcp/tools/testing.rs
 pub struct IntelligentTestingTool {
@@ -1152,11 +1188,13 @@ impl MCPTool for IntelligentTestingTool {
 ```
 
 ##### Task 3.2.2: Code Quality and Security Analysis
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 0.5 weeks
 **Dependencies**: Task 3.2.1
 
 **Quality Assurance Tools**:
+
 ```rust
 // Tool: forge_quality_comprehensive_analysis
 {
@@ -1210,11 +1248,13 @@ impl MCPTool for IntelligentTestingTool {
 #### Epic 4.1: Performance Monitoring and Optimization
 
 ##### Task 4.1.1: Performance Metrics and Monitoring
+
 **Priority**: P2 (Medium)
 **Estimated Effort**: 1 week  
 **Dependencies**: Task 3.2.2
 
 **Performance Monitoring Tools**:
+
 ```rust
 // Tool: forge_performance_monitor_comprehensive
 {
@@ -1271,11 +1311,13 @@ impl MCPTool for IntelligentTestingTool {
 ```
 
 ##### Task 4.1.2: Optimization and Resource Management
+
 **Priority**: P3 (Low)
 **Estimated Effort**: 1 week
 **Dependencies**: Task 4.1.1
 
 **Optimization Tools**:
+
 ```rust
 // Tool: forge_optimize_tool_execution
 {
@@ -1313,6 +1355,7 @@ impl MCPTool for IntelligentTestingTool {
 ## Critical Architectural Enhancements
 
 ### Unified State Management Architecture
+
 **Problem Solved**: Current fragmented app states (main.rs:118-135)
 
 ```rust
@@ -1362,6 +1405,7 @@ impl UnifiedStateManager {
 ```
 
 ### Enhanced Error Handling and Recovery
+
 **Problem Solved**: Brittle error handling across components
 
 ```rust
@@ -1401,6 +1445,7 @@ pub trait RecoveryStrategy: Send + Sync {
 ## Configuration Management Enhancements
 
 ### Environment Variables (Updated)
+
 ```bash
 # MCP Server Core Configuration
 FORGE_MCP_HOST=127.0.0.1
@@ -1434,6 +1479,7 @@ FORGE_MCP_MAX_PARALLEL_EXECUTIONS=8
 ```
 
 ### Enhanced Tool Configuration (JSON)
+
 ```json
 {
   "mcp_server": {
@@ -1538,6 +1584,7 @@ parking_lot = "0.12"
 ### Phase-wise Success Criteria
 
 **Phase 1 Success Criteria (Foundation)**:
+
 - [ ] MCP client can connect via all transport methods (WebSocket, stdio, HTTP)
 - [ ] Tool registry automatically discovers and validates all tools
 - [ ] All file system operations execute with proper error handling and permissions
@@ -1545,6 +1592,7 @@ parking_lot = "0.12"
 - [ ] Zero breaking changes to existing HTTP API during transition
 
 **Phase 2 Success Criteria (Advanced Integration)**:
+
 - [ ] Task execution completely replaced with MCP tool orchestration
 - [ ] Parallel tool execution achieves 60% performance improvement over sequential CLI
 - [ ] Git operations provide intelligent conflict prediction and resolution
@@ -1552,12 +1600,14 @@ parking_lot = "0.12"
 - [ ] Code generation tools produce syntactically correct code in 95% of cases
 
 **Phase 3 Success Criteria (Collaboration & QA)**:
+
 - [ ] Multiple Claude instances can collaborate on same project without conflicts
 - [ ] Session state synchronization occurs within 500ms across all connected clients
 - [ ] Testing integration automatically detects and runs tests in 90% of standard frameworks
 - [ ] Code quality analysis provides actionable suggestions with confidence scores
 
 **Phase 4 Success Criteria (Performance & Monitoring)**:
+
 - [ ] Real-time performance monitoring tracks all system metrics with <1% overhead
 - [ ] Optimization suggestions reduce tool execution time by average 25%
 - [ ] Resource management prevents system overload under high concurrency
@@ -1566,18 +1616,21 @@ parking_lot = "0.12"
 ### Comprehensive Testing Strategy
 
 **Unit Testing Requirements**:
+
 - [ ] 95%+ code coverage for all MCP components
 - [ ] Property-based testing for state management transactions
 - [ ] Mock implementations for all external dependencies (Git, filesystem, LLM APIs)
 - [ ] Performance benchmarks for each tool with regression detection
 
 **Integration Testing Requirements**:
+
 - [ ] End-to-end MCP protocol compliance testing with official MCP test suite
 - [ ] Multi-session concurrency testing with up to 10 simultaneous connections
 - [ ] Real repository integration testing with complex Git workflows
 - [ ] Cross-platform compatibility testing (Linux, macOS, Windows)
 
 **Performance Testing Requirements**:
+
 - [ ] Load testing with 100+ concurrent tool executions
 - [ ] Memory leak detection for long-running sessions (24+ hours)
 - [ ] Network partition and recovery testing for distributed sessions
@@ -1588,56 +1641,58 @@ parking_lot = "0.12"
 **Technical Risks & Mitigations**:
 
 1. **MCP Protocol Complexity**
-   - **Risk**: Complex JSON-RPC implementation may introduce bugs
-   - **Mitigation**: Use proven JSON-RPC libraries, comprehensive protocol testing, gradual rollout
+    - **Risk**: Complex JSON-RPC implementation may introduce bugs
+    - **Mitigation**: Use proven JSON-RPC libraries, comprehensive protocol testing, gradual rollout
 
-2. **Performance Degradation**  
-   - **Risk**: MCP overhead may slow down task execution
-   - **Mitigation**: Extensive benchmarking, caching strategies, async optimization
+2. **Performance Degradation**
+    - **Risk**: MCP overhead may slow down task execution
+    - **Mitigation**: Extensive benchmarking, caching strategies, async optimization
 
 3. **State Consistency Issues**
-   - **Risk**: Multi-session collaboration may cause data corruption
-   - **Mitigation**: Transactional state management, conflict detection, automatic rollback
+    - **Risk**: Multi-session collaboration may cause data corruption
+    - **Mitigation**: Transactional state management, conflict detection, automatic rollback
 
 4. **Tool Integration Complexity**
-   - **Risk**: Complex tool interactions may be difficult to debug
-   - **Mitigation**: Comprehensive logging, tool isolation, execution tracing
+    - **Risk**: Complex tool interactions may be difficult to debug
+    - **Mitigation**: Comprehensive logging, tool isolation, execution tracing
 
 **Project Risks & Mitigations**:
 
 1. **Scope Creep**
-   - **Risk**: Adding features beyond MVP requirements
-   - **Mitigation**: Strict phase-based development, regular stakeholder reviews
+    - **Risk**: Adding features beyond MVP requirements
+    - **Mitigation**: Strict phase-based development, regular stakeholder reviews
 
 2. **Integration Complexity**
-   - **Risk**: Deep changes may break existing functionality
-   - **Mitigation**: Feature flags, parallel implementation, extensive regression testing
+    - **Risk**: Deep changes may break existing functionality
+    - **Mitigation**: Feature flags, parallel implementation, extensive regression testing
 
 3. **Resource Constraints**
-   - **Risk**: Implementation may require more time/effort than estimated
-   - **Mitigation**: Phased rollout, MVP-first approach, regular milestone reviews
+    - **Risk**: Implementation may require more time/effort than estimated
+    - **Mitigation**: Phased rollout, MVP-first approach, regular milestone reviews
 
 ## Implementation Timeline (Detailed)
 
-| Week | Phase | Deliverables | Risk Level |
-|------|-------|-------------|------------|
-| 1-2 | 1.1 | MCP transport layer, protocol implementation | High |
-| 3 | 1.2 | Tool registry, basic file system tools | Medium |
-| 4-5 | 1.3 | Block/task management tools, context management | Medium |
-| 6-7 | 2.1 | Task execution engine, parallel orchestration | High |
-| 8 | 2.2 | Git integration, smart operations | Medium |
-| 9-10 | 2.3 | LLM provider unification, code generation | Medium |
-| 11 | 3.1 | Session management, collaboration features | Medium |
-| 12 | 3.2 | Testing integration, quality assurance | Low |
-| 13 | 4.1 | Performance monitoring, optimization | Low |
+| Week | Phase | Deliverables                                    | Risk Level |
+|------|-------|-------------------------------------------------|------------|
+| 1-2  | 1.1   | MCP transport layer, protocol implementation    | High       |
+| 3    | 1.2   | Tool registry, basic file system tools          | Medium     |
+| 4-5  | 1.3   | Block/task management tools, context management | Medium     |
+| 6-7  | 2.1   | Task execution engine, parallel orchestration   | High       |
+| 8    | 2.2   | Git integration, smart operations               | Medium     |
+| 9-10 | 2.3   | LLM provider unification, code generation       | Medium     |
+| 11   | 3.1   | Session management, collaboration features      | Medium     |
+| 12   | 3.2   | Testing integration, quality assurance          | Low        |
+| 13   | 4.1   | Performance monitoring, optimization            | Low        |
 
 **Total Duration**: 13 weeks
 **Critical Path**: MCP infrastructure → Task execution → Session management
-**Key Milestones**: 
+**Key Milestones**:
+
 - Week 5: MVP MCP functionality
 - Week 10: Feature complete
 - Week 13: Production ready
 
 ---
 
-*This comprehensive PRD addresses all identified architectural gaps and provides a complete roadmap for transforming Forge into a sophisticated MCP-enabled development platform. Implementation should follow the phased approach with continuous testing and validation at each stage.*
+*This comprehensive PRD addresses all identified architectural gaps and provides a complete roadmap for transforming Forge into a sophisticated MCP-enabled development platform. Implementation should follow the phased approach with
+continuous testing and validation at each stage.*

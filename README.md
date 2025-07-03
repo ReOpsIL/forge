@@ -4,33 +4,39 @@ A Visual Software Architecture & Modules-Driven Development Platform with LLM-Po
 
 ## Overview
 
-Forge IDE is a revolutionary development platform that visualizes software as an interconnected graph of intelligent modules. Developers can architect systems through high-level specifications and task definitions rather than writing code directly. The integrated LLM backend translates architectural intent into functioning code while maintaining perfect awareness of inter-module relationships and data flows.
+Forge IDE is a revolutionary development platform that visualizes software as an interconnected graph of intelligent modules. Developers can architect systems through high-level specifications and task definitions rather than writing code
+directly. The integrated LLM backend translates architectural intent into functioning code while maintaining perfect awareness of inter-module relationships and data flows.
 
 ## Features
 
 ### Block-Based Architecture
+
 - Software modules represented as blocks with inputs, outputs, and connections
 - JSON-based configuration for storing block definitions
 - Dynamic loading and management of block configurations
 
 ### Visual Interface
+
 - Card-based view for detailed block information
 - Interactive flow diagram for visualizing block connections using ReactFlow
 - Ability to edit block descriptions and manage todo items
 - Built with Vite, React, and styled with PrimeReact components
 
 ### Backend API
+
 - RESTful API for CRUD operations on blocks
 - Support for adding and removing todo items
 - Sample configuration generation
 
 ### LLM Integration
+
 - Multiple LLM providers supported (OpenRouter, Gemini, Anthropic)
 - Auto-completion and enhancement of block descriptions
 - Automatic task generation from block descriptions
 - Processing markdown specifications to generate blocks
 
 ### Git Integration
+
 - Branch creation and management
 - Commit, merge, push, and pull operations
 - Task execution with Git integration
@@ -38,6 +44,7 @@ Forge IDE is a revolutionary development platform that visualizes software as an
 - Build handling
 
 ### Task Management
+
 - Task execution functionality
 - Task status tracking
 - Task logs and commit tracking
@@ -95,23 +102,23 @@ npm run preview
 ## Project Structure
 
 - `frontend/`: Contains the React application
-  - `src/`: Source code
-    - `App.jsx`: Main application component with the top menu
-    - `main.jsx`: Entry point for the React application
-    - `index.css`: Global styles
-    - `App.css`: Styles for the App component
-  - `public/`: Static assets
-  - `index.html`: HTML template
-  - `vite.config.js`: Vite configuration
-  - `package.json`: Frontend dependencies and scripts
+    - `src/`: Source code
+        - `App.jsx`: Main application component with the top menu
+        - `main.jsx`: Entry point for the React application
+        - `index.css`: Global styles
+        - `App.css`: Styles for the App component
+    - `public/`: Static assets
+    - `index.html`: HTML template
+    - `vite.config.js`: Vite configuration
+    - `package.json`: Frontend dependencies and scripts
 - `src/`: Contains the Rust backend
-  - `main.rs`: Entry point for the Rust server
-  - `models.rs`: Data models for blocks
-  - `block_config.rs`: Block configuration management
-  - `block_handlers.rs`: API handlers for block operations
-  - `lib.rs`: Library exports for examples
+    - `main.rs`: Entry point for the Rust server
+    - `models.rs`: Data models for blocks
+    - `block_config.rs`: Block configuration management
+    - `block_handlers.rs`: API handlers for block operations
+    - `lib.rs`: Library exports for examples
 - `examples/`: Contains example Rust code
-  - `generate_config.rs`: Example to generate a new blocks_config.json file
+    - `generate_config.rs`: Example to generate a new blocks_config.json file
 - `blocks_config.json`: Configuration file for blocks
 
 ## Backend Development
@@ -149,26 +156,28 @@ Both methods will generate a new blocks_config.json file with 10 random blocks.
 
 The backend provides the following RESTful API endpoints:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/blocks | Get all blocks |
-| POST | /api/blocks | Add a new block |
-| PUT | /api/blocks | Update an existing block |
-| DELETE | /api/blocks/{name} | Delete a block by name |
-| POST | /api/blocks/{name}/todo | Add a todo item to a block |
-| DELETE | /api/blocks/{name}/todo/{index} | Remove a todo item from a block |
-| POST | /api/generate-sample | Generate a new sample configuration |
+| Method | Endpoint                        | Description                         |
+|--------|---------------------------------|-------------------------------------|
+| GET    | /api/blocks                     | Get all blocks                      |
+| POST   | /api/blocks                     | Add a new block                     |
+| PUT    | /api/blocks                     | Update an existing block            |
+| DELETE | /api/blocks/{name}              | Delete a block by name              |
+| POST   | /api/blocks/{name}/todo         | Add a todo item to a block          |
+| DELETE | /api/blocks/{name}/todo/{index} | Remove a todo item from a block     |
+| POST   | /api/generate-sample            | Generate a new sample configuration |
 
 #### Example API Usage
 
 ##### Block Management
 
 Get all blocks:
+
 ```bash
 curl -X GET http://localhost:8080/api/blocks
 ```
 
 Add a new block:
+
 ```bash
 curl -X POST http://localhost:8080/api/blocks \
   -H "Content-Type: application/json" \
@@ -186,6 +195,7 @@ curl -X POST http://localhost:8080/api/blocks \
 ```
 
 Update a block:
+
 ```bash
 curl -X PUT http://localhost:8080/api/blocks \
   -H "Content-Type: application/json" \
@@ -203,11 +213,13 @@ curl -X PUT http://localhost:8080/api/blocks \
 ```
 
 Delete a block:
+
 ```bash
 curl -X DELETE http://localhost:8080/api/blocks/BlockName
 ```
 
 Add a todo item to a block:
+
 ```bash
 curl -X POST http://localhost:8080/api/blocks/BlockName/todo \
   -H "Content-Type: application/json" \
@@ -215,11 +227,13 @@ curl -X POST http://localhost:8080/api/blocks/BlockName/todo \
 ```
 
 Remove a todo item from a block:
+
 ```bash
 curl -X DELETE http://localhost:8080/api/blocks/BlockName/todo/0
 ```
 
 Generate a new sample configuration:
+
 ```bash
 curl -X POST http://localhost:8080/api/generate-sample
 ```
@@ -227,6 +241,7 @@ curl -X POST http://localhost:8080/api/generate-sample
 ##### LLM Integration
 
 Enhance a block's description:
+
 ```bash
 curl -X PUT http://localhost:8080/api/blocks/BlockName/enhance \
   -H "Content-Type: application/json" \
@@ -234,6 +249,7 @@ curl -X PUT http://localhost:8080/api/blocks/BlockName/enhance \
 ```
 
 Generate tasks for a block:
+
 ```bash
 curl -X PUT http://localhost:8080/api/blocks/BlockName/generate-tasks \
   -H "Content-Type: application/json" \
@@ -241,6 +257,7 @@ curl -X PUT http://localhost:8080/api/blocks/BlockName/generate-tasks \
 ```
 
 Auto-complete a partial description:
+
 ```bash
 curl -X POST http://localhost:8080/api/blocks/auto-complete \
   -H "Content-Type: application/json" \
@@ -250,6 +267,7 @@ curl -X POST http://localhost:8080/api/blocks/auto-complete \
 ```
 
 Process markdown specifications:
+
 ```bash
 curl -X POST http://localhost:8080/api/blocks/process-markdown \
   -H "Content-Type: application/json" \
@@ -259,6 +277,7 @@ curl -X POST http://localhost:8080/api/blocks/process-markdown \
 ```
 
 Execute a task:
+
 ```bash
 curl -X POST http://localhost:8080/api/blocks/execute-task \
   -H "Content-Type: application/json" \
@@ -271,11 +290,13 @@ curl -X POST http://localhost:8080/api/blocks/execute-task \
 ##### Project Configuration
 
 Get project configuration:
+
 ```bash
 curl -X GET http://localhost:8080/api/project
 ```
 
 Update project configuration:
+
 ```bash
 curl -X PUT http://localhost:8080/api/project \
   -H "Content-Type: application/json" \
@@ -288,6 +309,7 @@ curl -X PUT http://localhost:8080/api/project \
 ```
 
 Test Git connection:
+
 ```bash
 curl -X POST http://localhost:8080/api/project/test-git-connection \
   -H "Content-Type: application/json" \
@@ -297,6 +319,7 @@ curl -X POST http://localhost:8080/api/project/test-git-connection \
 ##### Git Integration
 
 Create a new branch:
+
 ```bash
 curl -X POST http://localhost:8080/api/git/branch \
   -H "Content-Type: application/json" \
@@ -306,6 +329,7 @@ curl -X POST http://localhost:8080/api/git/branch \
 ```
 
 Commit changes:
+
 ```bash
 curl -X POST http://localhost:8080/api/git/commit \
   -H "Content-Type: application/json" \
@@ -315,6 +339,7 @@ curl -X POST http://localhost:8080/api/git/commit \
 ```
 
 Merge a branch:
+
 ```bash
 curl -X POST http://localhost:8080/api/git/merge \
   -H "Content-Type: application/json" \
@@ -325,6 +350,7 @@ curl -X POST http://localhost:8080/api/git/merge \
 ```
 
 Push changes:
+
 ```bash
 curl -X POST http://localhost:8080/api/git/push \
   -H "Content-Type: application/json" \
@@ -332,6 +358,7 @@ curl -X POST http://localhost:8080/api/git/push \
 ```
 
 Pull changes:
+
 ```bash
 curl -X POST http://localhost:8080/api/git/pull \
   -H "Content-Type: application/json" \
@@ -339,6 +366,7 @@ curl -X POST http://localhost:8080/api/git/pull \
 ```
 
 Execute a task with Git integration:
+
 ```bash
 curl -X POST http://localhost:8080/api/git/execute-task \
   -H "Content-Type: application/json" \
@@ -469,17 +497,17 @@ The main application component that renders the top menu and manages the active 
 
 ```jsx
 function App() {
-  const [activeView, setActiveView] = useState('home')
+    const [activeView, setActiveView] = useState('home')
 
-  // Menu items: Blocks, Flow, Help, Home
-  // ...
+    // Menu items: Blocks, Flow, Help, Home
+    // ...
 
-  return (
-    <div className="app-container">
-      <Menubar model={items} />
-      {renderContent()}
-    </div>
-  )
+    return (
+        <div className="app-container">
+            <Menubar model={items}/>
+            {renderContent()}
+        </div>
+    )
 }
 ```
 

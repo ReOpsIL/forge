@@ -1,6 +1,6 @@
 use crate::mcp::session::MAX_MCP_SESSIONS;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 /// MCP Server orchestrator - coordinates all MCP components
 ///
 /// This module provides the main MCP server that orchestrates transport layers,
@@ -9,30 +9,30 @@ use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use tokio::sync::{Mutex, RwLock, mpsc};
+use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio::time::interval;
 use tracing::{debug, error, info, warn};
 
 use crate::mcp::{
-    MCP_PROTOCOL_VERSION, SERVER_NAME, SERVER_VERSION,
-    context::{ContextManager, ContextStore},
-    errors::{MCPError, MCPResult, ServerError},
-    protocol::{
+    context::{ContextManager, ContextStore}, errors::{MCPError, MCPResult, ServerError}, protocol::{
         ClientCapabilities, InitializeParams, InitializeResult, MCPMessage, MCPRequest,
         MCPResponse, ServerCapabilities, ServerInfo, ToolsCapability,
     },
     session::{ClientInfo, SessionCleanupService, SessionId, SessionManager},
     state::{StateConfig, UnifiedStateManager},
     tools::{
-        ExecutionContext, MCPTool, ToolError, ToolRegistry, ToolResult,
-        blocks::{CreateBlockTool, ListBlocksTool, UpdateBlockTool},
-        filesystem::{
+        blocks::{CreateBlockTool, ListBlocksTool, UpdateBlockTool}, filesystem::{
             create_directory::CreateDirectoryTool, delete::DeleteTool,
             list_directory::ListDirectoryTool, read_file::ReadFileTool, write_file::WriteFileTool,
-        },
-        tasks::{CreateTaskTool, ExecTaskTool, UpdateTaskTool},
+        }, tasks::{CreateTaskTool, ExecTaskTool, UpdateTaskTool}, ExecutionContext, MCPTool,
+        ToolError,
+        ToolRegistry,
+        ToolResult,
     },
     transport::{MCPTransport, TransportType},
+    MCP_PROTOCOL_VERSION,
+    SERVER_NAME,
+    SERVER_VERSION,
 };
 
 /// MCP Server configuration

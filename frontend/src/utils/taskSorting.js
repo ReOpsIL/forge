@@ -18,12 +18,12 @@ export const sortTasksStably = (tasks) => {
         if (a.task_id && b.task_id) {
             return a.task_id.localeCompare(b.task_id);
         }
-        
+
         // Fallback to description if task_id is not available
         if (a.description && b.description) {
             return a.description.localeCompare(b.description);
         }
-        
+
         // Final fallback - maintain original order
         return 0;
     });
@@ -45,7 +45,7 @@ export const maintainTaskOrder = (currentTasks, newTasks) => {
     const currentTasksMap = new Map();
     currentTasks.forEach((task, index) => {
         if (task.task_id) {
-            currentTasksMap.set(task.task_id, { ...task, originalIndex: index });
+            currentTasksMap.set(task.task_id, {...task, originalIndex: index});
         }
     });
 
@@ -76,7 +76,7 @@ export const maintainTaskOrder = (currentTasks, newTasks) => {
     // Combine existing tasks (in original order) with new tasks (in stable order)
     return [...existingTasks, ...sortedNewTasks].map(task => {
         // Remove the originalIndex property we added for sorting
-        const { originalIndex, ...cleanTask } = task;
+        const {originalIndex, ...cleanTask} = task;
         return cleanTask;
     });
 };

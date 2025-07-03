@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card } from 'primereact/card';
-import { Button } from 'primereact/button';
-import { Toast } from 'primereact/toast';
-import { TabMenu } from 'primereact/tabmenu';
-import { Editor } from '@monaco-editor/react';
-import { Tooltip } from 'primereact/tooltip';
-import { Dropdown } from 'primereact/dropdown';
+import React, {useEffect, useRef, useState} from 'react';
+import {Card} from 'primereact/card';
+import {Button} from 'primereact/button';
+import {Toast} from 'primereact/toast';
+import {TabMenu} from 'primereact/tabmenu';
+import {Editor} from '@monaco-editor/react';
+import {Tooltip} from 'primereact/tooltip';
+import {Dropdown} from 'primereact/dropdown';
 import './ProjectView.css';
 
-const PromptSettingsView = ({ setActiveView }) => {
+const PromptSettingsView = ({setActiveView}) => {
     const [projectConfig, setProjectConfig] = useState({
         // User-configurable prompts
         selected_profession_id: '',
@@ -37,10 +37,10 @@ const PromptSettingsView = ({ setActiveView }) => {
 
     // Define the prompt types for the tabs
     const promptTabs = [
-        { label: 'Auto Complete', icon: 'pi pi-pencil' },
-        { label: 'Enhance Description', icon: 'pi pi-file-edit' },
-        { label: 'Generate Tasks', icon: 'pi pi-list' },
-        { label: 'Process Specification', icon: 'pi pi-file' }
+        {label: 'Auto Complete', icon: 'pi pi-pencil'},
+        {label: 'Enhance Description', icon: 'pi pi-file-edit'},
+        {label: 'Generate Tasks', icon: 'pi pi-list'},
+        {label: 'Process Specification', icon: 'pi pi-file'}
     ];
 
     useEffect(() => {
@@ -246,7 +246,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".auto-complete-system-help" position="right">
                                     System prompt for auto-completing block descriptions.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 auto-complete-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 auto-complete-system-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -256,7 +256,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.auto_complete_system_prompt}
                                     onChange={(value) => handleInputChange('auto_complete_system_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -271,7 +271,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".auto-complete-user-help" position="right">
                                     User prompt template for auto-completing block descriptions. Use {} as a placeholder for the description.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 auto-complete-user-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 auto-complete-user-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -281,7 +281,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.auto_complete_user_prompt}
                                     onChange={(value) => handleInputChange('auto_complete_user_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -301,7 +301,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".enhance-system-help" position="right">
                                     System prompt for enhancing block descriptions.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 enhance-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 enhance-system-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -311,7 +311,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.enhance_description_system_prompt}
                                     onChange={(value) => handleInputChange('enhance_description_system_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -326,7 +326,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".enhance-user-help" position="right">
                                     User prompt template for enhancing block descriptions. Use {} as a placeholder for the description.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 enhance-user-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 enhance-user-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -336,7 +336,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.enhance_description_user_prompt}
                                     onChange={(value) => handleInputChange('enhance_description_user_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -356,7 +356,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".tasks-system-help" position="right">
                                     System prompt for generating tasks from block descriptions.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 tasks-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 tasks-system-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -366,7 +366,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.generate_tasks_system_prompt}
                                     onChange={(value) => handleInputChange('generate_tasks_system_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -381,7 +381,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".tasks-user-help" position="right">
                                     User prompt template for generating tasks from block descriptions. Use {} as a placeholder for the description.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 tasks-user-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 tasks-user-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -391,7 +391,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.generate_tasks_user_prompt}
                                     onChange={(value) => handleInputChange('generate_tasks_user_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -406,7 +406,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".tasks-system-help" position="right">
                                     System prompt for generating tasks from block descriptions ==using MCP Tools==.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 tasks-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 tasks-system-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -416,7 +416,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.generate_tasks_system_prompt_mcp}
                                     onChange={(value) => handleInputChange('generate_tasks_system_prompt_mcp', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -431,7 +431,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".tasks-user-help" position="right">
                                     User prompt template for generating tasks from block descriptions ==using MCP Tools==. Use {} as a placeholder for the description.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 tasks-user-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 tasks-user-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -441,7 +441,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.generate_tasks_user_prompt_mcp}
                                     onChange={(value) => handleInputChange('generate_tasks_user_prompt_mcp', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -461,7 +461,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".markdown-system-help" position="right">
                                     System prompt for processing markdown specifications.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -471,7 +471,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.process_specification_system_prompt}
                                     onChange={(value) => handleInputChange('process_specification_system_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -486,7 +486,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".markdown-user-help" position="right">
                                     User prompt template for processing markdown specifications. Use {} as a placeholder for the markdown content.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 markdown-user-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 markdown-user-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -496,7 +496,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.process_specification_user_prompt}
                                     onChange={(value) => handleInputChange('process_specification_user_prompt', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -511,7 +511,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".markdown-system-help" position="right">
                                     System prompt for processing markdown specifications ==using MCP Tools==.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 markdown-system-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -521,7 +521,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.process_specification_system_prompt_mcp}
                                     onChange={(value) => handleInputChange('process_specification_system_prompt_mcp', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -536,7 +536,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                 <Tooltip target=".markdown-user-help" position="right">
                                     User prompt template for processing markdown specifications ==using MCP Tools==. Use {} as a placeholder for the markdown content.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 markdown-user-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 markdown-user-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -546,7 +546,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                                     value={projectConfig.process_specification_user_prompt_mcp}
                                     onChange={(value) => handleInputChange('process_specification_user_prompt_mcp', value || '')}
                                     options={{
-                                        minimap: { enabled: false },
+                                        minimap: {enabled: false},
                                         scrollBeyondLastLine: false,
                                         wordWrap: 'on',
                                         lineNumbers: 'on',
@@ -568,7 +568,7 @@ const PromptSettingsView = ({ setActiveView }) => {
 
     return (
         <div className="project-container">
-            <Toast ref={toastRef} />
+            <Toast ref={toastRef}/>
 
             <div className="flex justify-content-between align-items-center mb-3">
                 <div className="flex align-items-center">
@@ -577,7 +577,7 @@ const PromptSettingsView = ({ setActiveView }) => {
                         className="p-button-text mr-2"
                         onClick={() => setActiveView('project')}
                         tooltip="Back to Project Settings"
-                        tooltipOptions={{ position: 'bottom' }}
+                        tooltipOptions={{position: 'bottom'}}
                     />
                     <h2>Prompt Settings</h2>
                 </div>

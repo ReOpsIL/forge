@@ -3,8 +3,9 @@
 /// This module provides tools for managing blocks in the forge project,
 /// including listing, creating, updating, and deleting blocks.
 use async_trait::async_trait;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tracing::{debug, error, info, warn};
+
 
 use crate::llm_handler::BlockConnection;
 use crate::mcp::tools::{
@@ -180,8 +181,8 @@ impl MCPTool for ListBlocksTool {
                     ("blocks_count".to_string(), json!(result_blocks.len())),
                     ("filtered".to_string(), json!(filter.is_some())),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 
@@ -314,8 +315,8 @@ impl MCPTool for CreateBlockTool {
                     ("block_id".to_string(), json!(new_block.block_id)),
                     ("block_name".to_string(), json!(new_block.name)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 
@@ -477,7 +478,7 @@ impl MCPTool for UpdateBlockTool {
                 let name = input_val["name"].as_str().unwrap_or("").to_string();
                 let ctype = input_val["ctype"].as_str().unwrap_or("").to_string();
                 let description = input_val["description"].as_str().unwrap_or("").to_string();
-                
+
                 let mut connection = BlockConnection::new();
                 if !name.is_empty() {
                     connection.name = name;
@@ -488,7 +489,7 @@ impl MCPTool for UpdateBlockTool {
                 if !description.is_empty() {
                     connection.description = description;
                 }
-                
+
                 new_inputs.push(connection);
             }
             block.inputs = new_inputs;
@@ -502,7 +503,7 @@ impl MCPTool for UpdateBlockTool {
                 let name = output_val["name"].as_str().unwrap_or("").to_string();
                 let ctype = output_val["ctype"].as_str().unwrap_or("").to_string();
                 let description = output_val["description"].as_str().unwrap_or("").to_string();
-                
+
                 let mut connection = BlockConnection::new();
                 if !name.is_empty() {
                     connection.name = name;
@@ -513,7 +514,7 @@ impl MCPTool for UpdateBlockTool {
                 if !description.is_empty() {
                     connection.description = description;
                 }
-                
+
                 new_outputs.push(connection);
             }
             block.outputs = new_outputs;
@@ -578,8 +579,8 @@ impl MCPTool for UpdateBlockTool {
                     ("block_id".to_string(), json!(block.block_id)),
                     ("updated_fields".to_string(), json!(updated_fields)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 

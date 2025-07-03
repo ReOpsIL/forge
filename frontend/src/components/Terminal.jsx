@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Terminal as XTerm } from '@xterm/xterm'
-import { FitAddon } from '@xterm/addon-fit'
+import React, {useEffect, useRef, useState} from 'react'
+import {Terminal as XTerm} from '@xterm/xterm'
+import {FitAddon} from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
 import './Terminal.module.css'
 
@@ -105,7 +105,7 @@ class TerminalManager {
                 if (this.xterm) {
                     //const wasAtBottom = this.isAtBottom()
                     this.xterm.write(event.data)
-                    
+
                     // Only auto-scroll if user was at bottom or hasn't manually scrolled up
                     // if (wasAtBottom && !this.userScrolledUp) {
                     //     this.scrollToBottom()
@@ -118,7 +118,7 @@ class TerminalManager {
                 console.log('WebSocket closed:', event.code, event.reason)
                 this.updateConnectionStatus('disconnected')
                 this.ws = null
-                
+
                 // Auto-reconnect with exponential backoff
                 setTimeout(() => {
                     if (this.xterm && this.connectionStatus !== 'connected') {
@@ -156,9 +156,9 @@ class TerminalManager {
 
         // Only attach if not already attached to this element
         if (this.currentElement === element) return
-        
+
         this.currentElement = element
-        
+
         // Safely attach to new element
         try {
             this.xterm.open(element)
@@ -169,7 +169,7 @@ class TerminalManager {
             element.innerHTML = ''
             this.xterm.open(element)
         }
-        
+
         // Fit and focus
         setTimeout(() => {
             try {
@@ -195,18 +195,18 @@ class TerminalManager {
                     // Get the container dimensions
                     const rect = this.currentElement.getBoundingClientRect()
                     const proposed = this.fitAddon.proposeDimensions()
-                    
+
                     if (proposed && proposed.rows > 0) {
                         // Use a large fixed column count to prevent wrapping
                         // This ensures text will be cropped rather than wrapped
                         const fixedCols = 200  // Large enough to prevent most wrapping
-                        
+
                         // Resize the terminal with fixed wide columns
                         this.xterm.resize(fixedCols, proposed.rows)
-                        
+
                         // Notify backend about terminal size change
                         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                            const dims = { cols: fixedCols, rows: proposed.rows }
+                            const dims = {cols: fixedCols, rows: proposed.rows}
                             // Send resize notification to backend if needed
                             // this.ws.send(JSON.stringify({type: 'resize', cols: dims.cols, rows: dims.rows}))
                         }
@@ -234,32 +234,32 @@ class TerminalManager {
 
     detectUserScroll() {
         if (!this.xterm) return
-        
+
         const currentScrollTop = this.xterm.buffer.active.viewportY
         const maxScrollTop = this.xterm.buffer.active.length - this.xterm.rows
-        
+
         // Check if user scrolled up from bottom
         if (currentScrollTop < maxScrollTop - 1) {
             this.userScrolledUp = true
         } else {
             this.userScrolledUp = false
         }
-        
+
         this.lastScrollTop = currentScrollTop
     }
 
     isAtBottom() {
         if (!this.xterm) return true
-        
+
         const currentScrollTop = this.xterm.buffer.active.viewportY
         const maxScrollTop = this.xterm.buffer.active.length - this.xterm.rows
-        
+
         return currentScrollTop >= maxScrollTop - 1
     }
 
     scrollToBottom() {
         if (!this.xterm) return
-        
+
         this.xterm.scrollToBottom()
         this.userScrolledUp = false
     }
@@ -282,10 +282,10 @@ if (typeof window !== 'undefined') {
     window.terminalManager = terminalManager
 }
 
-const Terminal = ({ 
-    title = 'Claude Terminal',
-    wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/claude/ws`
-}) => {
+const Terminal = ({
+                      title = 'Claude Terminal',
+                      wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/claude/ws`
+                  }) => {
     const terminalRef = useRef(null)
     const [connectionStatus, setConnectionStatus] = useState('disconnected')
 
@@ -323,11 +323,16 @@ const Terminal = ({
 
     const getStatusColor = () => {
         switch (connectionStatus) {
-            case 'connected': return '#50fa7b'
-            case 'connecting': return '#f1fa8c'
-            case 'disconnected': return '#ff6e67'
-            case 'error': return '#ff5555'
-            default: return '#6272a4'
+            case 'connected':
+                return '#50fa7b'
+            case 'connecting':
+                return '#f1fa8c'
+            case 'disconnected':
+                return '#ff6e67'
+            case 'error':
+                return '#ff5555'
+            default:
+                return '#6272a4'
         }
     }
 
@@ -345,14 +350,14 @@ const Terminal = ({
                 <div className="terminal-title">{title}</div>
                 <div className="terminal-controls">
                     <div className="connection-status">
-                        <div 
+                        <div
                             className="status-indicator"
-                            style={{ backgroundColor: getStatusColor() }}
+                            style={{backgroundColor: getStatusColor()}}
                         />
                         <span className="status-text">{connectionStatus}</span>
                     </div>
                     {connectionStatus !== 'connected' && (
-                        <button 
+                        <button
                             className="reconnect-button"
                             onClick={handleReconnect}
                             disabled={connectionStatus === 'connecting'}
@@ -362,7 +367,7 @@ const Terminal = ({
                     )}
                 </div>
             </div>
-            <div 
+            <div
                 className="terminal-body"
                 ref={terminalRef}
                 onClick={handleTerminalClick}

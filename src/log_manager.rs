@@ -1,10 +1,10 @@
+use chrono::{DateTime, Duration, Utc};
+use serde::{Deserialize, Serialize};
 use std::fs::{self, OpenOptions};
 use std::io::{Error as IoError, ErrorKind, Write};
 use std::path::{Path, PathBuf};
-use chrono::{DateTime, Utc, Duration};
 use thiserror::Error;
 use tracing::{debug, error, info, warn};
-use serde::{Deserialize, Serialize};
 
 #[derive(Error, Debug)]
 pub enum LogManagerError {
@@ -110,15 +110,15 @@ impl LogManager {
     /// Generate a log file path with timestamp
     pub fn generate_log_file_path(&self, block_id: &str, task_id: &str) -> Result<PathBuf, LogManagerError> {
         let log_dir = self.create_log_directory(block_id, task_id)?;
-        
+
         // Generate timestamp for unique filename
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S_%3f");
-        let filename = format!("task_{}_{}.{}", 
-            sanitize_path_component(task_id), 
-            timestamp, 
-            self.config.log_file_extension
+        let filename = format!("task_{}_{}.{}",
+                               sanitize_path_component(task_id),
+                               timestamp,
+                               self.config.log_file_extension
         );
-        
+
         let file_path = log_dir.join(filename);
         Ok(file_path)
     }
@@ -173,7 +173,7 @@ impl LogManager {
 
         // Find the most recent log file for this task
         let log_file = self.find_latest_log_file(&log_dir, task_id)?;
-        
+
         let contents = fs::read(&log_file).map_err(|e| {
             error!("Failed to read log file {:?}: {}", log_file, e);
             LogManagerError::Io(e)
@@ -186,22 +186,22 @@ impl LogManager {
     /// Find the latest log file for a given task in a directory
     fn find_latest_log_file(&self, dir: &Path, task_id: &str) -> Result<PathBuf, LogManagerError> {
         let entries = fs::read_dir(dir).map_err(LogManagerError::Io)?;
-        
+
         let mut latest_file: Option<PathBuf> = None;
         let mut latest_time: Option<std::time::SystemTime> = None;
 
         let task_prefix = format!("task_{}_", sanitize_path_component(task_id));
-        
+
         for entry in entries {
             let entry = entry.map_err(LogManagerError::Io)?;
             let path = entry.path();
-            
+
             if path.is_file() {
                 if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
                     if filename.starts_with(&task_prefix) && filename.ends_with(&format!(".{}", self.config.log_file_extension)) {
                         let metadata = entry.metadata().map_err(LogManagerError::Io)?;
                         let modified_time = metadata.modified().map_err(LogManagerError::Io)?;
-                        
+
                         if latest_time.is_none() || Some(modified_time) > latest_time {
                             latest_file = Some(path);
                             latest_time = Some(modified_time);
@@ -219,20 +219,20 @@ impl LogManager {
     /// List all log files for a specific block
     pub fn list_log_files(&self, block_id: &str) -> Result<Vec<LogFileMetadata>, LogManagerError> {
         let block_dir = self.config.base_log_dir.join(sanitize_path_component(block_id));
-        
+
         if !block_dir.exists() {
             return Ok(Vec::new());
         }
 
         let mut log_files = Vec::new();
-        
+
         // Iterate through task directories
         let task_dirs = fs::read_dir(&block_dir).map_err(LogManagerError::Io)?;
-        
+
         for task_dir_entry in task_dirs {
             let task_dir_entry = task_dir_entry.map_err(LogManagerError::Io)?;
             let task_dir_path = task_dir_entry.path();
-            
+
             if task_dir_path.is_dir() {
                 if let Some(task_id) = task_dir_path.file_name().and_then(|n| n.to_str()) {
                     // List log files in this task directory
@@ -244,7 +244,7 @@ impl LogManager {
 
         // Sort by creation time (newest first)
         log_files.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        
+
         Ok(log_files)
     }
 
@@ -264,16 +264,16 @@ impl LogManager {
         for entry in entries {
             let entry = entry.map_err(LogManagerError::Io)?;
             let path = entry.path();
-            
+
             if path.is_file() {
                 if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
                     if filename.ends_with(&format!(".{}", self.config.log_file_extension)) {
                         let metadata = entry.metadata().map_err(LogManagerError::Io)?;
-                        
+
                         let created_at = metadata.created()
                             .map_err(LogManagerError::Io)?
                             .into();
-                        
+
                         let last_modified = metadata.modified()
                             .map_err(LogManagerError::Io)?
                             .into();
@@ -287,7 +287,7 @@ impl LogManager {
                             file_size: metadata.len(),
                             is_compressed: filename.ends_with(".gz"),
                         };
-                        
+
                         log_files.push(log_file_meta);
                     }
                 }
@@ -296,7 +296,7 @@ impl LogManager {
 
         // Sort by creation time (newest first)
         log_files.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-        
+
         Ok(log_files)
     }
 
@@ -310,7 +310,7 @@ impl LogManager {
         }
 
         cleaned_count += self.cleanup_directory(&self.config.base_log_dir, cutoff_date)?;
-        
+
         info!("Cleaned up {} old log files", cleaned_count);
         Ok(cleaned_count)
     }
@@ -327,7 +327,7 @@ impl LogManager {
             if path.is_dir() {
                 // Recursively clean subdirectories
                 cleaned_count += self.cleanup_directory(&path, cutoff_date)?;
-                
+
                 // Remove empty directories
                 if let Ok(mut dir_entries) = fs::read_dir(&path) {
                     if dir_entries.next().is_none() {
@@ -343,7 +343,7 @@ impl LogManager {
                 if let Ok(metadata) = entry.metadata() {
                     if let Ok(created_time) = metadata.created() {
                         let created_datetime: DateTime<Utc> = created_time.into();
-                        
+
                         if created_datetime < cutoff_date {
                             if let Err(e) = fs::remove_file(&path) {
                                 warn!("Failed to remove old log file {:?}: {}", path, e);
@@ -445,10 +445,10 @@ mod tests {
     #[test]
     fn test_create_log_directory() {
         let (manager, _temp_dir) = create_test_log_manager();
-        
+
         let result = manager.create_log_directory("test_block", "test_task");
         assert!(result.is_ok());
-        
+
         let log_dir = result.unwrap();
         assert!(log_dir.exists());
         assert!(log_dir.ends_with("test_block/test_task"));
@@ -464,10 +464,10 @@ mod tests {
     #[test]
     fn test_generate_log_file_path() {
         let (manager, _temp_dir) = create_test_log_manager();
-        
+
         let result = manager.generate_log_file_path("test_block", "test_task");
         assert!(result.is_ok());
-        
+
         let file_path = result.unwrap();
         assert!(file_path.file_name().unwrap().to_str().unwrap().starts_with("task_test_task_"));
         assert!(file_path.extension().unwrap() == "log");
@@ -476,14 +476,14 @@ mod tests {
     #[test]
     fn test_write_and_read_log_file() {
         let (manager, _temp_dir) = create_test_log_manager();
-        
+
         let file_path = manager.generate_log_file_path("test_block", "test_task").unwrap();
         let test_data = b"Hello, log file!";
-        
+
         // Write data
         let write_result = manager.write_stream_log(&file_path, test_data);
         assert!(write_result.is_ok());
-        
+
         // Read data back
         let read_result = manager.read_log_file("test_block", "test_task");
         assert!(read_result.is_ok());
@@ -493,14 +493,14 @@ mod tests {
     #[test]
     fn test_list_log_files() {
         let (manager, _temp_dir) = create_test_log_manager();
-        
+
         // Create a few log files
         let file_path1 = manager.generate_log_file_path("test_block", "task1").unwrap();
         let file_path2 = manager.generate_log_file_path("test_block", "task2").unwrap();
-        
+
         manager.write_stream_log(&file_path1, b"data1").unwrap();
         manager.write_stream_log(&file_path2, b"data2").unwrap();
-        
+
         let log_files = manager.list_log_files("test_block").unwrap();
         assert_eq!(log_files.len(), 2);
     }
@@ -508,7 +508,7 @@ mod tests {
     #[test]
     fn test_storage_status() {
         let (manager, _temp_dir) = create_test_log_manager();
-        
+
         let status = manager.check_storage_limits().unwrap();
         match status {
             StorageStatus::Ok { usage_percentage, total_size } => {

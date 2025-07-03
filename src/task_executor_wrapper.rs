@@ -1,14 +1,14 @@
 use crate::block_config::BlockConfigManager;
-use crate::project_config::ProjectConfigManager;
-use crate::task_executor::{TaskExecutor, get_task_executor, init_task_executor};
-use std::sync::Arc;
 use crate::models::ClaudeSessionManager;
+use crate::project_config::ProjectConfigManager;
+use crate::task_executor::{get_task_executor, init_task_executor, TaskExecutor};
+use std::sync::Arc;
 
 // Initialize the task executor
 pub fn initialize(
     product_manager: Arc<ProjectConfigManager>,
     block_manager: Arc<BlockConfigManager>,
-    claude_session_manager: Arc<ClaudeSessionManager>
+    claude_session_manager: Arc<ClaudeSessionManager>,
 ) -> Arc<TaskExecutor> {
     init_task_executor(product_manager, block_manager, claude_session_manager)
 }

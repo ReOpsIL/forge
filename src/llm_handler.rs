@@ -1,12 +1,12 @@
-use crate::models::{Block, Task};
+use crate::models::{Block, ClaudeSessionManager, Task};
 use crate::project_config::{
-    DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT, DEFAULT_AUTO_COMPLETE_USER_PROMPT,
-    DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT,
-    DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP,
-    DEFAULT_GENERATE_TASKS_USER_PROMPT, DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP,
+    ProjectConfigManager, DEFAULT_AUTO_COMPLETE_SYSTEM_PROMPT,
+    DEFAULT_AUTO_COMPLETE_USER_PROMPT, DEFAULT_ENHANCE_DESCRIPTION_SYSTEM_PROMPT,
+    DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT, DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT,
+    DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP, DEFAULT_GENERATE_TASKS_USER_PROMPT,
+    DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP,
     DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT_MCP,
-    DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP,
-    PROJECT_CONFIG_FILE, ProjectConfigManager,
+    DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT_MCP, PROJECT_CONFIG_FILE,
 };
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -188,7 +188,7 @@ impl LLMProviderImpl {
             }
         }
     }
-    
+
     async fn send_openrouter_prompt(
         &self,
         system_prompt: &str,
@@ -528,10 +528,9 @@ pub async fn auto_complete_description(
 
 // Function to enhance a block description using LLM
 pub async fn enhance_description(
-    description: &str,
-    provider_type: Option<LLMProvider>,
+    block: &Block,
+    claude_session_manager: &ClaudeSessionManager,
 ) -> Result<String, String> {
-    let provider = LLMProviderImpl::new(provider_type.unwrap_or_default());
 
     // Load project configuration to get custom prompts
     let project_manager = ProjectConfigManager::get_instance();
@@ -552,35 +551,55 @@ pub async fn enhance_description(
         .unwrap_or(DEFAULT_ENHANCE_DESCRIPTION_USER_PROMPT);
 
     // Create the user prompt by formatting the template with the description
-    let user_prompt = user_prompt_template.replace("{}", description);
+    let user_prompt = user_prompt_template.replace("{}", block.description.as_str());
 
-    // Send the prompt and return the result
-    match provider.provider_type {
-        LLMProvider::OpenRouter => {
-            provider
-                .send_openrouter_prompt(system_prompt, &user_prompt)
-                .await
+    let combined_prompt = format!("{}\n\nYou should modify specific the (forge) Block (ID: `{}`) description (using `update_block` MCP tool) with enhanced description according to rules:\n {}", system_prompt, block.block_id, user_prompt);
+
+    // Use claude_session_manager to inject a prompt to running Claude CLI session
+    let claude_session_id = "default-claude-session";
+
+    // Ensure Claude session exists or create it
+    match claude_session_manager.create_session(claude_session_id.to_string()) {
+        Ok(_) => {
+            info!("Claude session {} ready for creating tasks", claude_session_id);
         }
-        LLMProvider::Gemini => {
-            provider
-                .send_gemini_prompt(system_prompt, &user_prompt)
-                .await
+        Err(e) => {
+            error!("Failed to create/get Claude session {}: {}", claude_session_id, e);
+            return Err(format!("Failed to create Claude session: {}", e));
         }
-        LLMProvider::Anthropic => {
-            provider
-                .send_anthropic_prompt(system_prompt, &user_prompt)
-                .await
+    }
+
+    // Send the prompt to Claude CLI via stdin
+    if let Some(session) = claude_session_manager.get_session(claude_session_id) {
+        session.update_activity();
+
+        // Send prompt to Claude CLI stdin
+        if let Ok(stdin_opt) = session.stdin_tx.lock() {
+            if let Some(ref tx) = stdin_opt.as_ref() {
+                match tx.send(format!("{}
+", combined_prompt)) {
+                    Ok(_) => {
+                        info!("Successfully sent enhance prompt to Claude CLI session {}", claude_session_id);
+                        // The user will see the output streaming through the WebSocket
+                        // The actual execution will be handled by Claude CLI using its MCP tools
+                         Ok("Enhance prompt sent to Claude CLI session. Check the terminal for output.".to_string())
         }
-        LLMProvider::ClaudeCode => {
-            provider
-                .send_claudecode_prompt(system_prompt, &user_prompt)
-                .await
+                    Err(e) => {
+                        error!("Failed to send prompt to Claude CLI session {}: {}", claude_session_id, e);
+                         Err(format!("Failed to send prompt to Claude session: {}", e))
+                    }
+                }
+            } else {
+                error!("No stdin channel available for Claude session {}", claude_session_id);
+                 Err("No stdin channel available for Claude session".to_string())
+            }
+        } else {
+            error!("Failed to acquire stdin lock for Claude session {}", claude_session_id);
+            Err("Failed to acquire stdin lock for Claude session".to_string())
         }
-        LLMProvider::GeminiCode => {
-            provider
-                .send_geminicode_prompt(system_prompt, &user_prompt)
-                .await
-        }
+    } else {
+        error!("Claude session {} not found", claude_session_id);
+         Err(format!("Claude session {} not found", claude_session_id))
     }
 }
 
@@ -594,7 +613,7 @@ pub struct TaskResponse {
 // Function to get the full task response from LLM
 pub async fn generate_tasks(
     block: &Block,
-    claude_session_manager: &crate::models::ClaudeSessionManager
+    claude_session_manager: &crate::models::ClaudeSessionManager,
 ) -> Result<String, String> {
     // Load project configuration to get custom prompts
     let project_manager = ProjectConfigManager::get_instance();
@@ -646,16 +665,16 @@ pub async fn generate_tasks(
                         info!("Successfully sent specification processing prompt to Claude CLI session {}", claude_session_id);
                         // The user will see the output streaming through the WebSocket
                         // The actual execution will be handled by Claude CLI using its MCP tools
-                        return Ok("Specification processing prompt sent to Claude CLI session. Check the terminal for output.".to_string())
+                        return Ok("Specification processing prompt sent to Claude CLI session. Check the terminal for output.".to_string());
                     }
                     Err(e) => {
                         error!("Failed to send prompt to Claude CLI session {}: {}", claude_session_id, e);
-                        return Err(format!("Failed to send prompt to Claude session: {}", e))
+                        return Err(format!("Failed to send prompt to Claude session: {}", e));
                     }
                 }
             } else {
                 error!("No stdin channel available for Claude session {}", claude_session_id);
-                return Err("No stdin channel available for Claude session".to_string())
+                return Err("No stdin channel available for Claude session".to_string());
             }
         } else {
             error!("Failed to acquire stdin lock for Claude session {}", claude_session_id);
@@ -663,7 +682,7 @@ pub async fn generate_tasks(
         }
     } else {
         error!("Claude session {} not found", claude_session_id);
-        return Err(format!("Claude session {} not found", claude_session_id))
+        return Err(format!("Claude session {} not found", claude_session_id));
     }
 }
 
@@ -692,7 +711,7 @@ pub async fn process_specification(
 
     // Create the user prompt by formatting the template with the markdown content
     let user_prompt = user_prompt_template.replace("{}", markdown_content);
-    
+
     // Combine system and user prompts
     let combined_prompt = format!("{}\n\n{}", system_prompt, user_prompt);
 

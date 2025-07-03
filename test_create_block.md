@@ -35,6 +35,7 @@ The new MCP CreateBlockTool has been successfully implemented and integrated int
 ## Sample Usage
 
 ### Example 1: Basic Block Creation
+
 ```json
 {
   "name": "DataValidator",
@@ -43,6 +44,7 @@ The new MCP CreateBlockTool has been successfully implemented and integrated int
 ```
 
 ### Example 2: Block with Custom ID
+
 ```json
 {
   "name": "UserAuthentication", 
@@ -54,6 +56,7 @@ The new MCP CreateBlockTool has been successfully implemented and integrated int
 ## Output
 
 The tool returns a JSON response with:
+
 - Success status
 - Created block details (ID, name, description)
 - Empty connections and tasks (newly created)
@@ -62,6 +65,7 @@ The tool returns a JSON response with:
 ## Integration
 
 The tool is registered in the MCP server alongside other forge tools:
+
 - `list_blocks` - List all blocks
 - `create_block` - Create new blocks (NEW)
 - File system tools (read, write, list, create, delete)

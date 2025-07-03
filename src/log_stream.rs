@@ -1,15 +1,12 @@
-use actix_web::http::header::{CACHE_CONTROL, ContentType};
-use actix_web::web::Bytes;
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::http::header::ContentType;
+use actix_web::{web, HttpResponse, Responder};
 use futures::stream::StreamExt;
+use regex::Regex;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use tokio::sync::mpsc;
-use tokio_stream::wrappers::ReceiverStream;
-use std::path::PathBuf;
 use tokio::fs;
-use regex::Regex;
 
 // Structure to hold log entries for each task
 #[derive(Debug, Clone)]
@@ -79,39 +76,39 @@ async fn read_task_logs_from_file(block_id: &str, task_id: &str) -> Result<Strin
     let log_dir = PathBuf::from("./logs")
         .join(block_id)
         .join(format!("{}{}", block_id, task_id));
-    
+
     if !log_dir.exists() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "Log directory not found"
+            "Log directory not found",
         ));
     }
-    
+
     // Read all .log files in the directory
     let mut entries = fs::read_dir(&log_dir).await?;
     let mut log_files = Vec::new();
-    
+
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
         if path.extension().and_then(|ext| ext.to_str()) == Some("log") {
             log_files.push(path);
         }
     }
-    
+
     if log_files.is_empty() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "No log files found"
+            "No log files found",
         ));
     }
-    
+
     // Sort log files by name (timestamp in filename) to get them in chronological order
     log_files.sort();
-    
+
     // Read the latest log file (last in sorted order)
     let latest_log_file = log_files.last().unwrap();
     let content = fs::read_to_string(latest_log_file).await?;
-    
+
     Ok(content)
 }
 
@@ -126,7 +123,7 @@ fn strip_ansi_codes(content: &str) -> String {
 // Handler for streaming logs for a specific task
 pub async fn stream_logs(task_id: web::Path<String>) -> impl Responder {
     let task_id = task_id.into_inner();
-    
+
     // Parse the task_id in format "block_id:task_id"
     let parts: Vec<&str> = task_id.split(':').collect();
     if parts.len() != 2 {
@@ -134,10 +131,10 @@ pub async fn stream_logs(task_id: web::Path<String>) -> impl Responder {
             "error": "Invalid task ID format. Expected 'block_id:task_id'"
         }));
     }
-    
+
     let block_id = parts[0];
     let actual_task_id = parts[1];
-    
+
     // Try to read from file system first
     let log_content = match read_task_logs_from_file(block_id, actual_task_id).await {
         Ok(content) => content,

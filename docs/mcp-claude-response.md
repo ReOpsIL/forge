@@ -6,6 +6,7 @@ significantly enhance the integration between Forge and Claude Code:
 Current State Analysis
 
 Forge Architecture:
+
 - Visual block-based development platform with task management
 - Rust backend with Actix-web serving React frontend
 - Git integration with automated task execution using Claude CLI
@@ -13,6 +14,7 @@ Forge Architecture:
 - Task execution pipeline: task → branch → Claude CLI → commit → merge
 
 Existing Limitations:
+
 - Claude CLI is invoked as external process without context sharing
 - No bidirectional communication during task execution
 - Limited access to Forge's internal state and project knowledge
@@ -21,7 +23,7 @@ Existing Limitations:
 Proposed MCP Server Design
 
 ⏺ Update Todos
-⎿  ☒ Analyze Forge project structure and architecture                 
+⎿ ☒ Analyze Forge project structure and architecture                 
 ☒ Review existing MCP server implementation if any
 ☒ Design MCP server functionality for Forge-Claude Code integration
 ☐ Provide implementation recommendations
@@ -88,35 +90,35 @@ Implementation Recommendations
 Phase 1: Core Integration (Weeks 1-2)
 
 1. Replace HTTP API with MCP Protocol
-   - Implement proper MCP server in src/mcp_server.rs
-   - Add MCP tools for basic project and block operations
-   - Integrate with existing TaskExecutor for seamless task management
+    - Implement proper MCP server in src/mcp_server.rs
+    - Add MCP tools for basic project and block operations
+    - Integrate with existing TaskExecutor for seamless task management
 2. Enhanced Task Context
-   - Extend Task model to include richer context (related files, dependencies, etc.)
-   - Implement context-aware task generation and execution
-   - Add support for multi-step task workflows
+    - Extend Task model to include richer context (related files, dependencies, etc.)
+    - Implement context-aware task generation and execution
+    - Add support for multi-step task workflows
 
 Phase 2: Advanced Features (Weeks 3-4)
 
 1. Intelligent Code Generation
-   - Implement code template generation based on block types
-   - Add support for multiple programming languages
-   - Integrate with existing LLM providers for enhanced code suggestions
+    - Implement code template generation based on block types
+    - Add support for multiple programming languages
+    - Integrate with existing LLM providers for enhanced code suggestions
 2. Real-time Communication
-   - Implement WebSocket-based MCP server for real-time updates
-   - Add support for streaming task execution progress
-   - Enable bidirectional communication during task execution
+    - Implement WebSocket-based MCP server for real-time updates
+    - Add support for streaming task execution progress
+    - Enable bidirectional communication during task execution
 
 Phase 3: Collaboration & Quality (Weeks 5-6)
 
 1. Multi-session Support
-   - Enable multiple Claude instances to work on the same project
-   - Implement session management and context sharing
-   - Add conflict resolution for concurrent modifications
+    - Enable multiple Claude instances to work on the same project
+    - Implement session management and context sharing
+    - Add conflict resolution for concurrent modifications
 2. Quality Assurance Integration
-   - Integrate with testing frameworks and CI/CD pipelines
-   - Add automated code review and quality checks
-   - Implement performance monitoring and optimization suggestions
+    - Integrate with testing frameworks and CI/CD pipelines
+    - Add automated code review and quality checks
+    - Implement performance monitoring and optimization suggestions
 
 Key Benefits
 
@@ -133,7 +135,7 @@ Key Benefits
    suggestions over time
 
 ⏺ Update Todos
-⎿  ☒ Analyze Forge project structure and architecture                 
+⎿ ☒ Analyze Forge project structure and architecture                 
 ☒ Review existing MCP server implementation if any
 ☒ Design MCP server functionality for Forge-Claude Code integration
 ☒ Provide implementation recommendations

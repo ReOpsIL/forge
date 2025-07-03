@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::path::PathBuf;
 use tokio::fs;
 use tracing::info;
@@ -126,8 +126,8 @@ impl MCPTool for DeleteTool {
                     ("file_size".to_string(), json!(file_size)),
                     ("recursive".to_string(), json!(recursive)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 

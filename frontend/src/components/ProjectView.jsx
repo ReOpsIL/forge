@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Card} from 'primereact/card';
 import {InputText} from 'primereact/inputtext';
 import {Button} from 'primereact/button';
@@ -9,14 +9,14 @@ import {TabMenu} from 'primereact/tabmenu';
 import {Tooltip} from 'primereact/tooltip';
 import './ProjectView.css';
 
-const ProjectView = ({ setActiveView }) => {
+const ProjectView = ({setActiveView}) => {
     const [activeTabIndex, setActiveTabIndex] = useState(0);
 
     // Define the tabs for the project configuration
     const projectTabs = [
-        { label: 'Project Settings', icon: 'pi pi-home' },
-        { label: 'LLM Settings', icon: 'pi pi-cog' },
-        { label: 'Prompt Settings', icon: 'pi pi-pencil', command: () => setActiveView('promptSettings') }
+        {label: 'Project Settings', icon: 'pi pi-home'},
+        {label: 'LLM Settings', icon: 'pi pi-cog'},
+        {label: 'Prompt Settings', icon: 'pi pi-pencil', command: () => setActiveView('promptSettings')}
     ];
     const [projectConfig, setProjectConfig] = useState({
         git_repository_url: '',
@@ -51,31 +51,31 @@ const ProjectView = ({ setActiveView }) => {
 
     // LLM provider options
     const llmProviderOptions = [
-        { label: 'ClaudeCode', value: 'ClaudeCode' },
-        { label: 'GeminiCode', value: 'GeminiCode' },
-        { label: 'OpenRouter', value: 'OpenRouter' },
-        { label: 'Gemini', value: 'Gemini' },
-        { label: 'Anthropic', value: 'Anthropic' }
+        {label: 'ClaudeCode', value: 'ClaudeCode'},
+        {label: 'GeminiCode', value: 'GeminiCode'},
+        {label: 'OpenRouter', value: 'OpenRouter'},
+        {label: 'Gemini', value: 'Gemini'},
+        {label: 'Anthropic', value: 'Anthropic'}
     ];
 
     // OpenRouter model options
     const openrouterModelOptions = [
-        { label: 'Gemini 2.5 Pro',        value: 'google/gemini-2.5-pro' },
-        { label: 'Gemini 2.5 Flash',      value: 'google/gemini-2.5-flash' },
-        { label: 'Claude 4 Opus',        value: 'anthropic/claude-opus-4-20250514' },
-        { label: 'Claude 4 Sonnet',      value: 'anthropic/claude-sonnet-4-20250514' },
-        { label: 'Claude 3.7 Sonnet',      value: 'anthropic/claude-3-7-sonnet-20250219' },
-        { label: 'GPT‑4o',               value: 'openai/gpt-4o' },
-        { label: 'GPT‑4 Turbo',          value: 'openai/gpt-4-turbo' },
-        { label: 'Mistral Large',        value: 'mistralai/mistral-large-latest' }
+        {label: 'Gemini 2.5 Pro', value: 'google/gemini-2.5-pro'},
+        {label: 'Gemini 2.5 Flash', value: 'google/gemini-2.5-flash'},
+        {label: 'Claude 4 Opus', value: 'anthropic/claude-opus-4-20250514'},
+        {label: 'Claude 4 Sonnet', value: 'anthropic/claude-sonnet-4-20250514'},
+        {label: 'Claude 3.7 Sonnet', value: 'anthropic/claude-3-7-sonnet-20250219'},
+        {label: 'GPT‑4o', value: 'openai/gpt-4o'},
+        {label: 'GPT‑4 Turbo', value: 'openai/gpt-4-turbo'},
+        {label: 'Mistral Large', value: 'mistralai/mistral-large-latest'}
     ];
 
     // Gemini model options
     const geminiModelOptions = [
-        { label: 'Gemini 2.5 Pro',                  value: 'gemini-2.5-pro' },
-        { label: 'Gemini 2.5 Flash',                value: 'gemini-2.5-flash' },
-        { label: 'Gemini 2.5 Flash‑Lite (preview)', value: 'gemini-2.5-flash-lite-preview' },
-        { label: 'Gemini Ultra',                    value: 'gemini-ultra' }
+        {label: 'Gemini 2.5 Pro', value: 'gemini-2.5-pro'},
+        {label: 'Gemini 2.5 Flash', value: 'gemini-2.5-flash'},
+        {label: 'Gemini 2.5 Flash‑Lite (preview)', value: 'gemini-2.5-flash-lite-preview'},
+        {label: 'Gemini Ultra', value: 'gemini-ultra'}
     ];
 
     // Anthropic model options
@@ -195,15 +195,15 @@ const ProjectView = ({ setActiveView }) => {
         try {
             setLoadingBranches(true);
             const response = await fetch('/api/git/branches');
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch branches');
             }
 
             const data = await response.json();
-            
+
             if (data.success) {
-                setBranches(data.branches.map(branch => ({ label: branch, value: branch })));
+                setBranches(data.branches.map(branch => ({label: branch, value: branch})));
                 toastRef.current.show({
                     severity: 'success',
                     summary: 'Success',
@@ -296,7 +296,7 @@ const ProjectView = ({ setActiveView }) => {
                                 <Tooltip target=".git-repo-help" position="right">
                                     The URL of the Git repository associated with this project.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 git-repo-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 git-repo-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <InputText
                                 id="git_repository_url"
@@ -313,7 +313,7 @@ const ProjectView = ({ setActiveView }) => {
                                 <Tooltip target=".project-dir-help" position="right">
                                     The root directory for the project on the local file system.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 project-dir-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 project-dir-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <InputText
                                 id="project_home_directory"
@@ -330,7 +330,7 @@ const ProjectView = ({ setActiveView }) => {
                                 <Tooltip target=".project-desc-help" position="right">
                                     A descriptive summary of the project. Markdown is supported.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 project-desc-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 project-desc-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="monaco-editor-container">
                                 <Editor
@@ -356,7 +356,7 @@ const ProjectView = ({ setActiveView }) => {
                                 <Tooltip target=".main-branch-help" position="right">
                                     The main branch used for Git operations. Usually 'main' or 'master'.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 main-branch-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 main-branch-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <div className="flex">
                                 <Dropdown
@@ -389,7 +389,7 @@ const ProjectView = ({ setActiveView }) => {
                                 <Tooltip target=".llm-provider-help" position="right">
                                     The LLM provider to use for AI-powered features. If not selected, ClaudeCode will be used by default.
                                 </Tooltip>
-                                <i className="pi pi-question-circle ml-2 llm-provider-help" style={{ cursor: 'pointer' }}></i>
+                                <i className="pi pi-question-circle ml-2 llm-provider-help" style={{cursor: 'pointer'}}></i>
                             </label>
                             <Dropdown
                                 id="llm_provider"
@@ -408,7 +408,7 @@ const ProjectView = ({ setActiveView }) => {
                                     <Tooltip target=".anthropic-model-help" position="right">
                                         The model to use with Anthropic. If not selected, the default model will be used.
                                     </Tooltip>
-                                    <i className="pi pi-question-circle ml-2 anthropic-model-help" style={{ cursor: 'pointer' }}></i>
+                                    <i className="pi pi-question-circle ml-2 anthropic-model-help" style={{cursor: 'pointer'}}></i>
                                 </label>
                                 <Dropdown
                                     id="anthropic_model"
@@ -428,7 +428,7 @@ const ProjectView = ({ setActiveView }) => {
                                     <Tooltip target=".gemini-model-help" position="right">
                                         The model to use with Gemini. If not selected, the default model will be used.
                                     </Tooltip>
-                                    <i className="pi pi-question-circle ml-2 gemini-model-help" style={{ cursor: 'pointer' }}></i>
+                                    <i className="pi pi-question-circle ml-2 gemini-model-help" style={{cursor: 'pointer'}}></i>
                                 </label>
                                 <Dropdown
                                     id="gemini_model"
@@ -448,7 +448,7 @@ const ProjectView = ({ setActiveView }) => {
                                     <Tooltip target=".openrouter-model-help" position="right">
                                         The model to use with OpenRouter. If not selected, the default model will be used.
                                     </Tooltip>
-                                    <i className="pi pi-question-circle ml-2 openrouter-model-help" style={{ cursor: 'pointer' }}></i>
+                                    <i className="pi pi-question-circle ml-2 openrouter-model-help" style={{cursor: 'pointer'}}></i>
                                 </label>
                                 <Dropdown
                                     id="openrouter_model"
@@ -468,7 +468,7 @@ const ProjectView = ({ setActiveView }) => {
                                     <Tooltip target=".gemini-model-help" position="right">
                                         The model to use with Gemini. If not selected, the default model will be used.
                                     </Tooltip>
-                                    <i className="pi pi-question-circle ml-2 gemini-model-help" style={{ cursor: 'pointer' }}></i>
+                                    <i className="pi pi-question-circle ml-2 gemini-model-help" style={{cursor: 'pointer'}}></i>
                                 </label>
                                 <Dropdown
                                     id="gemini_model"
@@ -488,7 +488,7 @@ const ProjectView = ({ setActiveView }) => {
                                     <Tooltip target=".anthropic-model-help" position="right">
                                         The model to use with Anthropic. If not selected, the default model will be used.
                                     </Tooltip>
-                                    <i className="pi pi-question-circle ml-2 anthropic-model-help" style={{ cursor: 'pointer' }}></i>
+                                    <i className="pi pi-question-circle ml-2 anthropic-model-help" style={{cursor: 'pointer'}}></i>
                                 </label>
                                 <Dropdown
                                     id="anthropic_model"
@@ -534,10 +534,10 @@ const ProjectView = ({ setActiveView }) => {
                 </div>
             </div>
 
-            <TabMenu 
-                model={projectTabs} 
-                activeIndex={activeTabIndex} 
-                onTabChange={(e) => setActiveTabIndex(e.index)} 
+            <TabMenu
+                model={projectTabs}
+                activeIndex={activeTabIndex}
+                onTabChange={(e) => setActiveTabIndex(e.index)}
                 className="mb-3"
             />
 

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog } from 'primereact/dialog';
-import { Button } from 'primereact/button';
-import { InputText } from 'primereact/inputtext';
-import { InputTextarea } from 'primereact/inputtextarea';
-import { Dropdown } from 'primereact/dropdown';
-import { Chip } from 'primereact/chip';
-import { classNames } from 'primereact/utils';
+import React, {useEffect, useState} from 'react';
+import {Dialog} from 'primereact/dialog';
+import {Button} from 'primereact/button';
+import {InputText} from 'primereact/inputtext';
+import {InputTextarea} from 'primereact/inputtextarea';
+import {Dropdown} from 'primereact/dropdown';
+import {Chip} from 'primereact/chip';
+import {classNames} from 'primereact/utils';
 import './TaskDialog.css';
 
 /**
  * TaskDialog component for creating and editing tasks
- * 
+ *
  * @param {Object} props - Component props
  * @param {boolean} props.visible - Whether the dialog is visible
  * @param {Function} props.onHide - Function to call when the dialog is hidden
@@ -18,7 +18,7 @@ import './TaskDialog.css';
  * @param {string} props.blockId - ID of the block the task belongs to
  * @param {Function} props.onSave - Function to call when the task is saved
  */
-const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
+const TaskDialog = ({visible, onHide, task, blockId, onSave}) => {
     // Define the initial task state
     const initialTask = {
         task_id: '',
@@ -37,10 +37,10 @@ const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
 
     // State for the task form
     const [taskData, setTaskData] = useState(initialTask);
-    
+
     // State for form validation
     const [submitted, setSubmitted] = useState(false);
-    
+
     // State for array input fields
     const [newCriterion, setNewCriterion] = useState('');
     const [newDependency, setNewDependency] = useState('');
@@ -50,9 +50,9 @@ const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
 
     // Effort options
     const effortOptions = [
-        { label: 'Small', value: 'S' },
-        { label: 'Medium', value: 'M' },
-        { label: 'Large', value: 'L' }
+        {label: 'Small', value: 'S'},
+        {label: 'Medium', value: 'M'},
+        {label: 'Large', value: 'L'}
     ];
 
     // Initialize the form when the dialog is opened or the task changes
@@ -79,7 +79,7 @@ const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
 
     // Handle input changes
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         setTaskData(prev => ({
             ...prev,
             [name]: value
@@ -154,7 +154,7 @@ const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
         <Dialog
             header={task ? "Edit Task" : "Create Task"}
             visible={visible}
-            style={{ width: '50vw' }}
+            style={{width: '50vw'}}
             onHide={onHide}
             footer={dialogFooter}
             modal
@@ -176,7 +176,7 @@ const TaskDialog = ({ visible, onHide, task, blockId, onSave }) => {
                         name="task_name"
                         value={taskData.task_name}
                         onChange={handleInputChange}
-                        className={classNames({ 'p-invalid': submitted && !taskData.task_name })}
+                        className={classNames({'p-invalid': submitted && !taskData.task_name})}
                     />
                     {submitted && !taskData.task_name && <small className="p-error">Task name is required.</small>}
                 </div>

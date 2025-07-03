@@ -1,13 +1,13 @@
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::fs::{File, OpenOptions};
-use std::io::{Write, BufWriter};
-use std::path::PathBuf;
+use crate::log_manager::{LogManager, LogManagerConfig};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fs::{File, OpenOptions};
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use tracing::{debug, error, info, warn};
-use crate::log_manager::{LogManager, LogManagerConfig};
 
 #[derive(Error, Debug)]
 pub enum CaptureError {
@@ -94,9 +94,9 @@ impl StreamCapture {
             .write(true)
             .truncate(true)
             .open(&log_file_path)?;
-        
+
         let writer = BufWriter::new(file);
-        
+
         let metadata = CaptureMetadata {
             task_id: task_id.clone(),
             block_id: block_id.clone(),
@@ -128,7 +128,7 @@ impl StreamCapture {
 
         self.active.store(true, Ordering::Release);
         info!("Started stream capture for task: {}", self.task_id);
-        
+
         // Start auto-flush task if enabled
         if self.config.auto_flush {
             self.start_auto_flush_task();
@@ -146,10 +146,10 @@ impl StreamCapture {
         }
 
         self.active.store(false, Ordering::Release);
-        
+
         // Flush any remaining buffer data to file
         self.flush_buffer()?;
-        
+
         // Close the file writer
         if let Ok(mut writer_opt) = self.file_writer.lock() {
             if let Some(writer) = writer_opt.take() {
@@ -168,10 +168,10 @@ impl StreamCapture {
         // Return the buffer contents
         let buffer = self.buffer.lock()
             .map_err(|e| CaptureError::LockError(e.to_string()))?;
-        
+
         info!("Stopped stream capture for task: {} (captured {} bytes)", 
               self.task_id, buffer.len());
-        
+
         Ok(buffer.clone())
     }
 
@@ -198,7 +198,7 @@ impl StreamCapture {
         }
 
         buffer.extend_from_slice(data);
-        
+
         debug!("Added {} bytes to capture buffer for task: {} (buffer size: {})", 
                data.len(), self.task_id, buffer.len());
 
@@ -215,7 +215,7 @@ impl StreamCapture {
     pub fn flush_buffer(&self) -> Result<(), CaptureError> {
         let mut buffer = self.buffer.lock()
             .map_err(|e| CaptureError::LockError(e.to_string()))?;
-        
+
         if buffer.is_empty() {
             return Ok(());
         }
@@ -292,11 +292,10 @@ impl StreamCapture {
                 if let Ok(buffer_guard) = buffer.lock() {
                     if !buffer_guard.is_empty() {
                         drop(buffer_guard); // Release lock before flushing
-                        
+
                         // Perform flush (similar to flush_buffer but without self reference)
-                        if let (Ok(mut buffer_guard), Ok(mut writer_opt)) = 
+                        if let (Ok(mut buffer_guard), Ok(mut writer_opt)) =
                             (buffer.lock(), file_writer.lock()) {
-                            
                             if let Some(writer) = writer_opt.as_mut() {
                                 if let Err(e) = writer.write_all(&buffer_guard) {
                                     error!("Auto-flush write error for task {}: {}", task_id, e);
@@ -338,7 +337,7 @@ impl StreamCaptureManager {
     pub fn new(config: CaptureConfig) -> Self {
         let log_manager_config = LogManagerConfig::default();
         let log_manager = Arc::new(LogManager::new(log_manager_config));
-        
+
         Self {
             captures: Arc::new(Mutex::new(std::collections::HashMap::new())),
             config,
@@ -453,7 +452,6 @@ impl StreamCaptureManager {
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    use std::path::Path;
 
     fn create_test_log_path() -> (TempDir, PathBuf) {
         let temp_dir = TempDir::new().unwrap();
@@ -465,7 +463,7 @@ mod tests {
     fn test_stream_capture_lifecycle() {
         let (_temp_dir, log_path) = create_test_log_path();
         let config = CaptureConfig::default();
-        
+
         let capture = StreamCapture::new(
             "test_task".to_string(),
             "test_block".to_string(),
@@ -496,7 +494,7 @@ mod tests {
         let (_temp_dir, log_path) = create_test_log_path();
         let mut config = CaptureConfig::default();
         config.max_capture_size = 10; // Very small limit
-        
+
         let capture = StreamCapture::new(
             "test_task".to_string(),
             "test_block".to_string(),
@@ -509,7 +507,7 @@ mod tests {
         // Try to write more data than the limit
         let large_data = vec![0u8; 20];
         let result = capture.write_to_buffer(&large_data);
-        
+
         assert!(matches!(result, Err(CaptureError::BufferOverflow { .. })));
     }
 
@@ -539,7 +537,7 @@ mod tests {
     fn test_capture_metadata() {
         let (_temp_dir, log_path) = create_test_log_path();
         let config = CaptureConfig::default();
-        
+
         let capture = StreamCapture::new(
             "test_task".to_string(),
             "test_block".to_string(),

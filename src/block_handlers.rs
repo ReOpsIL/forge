@@ -1,11 +1,11 @@
-use crate::block_config::{BlockConfigManager, generate_sample_config};
+use crate::block_config::{generate_sample_config, BlockConfigManager};
 use crate::llm_handler::{
-    GeneratedBlock, LLMProvider, auto_complete_description, enhance_description, generate_tasks,
-    process_specification,
+    auto_complete_description, enhance_description, generate_tasks, process_specification, GeneratedBlock,
+    LLMProvider,
 };
-use crate::models::{Block, Task, ClaudeSessionManager};
+use crate::models::{Block, ClaudeSessionManager, Task};
 use crate::project_config::ProjectConfigManager;
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
@@ -106,17 +106,9 @@ async fn enhance_block_with_llm(
     data: &web::Data<AppState>,
 ) -> Result<Block, String> {
     // Get the project configuration to get the LLM provider setting
-    let project_config = data
-        .project_manager
-        .get_config()
-        .map_err(|e| format!("Failed to get project config: {}", e))?;
 
     // Enhance the description using LLM
-    let enhanced_description =
-        enhance_description(&block.description, project_config.llm_provider).await?;
-
-    // Update the block with the enhanced description
-    block.description = enhanced_description;
+    enhance_description(&block, &data.claude_session_manager).await?;
 
     Ok(block)
 }
@@ -162,7 +154,7 @@ pub async fn generate_tasks_block_handler(
         }
         Err(e) => {
             println!("Failed to enhance block with LLM: {}", e);
-            return HttpResponse::BadRequest().body(e)
+            return HttpResponse::BadRequest().body(e);
         }
     }
     HttpResponse::Ok().body("Block task generated successfully")
@@ -398,21 +390,21 @@ pub async fn process_markdown_handler(
         }
     };
 
-    let block  = data.block_manager.get_block_by_id(&request.block_id);
+    let block = data.block_manager.get_block_by_id(&request.block_id);
     match block {
         Some(block) => {
             match generate_tasks(&block, &data.claude_session_manager).await {
                 Ok(message) => {
                     let response = ProcessMarkdownResponse {
                         status: "success".to_string(),
-                        message: format!("Successfully processed markdown file and added tasks to block '{}'", request.block_id)
+                        message: format!("Successfully processed markdown file and added tasks to block '{}'", request.block_id),
                     };
                     HttpResponse::Ok().json(response)
                 }
                 Err(e) => HttpResponse::InternalServerError()
                     .body(format!("Failed to process specification: {}", e)),
             }
-        },
+        }
         None => {
             HttpResponse::BadRequest().body(format!("Block '{}' not found", request.block_id))
         }

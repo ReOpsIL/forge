@@ -1,12 +1,19 @@
 {
-    "mcpServers": {
-      "forge": {
-        "command": "./target/debug/forge",
-        "args": ["--mcp"]
-      },
-      "git": {
-        "command": "python3",
-        "args": ["-m", "mcp_server_git", "--repository", "."]
-      } 
+  "mcpServers": {
+    "forge": {
+      "command": "./target/debug/forge",
+      "args": [
+        "--mcp"
+      ]
+    },
+    "git": {
+      "command": "python3",
+      "args": [
+        "-m",
+        "mcp_server_git",
+        "--repository",
+        "."
+      ]
     }
+  }
 }

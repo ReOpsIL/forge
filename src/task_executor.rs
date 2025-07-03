@@ -5,6 +5,7 @@ use crate::models::{ClaudeSessionManager, SessionConfig, Task};
 use crate::project_config::ProjectConfigManager;
 use crate::task_queue::QueuedTask;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -12,7 +13,6 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 use tracing::{error, info};
-use std::fs;
 
 // Singleton task executor that manages a global execution queue
 pub struct TaskExecutor {
@@ -20,7 +20,7 @@ pub struct TaskExecutor {
     in_progress: RwLock<HashSet<String>>, // Set of task IDs currently in the queue or being processed
     project_manager: Arc<ProjectConfigManager>,
     block_manager: Arc<BlockConfigManager>,
-    claude_session_manager: Arc<ClaudeSessionManager>
+    claude_session_manager: Arc<ClaudeSessionManager>,
 }
 
 impl TaskExecutor {
@@ -28,7 +28,7 @@ impl TaskExecutor {
     pub fn new(
         project_manager: Arc<ProjectConfigManager>,
         block_manager: Arc<BlockConfigManager>,
-        claude_session_manager: Arc<ClaudeSessionManager>
+        claude_session_manager: Arc<ClaudeSessionManager>,
     ) -> Arc<Self> {
         let executor = Arc::new(Self {
             queue: Mutex::new(VecDeque::new()),
@@ -50,19 +50,19 @@ impl TaskExecutor {
             let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
             rt.block_on(async {
                 loop {
-                // Process any tasks in the queue
-                if let Some(task) = executor.get_next_task() {
-                    println!("Processing task: {}:{}", task.block_id, task.task_id);
+                    // Process any tasks in the queue
+                    if let Some(task) = executor.get_next_task() {
+                        println!("Processing task: {}:{}", task.block_id, task.task_id);
 
-                    // Execute the task
-                    executor.execute_task(task.clone());
+                        // Execute the task
+                        executor.execute_task(task.clone());
 
-                    // Remove the task from the in_progress set
-                    let task_id = task.get_unique_id();
-                    if let Ok(mut in_progress) = executor.in_progress.write() {
-                        in_progress.remove(&task_id);
+                        // Remove the task from the in_progress set
+                        let task_id = task.get_unique_id();
+                        if let Ok(mut in_progress) = executor.in_progress.write() {
+                            in_progress.remove(&task_id);
+                        }
                     }
-                }
 
                     // Sleep for a short time before checking the queue again
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -431,7 +431,7 @@ impl TaskExecutor {
         match self.execute_git_tasks_mcp(&task.block_id, &task.task_id) {
             Ok(_) => {
                 info!("Task {} executed successfully", task.task_id);
-            },
+            }
             Err(e) => {
                 error!("Failed to execute task: {}", e);
             }
@@ -771,23 +771,23 @@ impl TaskExecutor {
     // Generate a list of relevant source file extensions found in the project
     fn get_source_ext_list(project_dir: &str) -> Vec<String> {
         let mut found_extensions = std::collections::HashSet::new();
-        
+
         // Always include these core file extensions
         let core_extensions = vec![
             "toml", "lock", "json", "md", "gitignore", "mcp"
         ];
-        
+
         for ext in core_extensions {
             found_extensions.insert(ext.to_string());
         }
-        
+
         // Recursively find source files, excluding build/cache directories
         if let Ok(entries) = fs::read_dir(project_dir) {
             for entry in entries.flatten() {
                 if let Ok(file_type) = entry.file_type() {
                     let path = entry.path();
                     let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-                    
+
                     // Skip excluded directories
                     if file_type.is_dir() {
                         let excluded_dirs = vec![
@@ -835,7 +835,7 @@ impl TaskExecutor {
                         if excluded_dirs.contains(&file_name.as_ref()) {
                             continue;
                         }
-                        
+
                         // Recursively process subdirectories
                         let subdir_extensions = Self::get_source_ext_from_dir(&path, project_dir);
                         found_extensions.extend(subdir_extensions);
@@ -924,7 +924,7 @@ impl TaskExecutor {
                                 "glsl", "hlsl", "vert", "frag", "geom", "comp",
                                 "shader", "fx", "effect",
                             ];
-                            
+
                             if source_extensions.contains(&ext.as_ref()) {
                                 found_extensions.insert(ext);
                             }
@@ -933,20 +933,20 @@ impl TaskExecutor {
                 }
             }
         }
-        
+
         found_extensions.into_iter().collect()
     }
-    
+
     // Helper function to recursively process subdirectories
     fn get_source_ext_from_dir(dir_path: &Path, project_root: &str) -> std::collections::HashSet<String> {
         let mut extensions = std::collections::HashSet::new();
-        
+
         if let Ok(entries) = fs::read_dir(dir_path) {
             for entry in entries.flatten() {
                 if let Ok(file_type) = entry.file_type() {
                     let path = entry.path();
                     let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-                    
+
                     if file_type.is_dir() {
                         // Skip excluded subdirectories
                         let excluded_dirs = vec![
@@ -967,7 +967,7 @@ impl TaskExecutor {
                                 "html", "css", "scss", "sass", "less", "vue", "svelte",
                                 "md", "txt", "yml", "yaml", "toml", "json", "xml"
                             ];
-                            
+
                             if source_extensions.contains(&ext.as_ref()) {
                                 extensions.insert(ext);
                             }
@@ -976,7 +976,7 @@ impl TaskExecutor {
                 }
             }
         }
-        
+
         extensions
     }
 
@@ -1041,11 +1041,11 @@ impl TaskExecutor {
 
         // Construct the MCP-based prompt for Claude session
         let commit_message = task_opt.description.lines().next().unwrap_or("Task execution").to_string();
-        
+
         // Generate a dynamic list of source file extensions to include
         let source_extensions = Self::get_source_ext_list(&project_dir);
-        let extensions_info = format!("*.{}", source_extensions.join(", *.")); 
-        
+        let extensions_info = format!("*.{}", source_extensions.join(", *."));
+
         let mcp_prompt = format!(
             r#"I need you to execute a task using the MCP tools available. Here's what you need to do:
 
@@ -1126,16 +1126,16 @@ IMPORTANT DEBUG INSTRUCTIONS:
                             info!("Successfully sent task exec prompt to Claude CLI session {}", claude_session_id);
                             // The user will see the output streaming through the WebSocket
                             // The actual execution will be handled by Claude CLI using its MCP tools
-                            return Ok("Task exec prompt sent to Claude CLI session. Check the terminal for output.".to_string())
+                            return Ok("Task exec prompt sent to Claude CLI session. Check the terminal for output.".to_string());
                         }
                         Err(e) => {
                             error!("Failed to send prompt to Claude CLI session {}: {}", claude_session_id, e);
-                            return Err(format!("Failed to send prompt to Claude session: {}", e))
+                            return Err(format!("Failed to send prompt to Claude session: {}", e));
                         }
                     }
                 } else {
                     error!("No stdin channel available for Claude session {}", claude_session_id);
-                    return Err("No stdin channel available for Claude session".to_string())
+                    return Err("No stdin channel available for Claude session".to_string());
                 }
             } else {
                 error!("Failed to acquire stdin lock for Claude session {}", claude_session_id);

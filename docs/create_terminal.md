@@ -1,4 +1,5 @@
-Add new component for running "claude" as process and stream the output to frontend new page "Claude" , refer to the following description as example and general guideline for implementing the terminal frontend and backend functionality, make sure the integration fits well in current backend, and frontend: // src/main.rs
+Add new component for running "claude" as process and stream the output to frontend new page "Claude" , refer to the following description as example and general guideline for implementing the terminal frontend and backend functionality,
+make sure the integration fits well in current backend, and frontend: // src/main.rs
 use axum::{
 extract::{
 ws::{Message, WebSocket},
@@ -26,6 +27,7 @@ let app = Router::new().route("/ws", get(ws_handler));
     println!("Listening on ws://0.0.0.0:8080");
 
     axum::serve(listener, app).await.unwrap();
+
 }
 
 async fn ws_handler(ws: WebSocketUpgrade) -> Response {
@@ -104,4 +106,5 @@ pixel_height: 0,
     // Clean up the child process
     let _ = child.kill();
     println!("WebSocket connection closed and child process killed.");
+
 }

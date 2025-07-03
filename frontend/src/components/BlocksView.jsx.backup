@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {Card} from 'primereact/card';
 import {InputTextarea} from 'primereact/inputtextarea';
 import {Button} from 'primereact/button';
@@ -11,14 +11,14 @@ import {ConfirmDialog, confirmDialog} from 'primereact/confirmdialog';
 import {Dialog} from 'primereact/dialog';
 import {Toast} from 'primereact/toast';
 import {Accordion, AccordionTab} from 'primereact/accordion';
-import Editor from '@monaco-editor/react';
+import Editor, { DiffEditor } from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import TaskDialog from './TaskDialog';
 import LogsDialog from './LogsDialog';
-import {useBlockTaskOrdering} from '../hooks/useTaskOrdering';
+import { useBlockTaskOrdering } from '../hooks/useTaskOrdering';
 import './BlocksView.css';
 
-const BlocksView = ({refreshTrigger}) => {
+const BlocksView = ({ refreshTrigger }) => {
     const [blocks, setBlocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingDescription, setEditingDescription] = useState({});
@@ -66,7 +66,7 @@ const BlocksView = ({refreshTrigger}) => {
     const blocksRef = useRef([]);
 
     // Stable task ordering hook
-    const {getStableTasksForBlock, refreshAllBlockOrders} = useBlockTaskOrdering(blocks);
+    const { getStableTasksForBlock, refreshAllBlockOrders } = useBlockTaskOrdering(blocks);
 
     // Update the ref whenever blocks changes
     useEffect(() => {
@@ -118,10 +118,10 @@ const BlocksView = ({refreshTrigger}) => {
             setLoading(true);
             await fetchBlocks();
             refreshAllBlockOrders(); // Refresh stable task ordering
-
+            
             // Show success message
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'success',
                     summary: 'Success',
                     detail: 'Blocks refreshed successfully',
@@ -131,7 +131,7 @@ const BlocksView = ({refreshTrigger}) => {
         } catch (error) {
             console.error('Error during manual refresh:', error);
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'error',
                     summary: 'Error',
                     detail: 'Failed to refresh blocks',
@@ -182,7 +182,7 @@ const BlocksView = ({refreshTrigger}) => {
 
             // Show success message
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'success',
                     summary: 'Success',
                     detail: 'Block description updated successfully',
@@ -192,7 +192,7 @@ const BlocksView = ({refreshTrigger}) => {
         } catch (error) {
             console.error('Error updating block description:', error);
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'error',
                     summary: 'Error',
                     detail: 'Failed to update block description',
@@ -238,7 +238,7 @@ const BlocksView = ({refreshTrigger}) => {
 
             // Show a success message
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'success',
                     summary: 'Success',
                     detail: 'Block description enhanced successfully',
@@ -248,7 +248,7 @@ const BlocksView = ({refreshTrigger}) => {
         } catch (error) {
             console.error('Error enhancing block description:', error);
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'error',
                     summary: 'Error',
                     detail: 'Failed to enhance block description',
@@ -293,7 +293,7 @@ const BlocksView = ({refreshTrigger}) => {
 
             // Show a success message
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'success',
                     summary: 'Success',
                     detail: 'Block description enhanced successfully',
@@ -303,7 +303,7 @@ const BlocksView = ({refreshTrigger}) => {
         } catch (error) {
             console.error('Error enhancing block description:', error);
             if (toastRef.current) {
-                toastRef.current.show({
+                if (toastRef.current) { toastRef.current.show({
                     severity: 'error',
                     summary: 'Error',
                     detail: 'Failed to enhance block description',
@@ -378,20 +378,24 @@ const BlocksView = ({refreshTrigger}) => {
             });
 
             // Show success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Block name updated successfully',
-                life: 3000
-            });
+            if (toastRef.current) {
+                if (toastRef.current) { toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Block name updated successfully',
+                    life: 3000
+                });
+            }
         } catch (error) {
             console.error('Error updating block name:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to update block name',
-                life: 3000
-            });
+            if (toastRef.current) {
+                if (toastRef.current) { toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to update block name',
+                    life: 3000
+                });
+            }
         }
     };
 
@@ -442,7 +446,7 @@ const BlocksView = ({refreshTrigger}) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({description: newTaskText[block_id]}),
+                body: JSON.stringify({ description: newTaskText[block_id] }),
             });
 
             if (!response.ok) {
@@ -459,10 +463,10 @@ const BlocksView = ({refreshTrigger}) => {
                         ...block,
                         todo_list: {
                             ...block.todo_list,
-                            [newTaskId]: {
+                            [newTaskId]: { 
                                 task_id: newTaskId,
-                                description: newTaskText[block_id],
-                                log: null
+                                description: newTaskText[block_id], 
+                                log: null 
                             }
                         }
                     };
@@ -507,7 +511,7 @@ const BlocksView = ({refreshTrigger}) => {
         setBlocks(blocks.map(block => {
             if (block.block_id === block_id) {
                 // Create a new todo_list without the deleted tasks
-                const updatedTodoList = {...block.todo_list};
+                const updatedTodoList = { ...block.todo_list };
                 taskIdsToDelete.forEach(taskId => {
                     delete updatedTodoList[taskId];
                 });
@@ -591,20 +595,24 @@ const BlocksView = ({refreshTrigger}) => {
             });
 
             // Show success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Task updated successfully',
-                life: 3000
-            });
+            if (toastRef.current) {
+                if (toastRef.current) { toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: 'Task updated successfully',
+                    life: 3000
+                });
+            }
         } catch (error) {
             console.error('Error updating task:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to update task',
-                life: 3000
-            });
+            if (toastRef.current) {
+                if (toastRef.current) { toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to update task',
+                    life: 3000
+                });
+            }
         }
     };
 
@@ -660,7 +668,7 @@ const BlocksView = ({refreshTrigger}) => {
             await fetchBlocks();
 
             // Show success message
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'success',
                 summary: 'Success',
                 detail: 'Task saved successfully',
@@ -668,7 +676,7 @@ const BlocksView = ({refreshTrigger}) => {
             });
         } catch (error) {
             console.error('Error saving task:', error);
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Failed to save task',
@@ -763,7 +771,7 @@ const BlocksView = ({refreshTrigger}) => {
                             }));
 
                             // Show success message
-                            toastRef.current.show({
+                            if (toastRef.current) { toastRef.current.show({
                                 severity: 'success',
                                 summary: 'Success',
                                 detail: 'Task executed successfully with Git integration',
@@ -793,7 +801,7 @@ const BlocksView = ({refreshTrigger}) => {
             console.error('Error executing task with Git:', error);
 
             // Show error message
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'error',
                 summary: 'Error',
                 detail: `Failed to execute task with Git: ${error.message}`,
@@ -814,12 +822,12 @@ const BlocksView = ({refreshTrigger}) => {
         if (!stableTasks || stableTasks.length === 0) {
             return false;
         }
-
+        
         // Check if all tasks are completed
-        const allCompleted = stableTasks.every(task =>
+        const allCompleted = stableTasks.every(task => 
             task.status === 'COMPLETED' || task.status === '[COMPLETED]'
         );
-
+        
         return !allCompleted;
     };
 
@@ -836,12 +844,12 @@ const BlocksView = ({refreshTrigger}) => {
     // Handle empty tasks dialog response
     const handleEmptyTasksResponse = (shouldGenerateTasks) => {
         setShowEmptyTasksDialog(false);
-
+        
         if (shouldGenerateTasks && currentEmptyTasksBlockId) {
             // Generate tasks for the block
             generateTasks(currentEmptyTasksBlockId);
         }
-
+        
         setCurrentEmptyTasksBlockId(null);
     };
 
@@ -918,7 +926,7 @@ const BlocksView = ({refreshTrigger}) => {
 
         // Only accept markdown files
         if (!file.name.endsWith('.md')) {
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Please select a markdown (.md) file',
@@ -961,20 +969,24 @@ const BlocksView = ({refreshTrigger}) => {
             await fetchBlocks();
 
             // Show success message
-            toastRef.current.show({
-                severity: 'success',
-                summary: 'Success',
-                detail: data.message,
-                life: 3000
-            });
+            if (toastRef.current) {
+                if (toastRef.current) { toastRef.current.show({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: data.message,
+                    life: 3000
+                });
+            }
         } catch (error) {
             console.error('Error processing markdown file:', error);
-            toastRef.current.show({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to process markdown file',
-                life: 3000
-            });
+            if (toastRef.current) {
+                if (toastRef.current) { toastRef.current.show({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to process markdown file',
+                    life: 3000
+                });
+            }
         } finally {
             // Hide loading dialog
             setShowLoadingDialog(false);
@@ -1006,7 +1018,7 @@ const BlocksView = ({refreshTrigger}) => {
         const filename = `${block.block_id}_${block.block_id}.md`;
 
         // Create a blob with the markdown content
-        const blob = new Blob([markdown], {type: 'text/markdown;charset=utf-8'});
+        const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
 
         // Create a URL for the blob
         const url = URL.createObjectURL(blob);
@@ -1027,7 +1039,7 @@ const BlocksView = ({refreshTrigger}) => {
         }, 0);
 
         // Show success message
-        toastRef.current.show({
+        if (toastRef.current) { toastRef.current.show({
             severity: 'success',
             summary: 'Success',
             detail: 'Tasks exported successfully',
@@ -1082,7 +1094,7 @@ const BlocksView = ({refreshTrigger}) => {
     // Function to handle creating a new block
     const handleCreateBlock = async () => {
         if (!newBlock.name.trim() || !newBlock.description.trim()) {
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Block name and description are required',
@@ -1125,7 +1137,7 @@ const BlocksView = ({refreshTrigger}) => {
             setShowNewBlockDialog(false);
 
             // Show success message
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'success',
                 summary: 'Success',
                 detail: 'Block created successfully',
@@ -1133,7 +1145,7 @@ const BlocksView = ({refreshTrigger}) => {
             });
         } catch (error) {
             console.error('Error creating block:', error);
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Failed to create block',
@@ -1161,7 +1173,7 @@ const BlocksView = ({refreshTrigger}) => {
             await fetchBlocks();
 
             // Show success message
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'success',
                 summary: 'Success',
                 detail: 'Block deleted successfully',
@@ -1169,7 +1181,7 @@ const BlocksView = ({refreshTrigger}) => {
             });
         } catch (error) {
             console.error('Error deleting block:', error);
-            toastRef.current.show({
+            if (toastRef.current) { toastRef.current.show({
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Failed to delete block',
@@ -1214,11 +1226,11 @@ const BlocksView = ({refreshTrigger}) => {
             <ConfirmDialog/>
 
             {/* Hidden file input for markdown import */}
-            <input
-                type="file"
-                ref={fileInputRef}
-                style={{display: 'none'}}
-                accept=".md"
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept=".md" 
                 onChange={handleFileUpload}
             />
 
@@ -1296,10 +1308,10 @@ const BlocksView = ({refreshTrigger}) => {
                 <div className="p-fluid">
                     <div className="field">
                         {currentTaskLog ? (
-                            <div className="p-2 border-1 surface-border border-round mt-2"
+                            <div className="p-2 border-1 surface-border border-round mt-2" 
                                  style={{
-                                     backgroundColor: '#FFFFFF19',
-                                     maxHeight: '400px',
+                                     backgroundColor: '#FFFFFF19', 
+                                     maxHeight: '400px', 
                                      overflow: 'auto',
                                      whiteSpace: 'pre-wrap',
                                      fontFamily: 'monospace'
@@ -1686,128 +1698,118 @@ const BlocksView = ({refreshTrigger}) => {
                                 <div className="task-list-container">
                                     {/* Task List Controls */}
                                     <div className="task-list-controls mb-2">
-                                        <Button
-                                            icon="pi pi-plus"
-                                            className="p-button-sm"
-                                            onClick={() => openCreateTaskDialog(block.block_id)}
-                                            tooltip="Create new task"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
-                                        <div className="flex align-items-center">
                                             <Button
-                                                icon="pi pi-hammer"
-                                                className="p-button-sm p-button-info"
-                                                onClick={() => handleExecuteWithEmptyTasksCheck(block.block_id)}
-                                                disabled={areTasksRunning(block.block_id)}
-                                                tooltip="Run Tasks"
+                                                icon="pi pi-plus"
+                                                className="p-button-sm"
+                                                onClick={() => openCreateTaskDialog(block.block_id)}
+                                                tooltip="Create new task"
                                                 tooltipOptions={{position: 'top'}}
                                             />
                                             <div className="flex align-items-center">
-                                                <Checkbox
-                                                    inputId="resolve-dependencies"
-                                                    checked={resolveDependencies}
-                                                    onChange={e => setResolveDependencies(e.checked)}
-                                                    tooltip="Resolve dependency"
+                                                <Button
+                                                    icon="pi pi-hammer"
+                                                    className="p-button-sm p-button-info"
+                                                    onClick={() => handleExecuteWithEmptyTasksCheck(block.block_id)}
+                                                    disabled={areTasksRunning(block.block_id)}
+                                                    tooltip="Run Tasks"
                                                     tooltipOptions={{position: 'top'}}
                                                 />
-                                                <label htmlFor="resolve-dependencies" className="ml-1 text-sm">Dep</label>
+                                                <div className="flex align-items-center">
+                                                    <Checkbox
+                                                        inputId="resolve-dependencies"
+                                                        checked={resolveDependencies}
+                                                        onChange={e => setResolveDependencies(e.checked)}
+                                                        tooltip="Resolve dependency"
+                                                        tooltipOptions={{position: 'top'}}
+                                                    />
+                                                    <label htmlFor="resolve-dependencies" className="ml-1 text-sm">Dep</label>
+                                                </div>
+                                                <div className="flex align-items-center">
+                                                    <Checkbox
+                                                        inputId="force-completed"
+                                                        checked={forceCompleted}
+                                                        onChange={e => setForceCompleted(e.checked)}
+                                                        tooltip="Force completed"
+                                                        tooltipOptions={{position: 'top'}}
+                                                    />
+                                                    <label htmlFor="force-completed" className="ml-1 text-sm">Force</label>
+                                                </div>
                                             </div>
-                                            <div className="flex align-items-center">
-                                                <Checkbox
-                                                    inputId="force-completed"
-                                                    checked={forceCompleted}
-                                                    onChange={e => setForceCompleted(e.checked)}
-                                                    tooltip="Force completed"
-                                                    tooltipOptions={{position: 'top'}}
-                                                />
-                                                <label htmlFor="force-completed" className="ml-1 text-sm">Force</label>
-                                            </div>
-                                        </div>
-                                        <Button
-                                            icon="pi pi-sitemap"
-                                            className="p-button-sm p-button-info"
-                                            onClick={() => {
-                                                setCurrentDependencyBlock(block.block_id);
-                                                setShowDependencyTreeDialog(true);
-                                            }}
-                                            tooltip="View dependency tree"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
-                                        <Button
-                                            icon="pi pi-exclamation-triangle"
-                                            tooltip="Stop tasks execution"
-                                            className="p-button-sm p-button-warning"
-                                            onClick={() => stopAllTasks(block.block_id)}
-                                            disabled={!areTasksRunning(block.block_id)}
-                                        />
-                                        <Button
-                                            icon="pi pi-check-square"
-                                            tooltip="Select all tasks"
-                                            className="p-button-sm p-button-danger"
-                                            onClick={() => {
-                                                const stableTasks = getStableTasksForBlock(block.block_id);
-                                                setSelectedTasks({
-                                                    ...selectedTasks,
-                                                    [block.block_id]: stableTasks.map(task => task.task_id)
-                                                });
-                                            }}
-                                        />
-                                        <Button
-                                            icon="pi pi-stop"
-                                            tooltip="Unselect all tasks"
-                                            className="p-button-sm p-button-danger"
-                                            onClick={() => {
-                                                setSelectedTasks({
-                                                    ...selectedTasks,
-                                                    [block.block_id]: []
-                                                });
-                                            }}
-                                        />
-                                        <Button
-                                            icon="pi pi-trash"
-                                            tooltip="Delete task"
-                                            className="p-button-sm p-button-danger"
-                                            onClick={() => {
-                                                const tasksToDelete = selectedTasks[block.block_id] || [];
-                                                if (tasksToDelete.length > 0) {
-                                                    confirmDeleteTasks(block.block_id);
-                                                }
-                                            }}
-                                            disabled={!selectedTasks[block.block_id]?.length}
-                                        />
-                                        <Button
-                                            icon="pi pi-book"
-                                            tooltip="Show task logs"
-                                            className="p-button-sm p-button-info"
-                                            onClick={() => {
-                                                const selectedTaskIndices = selectedTasks[block.block_id] || [];
-                                                if (selectedTaskIndices.length === 1) {
-                                                    showTaskLogs(block.block_id, selectedTaskIndices[0]);
-                                                } else {
-                                                    toastRef.current.show({
-                                                        severity: 'warn',
-                                                        summary: 'Warning',
-                                                        detail: 'Please select exactly one task to view its logs',
-                                                        life: 3000
+                                            <Button
+                                                icon="pi pi-exclamation-triangle"
+                                                tooltip="Stop tasks execution"
+                                                className="p-button-sm p-button-warning"
+                                                onClick={() => stopAllTasks(block.block_id)}
+                                                disabled={!areTasksRunning(block.block_id)}
+                                            />
+                                            <Button
+                                                icon="pi pi-check-square"
+                                                tooltip="Select all tasks"
+                                                className="p-button-sm p-button-danger"
+                                                onClick={() => {
+                                                    const stableTasks = getStableTasksForBlock(block.block_id);
+                                                    setSelectedTasks({
+                                                        ...selectedTasks,
+                                                        [block.block_id]: stableTasks.map(task => task.task_id)
                                                     });
-                                                }
-                                            }}
-                                            disabled={!selectedTasks[block.block_id]?.length || selectedTasks[block.block_id]?.length !== 1}
-                                        />
-                                        <Button
-                                            icon="pi pi-file-import"
-                                            className="p-button-sm p-button-help"
-                                            onClick={() => handleFileSelect(block.block_id)}
-                                            tooltip="Import tasks from markdown file"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
-                                        <Button
-                                            icon="pi pi-file-export"
-                                            className="p-button-sm p-button-help"
-                                            onClick={() => exportTasksAsMarkdown(block)}
-                                            tooltip="Export tasks to markdown file"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
+                                                }}
+                                            />
+                                            <Button
+                                                icon="pi pi-stop"
+                                                tooltip="Unselect all tasks"
+                                                className="p-button-sm p-button-danger"
+                                                onClick={() => {
+                                                    setSelectedTasks({
+                                                        ...selectedTasks,
+                                                        [block.block_id]: []
+                                                    });
+                                                }}
+                                            />
+                                            <Button
+                                                icon="pi pi-trash"
+                                                tooltip="Delete task"
+                                                className="p-button-sm p-button-danger"
+                                                onClick={() => {
+                                                    const tasksToDelete = selectedTasks[block.block_id] || [];
+                                                    if (tasksToDelete.length > 0) {
+                                                        confirmDeleteTasks(block.block_id);
+                                                    }
+                                                }}
+                                                disabled={!selectedTasks[block.block_id]?.length}
+                                            />
+                                            <Button
+                                                icon="pi pi-book"
+                                                tooltip="Show task logs"
+                                                className="p-button-sm p-button-info"
+                                                onClick={() => {
+                                                    const selectedTaskIndices = selectedTasks[block.block_id] || [];
+                                                    if (selectedTaskIndices.length === 1) {
+                                                        showTaskLogs(block.block_id, selectedTaskIndices[0]);
+                                                    } else {
+                                                        if (toastRef.current) { toastRef.current.show({
+                                                            severity: 'warn',
+                                                            summary: 'Warning',
+                                                            detail: 'Please select exactly one task to view its logs',
+                                                            life: 3000
+                                                        });
+                                                    }
+                                                }}
+                                                disabled={!selectedTasks[block.block_id]?.length || selectedTasks[block.block_id]?.length !== 1}
+                                            />
+                                            <Button
+                                                icon="pi pi-file-import"
+                                                className="p-button-sm p-button-help"
+                                                onClick={() => handleFileSelect(block.block_id)}
+                                                tooltip="Import tasks from markdown file"
+                                                tooltipOptions={{position: 'top'}}
+                                            />
+                                            <Button
+                                                icon="pi pi-file-export"
+                                                className="p-button-sm p-button-help"
+                                                onClick={() => exportTasksAsMarkdown(block)}
+                                                tooltip="Export tasks to markdown file"
+                                                tooltipOptions={{position: 'top'}}
+                                            />
                                     </div>
 
                                     {/* New Task Input */}
@@ -1844,7 +1846,7 @@ const BlocksView = ({refreshTrigger}) => {
                                         <div className="task-list-scrollable">
                                             <Accordion multiple className="w-full">
                                                 {getStableTasksForBlock(block.block_id).map((todo) => (
-                                                    <AccordionTab
+                                                    <AccordionTab 
                                                         key={todo.task_id}
                                                         headerClassName="task-accordion-header"
                                                         header={
@@ -1906,7 +1908,7 @@ const BlocksView = ({refreshTrigger}) => {
                                                                                     openEditTaskDialog(block.block_id, todo);
                                                                                 }}
                                                                                 tooltip="Edit task"
-                                                                                tooltipOptions={{position: 'left'}}
+                                                                                tooltipOptions={{ position: 'left' }}
                                                                                 disabled={isTaskRunning(block.block_id, todo.task_id)}
                                                                             />
                                                                         </div>

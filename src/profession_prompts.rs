@@ -1,6 +1,3 @@
-use crate::project_config::{
-    DEFAULT_GENERATE_TASKS_SYSTEM_PROMPT_MCP, DEFAULT_GENERATE_TASKS_USER_PROMPT_MCP,
-};
 use serde::{Deserialize, Serialize};
 
 // Define profession categories

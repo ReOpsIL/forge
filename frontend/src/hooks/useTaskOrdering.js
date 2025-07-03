@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { sortTasksStably, maintainTaskOrder, todoListToSortedArray } from '../utils/taskSorting';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {maintainTaskOrder, sortTasksStably, todoListToSortedArray} from '../utils/taskSorting';
 
 /**
  * Custom hook for managing stable task ordering

@@ -1,12 +1,12 @@
 use actix_files as fs;
-use actix_web::{App, HttpServer, Responder, web};
+use actix_web::{web, App, HttpServer, Responder};
 use clap::{Arg, Command};
 use dotenv::dotenv;
 use std::sync::Arc;
 use std::thread;
 use tracing::{debug, error, info, warn};
 use tracing_appender::{self, rolling};
-use tracing_subscriber::{self, EnvFilter, fmt, prelude::*};
+use tracing_subscriber::{self, fmt, prelude::*, EnvFilter};
 
 // Import models from the models module
 mod block_config;
@@ -27,27 +27,27 @@ mod task_queue;
 
 mod mcp;
 use crate::block_handlers::{generate_tasks_block_handler, get_blocks_from_file_handler, process_specification_handler};
-use block_config::{BlockConfigManager, generate_sample_config};
+use block_config::{generate_sample_config, BlockConfigManager};
 use block_handlers::{
-    AppState, BLOCK_CONFIG_FILE, add_block_handler, add_task_handler,
-    delete_block_handler, enhance_block_handler, generate_sample_config_handler,
-    get_block_dependencies_handler, process_markdown_handler,
+    add_block_handler, add_task_handler, delete_block_handler, enhance_block_handler,
+    generate_sample_config_handler, get_block_dependencies_handler, process_markdown_handler,
     remove_task_handler, update_block_handler,
+    AppState, BLOCK_CONFIG_FILE,
+};
+use project_config::{ProjectConfigManager, PROJECT_CONFIG_FILE};
+use project_handlers::{
+    check_project_config_handler, get_profession_prompts_handler, get_professions_handler,
+    get_project_config_handler, test_git_connection_handler, update_project_config_handler,
+    ProjectAppState,
 };
 use tools_handlers::{
-    ToolsAppState, execute_block_task_handler
-};
-use project_config::{PROJECT_CONFIG_FILE, ProjectConfigManager};
-use project_handlers::{
-    ProjectAppState, check_project_config_handler, get_profession_prompts_handler,
-    get_professions_handler, get_project_config_handler, test_git_connection_handler,
-    update_project_config_handler,
+    execute_block_task_handler, ToolsAppState,
 };
 
 use crate::claude_handlers::claude_ws_handler;
 use crate::log_stream::{get_task_ids, stream_logs};
 use crate::mcp::transport::TransportFactory;
-use crate::mcp::{MCPServer, server::MCPServerConfig};
+use crate::mcp::{server::MCPServerConfig, MCPServer};
 use crate::models::{ClaudeSessionManager, SessionConfig};
 use crate::task_executor_wrapper::initialize as init_task_executor;
 use crate::tools_handlers::get_branches_handler;
@@ -276,7 +276,7 @@ async fn main() -> std::io::Result<()> {
             git_app_state,
             claude_session_manager,
         )
-        .await
+            .await
     }
 }
 
@@ -364,7 +364,7 @@ async fn run_http_server(
             // Serve the index.html for all other routes
             .default_service(web::get().to(index))
     })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }

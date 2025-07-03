@@ -1,14 +1,14 @@
 use crate::models::ClaudeSessionManager;
+use crate::project_handlers::ProjectAppState;
 use actix::{Actor, AsyncContext, Handler, Message, StreamHandler};
-use actix_web::{Error, HttpRequest, HttpResponse, web};
+use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
-use portable_pty::{CommandBuilder, PtySize, native_pty_system};
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tracing::{debug, error, info, warn};
-use crate::project_handlers::ProjectAppState;
 
 /// WebSocket actor for handling Claude CLI communication
 pub struct ClaudeWebSocket {
@@ -35,7 +35,7 @@ impl Actor for ClaudeWebSocket {
                 let needs_new_process = if let Some(session) = self.session_manager.get_session(&self.session_id) {
                     // Increment connection count for this session
                     session.increment_connections();
-                    
+
                     // Check if we need to spawn a new process
                     !session.is_active()
                 } else {
@@ -247,7 +247,7 @@ impl ClaudeWebSocket {
 
         // Create channels for communication
         let (stdin_tx, stdin_rx) = mpsc::unbounded_channel::<String>();
-        
+
         // Create broadcast channel for output (capacity 1000 messages)
         // Using a larger buffer to handle bursts of output
         let (output_tx, _) = tokio::sync::broadcast::channel::<String>(2000);

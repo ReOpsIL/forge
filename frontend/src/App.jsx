@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {Toast} from 'primereact/toast'
 import {Dialog} from 'primereact/dialog'
 import {Button} from 'primereact/button'
@@ -33,15 +33,15 @@ function App() {
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (!isResizing) return
-            
+
             const containerWidth = window.innerWidth
             const newWidth = containerWidth - e.clientX
-            
+
             // Constrain width between 200px and 80% of window width
             const minWidth = 200
             const maxWidth = containerWidth * 0.8
             const constrainedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth))
-            
+
             setTerminalPanelWidth(constrainedWidth)
         }
 
@@ -72,7 +72,7 @@ function App() {
                 window.terminalManager.fit()
             }
         }, 100)
-        
+
         return () => clearTimeout(timer)
     }, [terminalPanelWidth, terminalPanelCollapsed])
 
@@ -155,13 +155,13 @@ function App() {
 
     return (
         <div className="app-container">
-            <Toast ref={toastRef} />
+            <Toast ref={toastRef}/>
 
             {/* Project Configuration Dialog */}
             <Dialog
                 header="Project Configuration Required"
                 visible={showConfigDialog}
-                style={{ width: '50vw' }}
+                style={{width: '50vw'}}
                 onHide={() => setShowConfigDialog(false)}
                 footer={
                     <div>
@@ -189,29 +189,29 @@ function App() {
             <Menubar model={items} className="mb-4"/>
 
             <div className="main-content">
-                <div 
+                <div
                     className="left-panel"
-                    style={{ 
-                        width: terminalPanelCollapsed 
-                            ? 'calc(100% - 60px)' 
-                            : `calc(100% - ${terminalPanelWidth}px)` 
+                    style={{
+                        width: terminalPanelCollapsed
+                            ? 'calc(100% - 60px)'
+                            : `calc(100% - ${terminalPanelWidth}px)`
                     }}
                 >
                     {renderContent()}
                 </div>
 
                 {!terminalPanelCollapsed && (
-                    <div 
+                    <div
                         className="panel-resizer"
                         onMouseDown={handleStartResize}
                         ref={resizerRef}
                     />
                 )}
 
-                <div 
+                <div
                     className={`right-panel ${terminalPanelCollapsed ? 'collapsed' : ''}`}
-                    style={{ 
-                        width: terminalPanelCollapsed ? '60px' : `${terminalPanelWidth}px` 
+                    style={{
+                        width: terminalPanelCollapsed ? '60px' : `${terminalPanelWidth}px`
                     }}
                 >
                     <div className="terminal-panel-header">
@@ -227,7 +227,7 @@ function App() {
                     </div>
                     {!terminalPanelCollapsed && (
                         <div className="terminal-panel-content">
-                            <Terminal />
+                            <Terminal/>
                         </div>
                     )}
                 </div>

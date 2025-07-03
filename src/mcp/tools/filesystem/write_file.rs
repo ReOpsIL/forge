@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::path::PathBuf;
 use tokio::fs;
 use tracing::info;
@@ -167,8 +167,8 @@ impl MCPTool for WriteFileTool {
                     ("bytes_written".to_string(), json!(bytes_written)),
                     ("encoding".to_string(), json!(encoding)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 

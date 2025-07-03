@@ -1,11 +1,11 @@
-use crate::mcp::MCPTool;
 use crate::mcp::tools::{
-    Content, ContextUpdate, ExecutionContext, Permission, ToolCategory, ToolError, ToolResult,
-    ToolResultBuilder, Notification,
+    Content, ContextUpdate, ExecutionContext, Notification, Permission, ToolCategory, ToolError,
+    ToolResult, ToolResultBuilder,
 };
+use crate::mcp::MCPTool;
 use crate::models::Task;
 use async_trait::async_trait;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet, VecDeque};
 use tracing::{error, info, warn};
 
@@ -232,8 +232,8 @@ impl MCPTool for CreateTaskTool {
                     ("task_name".to_string(), json!(task.task_name)),
                     ("block_id".to_string(), json!(block_id)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 
@@ -415,7 +415,7 @@ impl MCPTool for UpdateTaskTool {
             if let Some(status) = params["status"].as_str() {
                 task.status = status.to_string();
                 updated_fields.push("status");
-                
+
                 // If task is being marked as completed, stop stream capture
                 if status == "COMPLETED" || status == "DONE" {
                     if let Some(claude_session_manager) = &context.claude_session_manager {
@@ -547,8 +547,8 @@ impl MCPTool for UpdateTaskTool {
                     ("block_id".to_string(), json!(block_id)),
                     ("updated_fields".to_string(), json!(updated_fields)),
                 ]
-                .into_iter()
-                .collect(),
+                    .into_iter()
+                    .collect(),
             ),
         };
 
@@ -689,7 +689,7 @@ impl MCPTool for ExecTaskTool {
         // Get the block
         let blocks = context.block_manager.get_blocks()
             .map_err(|e| ToolError::ExecutionFailed(format!("Failed to get blocks: {}", e)))?;
-        
+
         let block = blocks.iter()
             .find(|b| b.block_id == block_id)
             .ok_or_else(|| ToolError::InvalidParams(format!("Block with ID '{}' not found", block_id)))?;
@@ -723,7 +723,7 @@ impl MCPTool for ExecTaskTool {
 
         // Build dependency graph and perform topological sort
         let execution_plan = self.build_execution_plan(&tasks_to_execute, resume_from_last)?;
-        
+
         if dry_run {
             return self.create_dry_run_result(&execution_plan, block_id);
         }
@@ -781,7 +781,7 @@ impl ExecTaskTool {
                     adj_list.get_mut(dependency)
                         .unwrap()
                         .push(task.task_id.clone());
-                    
+
                     // Increment in-degree for current task
                     *in_degree.get_mut(&task.task_id).unwrap() += 1;
                 } else {
@@ -908,10 +908,10 @@ impl ExecTaskTool {
         for task_id in &plan.tasks {
             if let Some(task) = plan.task_map.get(task_id) {
                 info!("Executing task: {} ({})", task.task_name, task_id);
-                
+
                 let result = self.execute_single_task(task, context, block_id).await?;
                 results.push(result);
-                
+
                 // Break execution if task failed and we're not continuing on error
                 if !results.last().unwrap().success {
                     warn!("Task execution failed, stopping sequential execution");
@@ -945,7 +945,7 @@ impl ExecTaskTool {
         block_id: &str,
     ) -> Result<TaskExecutionResult, ToolError> {
         let start_time = std::time::SystemTime::now();
-        
+
         // Update task status to IN_PROGRESS
         if let Err(e) = context.block_manager.update_task_status(block_id, &task.task_id, "IN_PROGRESS") {
             warn!("Failed to update task status to IN_PROGRESS: {}", e);
@@ -953,12 +953,12 @@ impl ExecTaskTool {
 
         // Execute task by injecting prompt to running Claude CLI process
         let success = self.execute_task_using_injecting_prompt(task, context).await;
-        
+
         let end_time = std::time::SystemTime::now();
         let duration = end_time.duration_since(start_time).unwrap_or_default();
 
         let final_status = if success { "COMPLETED" } else { "FAILED" };
-        
+
         // Update task status
         if let Err(e) = context.block_manager.update_task_status(block_id, &task.task_id, final_status) {
             warn!("Failed to update task status to {}: {}", final_status, e);
@@ -970,10 +970,10 @@ impl ExecTaskTool {
             success,
             duration,
             error_message: if success { None } else { Some("Task execution failed".to_string()) },
-            output: if success { 
-                Some(format!("Successfully executed task: {}", task.task_name)) 
-            } else { 
-                None 
+            output: if success {
+                Some(format!("Successfully executed task: {}", task.task_name))
+            } else {
+                None
             },
         })
     }
@@ -996,7 +996,7 @@ impl ExecTaskTool {
 
         // Generate the prompt for Claude CLI
         let prompt = self.generate_task_execution_prompt(task);
-        
+
         info!("Generated prompt for Claude CLI execution:\n{}", prompt);
 
         // Use the default session ID for Claude CLI (matching claude_handlers.rs)
@@ -1049,11 +1049,11 @@ impl ExecTaskTool {
     /// Generate a task execution prompt for Claude CLI
     fn generate_task_execution_prompt(&self, task: &Task) -> String {
         let mut prompt = String::new();
-        
+
         prompt.push_str(&format!("# Task Execution Request\n\n"));
         prompt.push_str(&format!("**Task Name:** {}\n\n", task.task_name));
         prompt.push_str(&format!("**Description:** {}\n\n", task.description));
-        
+
         if !task.files_affected.is_empty() {
             prompt.push_str("**Files to work with:**\n");
             for file in &task.files_affected {
@@ -1061,7 +1061,7 @@ impl ExecTaskTool {
             }
             prompt.push_str("\n");
         }
-        
+
         if !task.function_signatures.is_empty() {
             prompt.push_str("**Function signatures to implement:**\n");
             for signature in &task.function_signatures {
@@ -1069,7 +1069,7 @@ impl ExecTaskTool {
             }
             prompt.push_str("\n");
         }
-        
+
         if !task.acceptance_criteria.is_empty() {
             prompt.push_str("**Acceptance criteria:**\n");
             for criteria in &task.acceptance_criteria {
@@ -1077,7 +1077,7 @@ impl ExecTaskTool {
             }
             prompt.push_str("\n");
         }
-        
+
         if !task.testing_requirements.is_empty() {
             prompt.push_str("**Testing requirements:**\n");
             for requirement in &task.testing_requirements {
@@ -1085,11 +1085,11 @@ impl ExecTaskTool {
             }
             prompt.push_str("\n");
         }
-        
+
         prompt.push_str("Please execute this task using your available MCP tools. ");
         prompt.push_str("Create, modify, or analyze files as needed to complete the task requirements. ");
         prompt.push_str("Provide clear feedback on what you're doing and the results.\n\n");
-        
+
         prompt
     }
 
@@ -1173,7 +1173,7 @@ impl ExecTaskTool {
                 message: format!("Successfully executed {} tasks", successful_tasks),
             });
         }
-        
+
         if failed_tasks > 0 {
             tool_result = tool_result.with_notification(Notification::Warning {
                 message: format!("{} tasks failed execution", failed_tasks),
@@ -1191,7 +1191,7 @@ impl ExecTaskTool {
                     block_id: block_id.to_string(),
                     status: if result.success { "COMPLETED".to_string() } else { "FAILED".to_string() },
                     progress: if result.success { 100.0 } else { 0.0 },
-                    message: result.output.clone().unwrap_or_else(|| 
+                    message: result.output.clone().unwrap_or_else(||
                         result.error_message.clone().unwrap_or_else(|| "Task executed".to_string())
                     ),
                 }

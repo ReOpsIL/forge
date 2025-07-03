@@ -1,7 +1,7 @@
 use crate::llm_handler::BlockConnection;
 use crate::stream_capture::StreamCaptureManager;
 use portable_pty::Child;
-use rand::{Rng, distributions::Alphanumeric};
+use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -324,7 +324,7 @@ impl ClaudeSession {
         let now = Instant::now();
         let capture_config = crate::stream_capture::CaptureConfig::default();
         let stream_capture_manager = Arc::new(StreamCaptureManager::new(capture_config));
-        
+
         Self {
             session_id,
             created_at: now,
@@ -431,12 +431,12 @@ impl ClaudeSession {
             if let Some(current_task_id) = active_capture.as_ref() {
                 let _ = self.stream_capture_manager.stop_capture(current_task_id);
             }
-            
+
             // Start new capture
             self.stream_capture_manager.start_capture(task_id, block_id)?;
             *active_capture = Some(task_id.to_string());
         }
-        
+
         Ok(())
     }
 

@@ -2,7 +2,8 @@
 
 ## Overview
 
-Two new constant prompts have been created that implement the same functionality as the existing `DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT` and `DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT`, but use MCP tools (`create_block` and `create_task`) as the mechanism for creating forge Blocks and Tasks.
+Two new constant prompts have been created that implement the same functionality as the existing `DEFAULT_PROCESS_MARKDOWN_SPEC_SYSTEM_PROMPT` and `DEFAULT_PROCESS_MARKDOWN_SPEC_USER_PROMPT`, but use MCP tools (`create_block` and
+`create_task`) as the mechanism for creating forge Blocks and Tasks.
 
 ## New Constants
 
@@ -13,6 +14,7 @@ Two new constant prompts have been created that implement the same functionality
 **Purpose**: System prompt that defines the AI's role as a software architecture analyst using MCP tools.
 
 **Key Features**:
+
 - Identifies available MCP tools (`create_block` and `create_task`)
 - Defines the AI's role in parsing specifications and creating components
 - Emphasizes direct tool usage for component creation
@@ -25,6 +27,7 @@ Two new constant prompts have been created that implement the same functionality
 **Purpose**: User prompt that provides detailed instructions for processing markdown specifications using MCP tools.
 
 **Key Features**:
+
 - **Two-phase process**: First create blocks, then create tasks
 - **Comprehensive guidelines** for both block and task creation
 - **Detailed MCP tool usage examples** with JSON parameters
@@ -32,18 +35,19 @@ Two new constant prompts have been created that implement the same functionality
 
 ## Functionality Comparison
 
-| Aspect | Original Prompts | New MCP Prompts |
-|--------|-----------------|-----------------|
-| **Output Format** | JSON array of block specifications | Direct MCP tool calls |
-| **Block Creation** | JSON structure definition | `create_block` tool usage |
-| **Task Creation** | Not included | `create_task` tool with full metadata |
-| **Persistence** | Manual processing required | Automatic via MCP tools |
-| **Validation** | External validation needed | Built-in tool validation |
-| **Integration** | Requires parsing and conversion | Direct forge integration |
+| Aspect             | Original Prompts                   | New MCP Prompts                       |
+|--------------------|------------------------------------|---------------------------------------|
+| **Output Format**  | JSON array of block specifications | Direct MCP tool calls                 |
+| **Block Creation** | JSON structure definition          | `create_block` tool usage             |
+| **Task Creation**  | Not included                       | `create_task` tool with full metadata |
+| **Persistence**    | Manual processing required         | Automatic via MCP tools               |
+| **Validation**     | External validation needed         | Built-in tool validation              |
+| **Integration**    | Requires parsing and conversion    | Direct forge integration              |
 
 ## MCP Tools Integration
 
 ### create_block Tool Usage
+
 ```json
 {
   "name": "UserAuthenticationService",
@@ -52,6 +56,7 @@ Two new constant prompts have been created that implement the same functionality
 ```
 
 ### create_task Tool Usage
+
 ```json
 {
   "block_id": "[block_id_from_create_block_response]",
@@ -92,6 +97,7 @@ Default values are automatically populated in the `Default` implementation using
 ## Usage Context
 
 These prompts are designed for scenarios where:
+
 - Markdown specifications need to be converted to forge blocks and tasks
 - Direct integration with the forge project management system is required
 - Comprehensive task tracking with metadata is needed

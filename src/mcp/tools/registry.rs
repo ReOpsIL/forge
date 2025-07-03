@@ -247,9 +247,9 @@ impl ToolRegistry {
                 meta.name.to_lowercase().contains(&query_lower)
                     || meta.description.to_lowercase().contains(&query_lower)
                     || meta
-                        .tags
-                        .iter()
-                        .any(|tag| tag.to_lowercase().contains(&query_lower))
+                    .tags
+                    .iter()
+                    .any(|tag| tag.to_lowercase().contains(&query_lower))
             })
             .map(|meta| ToolInfo {
                 name: meta.name.clone(),

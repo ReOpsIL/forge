@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events';
-import { terminalSessionManager, TerminalSession } from '../services/terminal-session-manager';
+import {EventEmitter} from 'events';
+import {TerminalSession, terminalSessionManager} from '../services/terminal-session-manager';
 
 export interface TerminalState {
     sessionId: string | null;
@@ -26,7 +26,7 @@ export class TerminalStore extends EventEmitter {
 
     constructor() {
         super();
-        
+
         terminalSessionManager.on('sessionCreated', (sessionId: string) => {
             this.initializeSessionState(sessionId);
         });
@@ -39,11 +39,11 @@ export class TerminalStore extends EventEmitter {
     createSession(): string {
         const sessionId = terminalSessionManager.createSession();
         this.initializeSessionState(sessionId);
-        
+
         if (!this.state.activeSessionId) {
             this.setActiveSession(sessionId);
         }
-        
+
         this.emit('sessionCreated', sessionId);
         return sessionId;
     }
@@ -54,13 +54,13 @@ export class TerminalStore extends EventEmitter {
 
     cleanupSession(sessionId: string): void {
         terminalSessionManager.cleanupSession(sessionId);
-        
+
         if (this.state.activeSessionId === sessionId) {
             const remainingSessions = Array.from(this.state.sessions.keys());
             const nextSession = remainingSessions.find(id => id !== sessionId);
             this.setActiveSession(nextSession || null);
         }
-        
+
         this.emit('sessionCleaned', sessionId);
     }
 
@@ -80,10 +80,10 @@ export class TerminalStore extends EventEmitter {
         if (sessionId && !this.state.sessions.has(sessionId)) {
             throw new Error(`Session ${sessionId} does not exist`);
         }
-        
+
         const previousSessionId = this.state.activeSessionId;
         this.state.activeSessionId = sessionId;
-        
+
         this.emit('activeSessionChanged', sessionId, previousSessionId);
     }
 
@@ -104,7 +104,7 @@ export class TerminalStore extends EventEmitter {
             sessionState.isConnected = isConnected;
             sessionState.isConnecting = isConnecting;
             sessionState.error = isConnected ? null : sessionState.error;
-            
+
             this.emit('sessionConnectionChanged', sessionId, isConnected, isConnecting);
         }
     }
@@ -113,16 +113,16 @@ export class TerminalStore extends EventEmitter {
         const sessionState = this.state.sessions.get(sessionId);
         if (sessionState) {
             sessionState.history.push(command);
-            
+
             if (sessionState.history.length > 1000) {
                 sessionState.history = sessionState.history.slice(-1000);
             }
-            
+
             this.state.globalHistory.push(`[${sessionId}] ${command}`);
             if (this.state.globalHistory.length > 2000) {
                 this.state.globalHistory = this.state.globalHistory.slice(-2000);
             }
-            
+
             terminalSessionManager.updateSessionActivity(sessionId);
             this.emit('historyUpdated', sessionId, command);
         }
@@ -177,8 +177,8 @@ export class TerminalStore extends EventEmitter {
         if (!sessionState) {
             return undefined;
         }
-        
-        return key ? sessionState.metadata[key] : { ...sessionState.metadata };
+
+        return key ? sessionState.metadata[key] : {...sessionState.metadata};
     }
 
     clearHistory(sessionId: string): void {
@@ -211,14 +211,14 @@ export class TerminalStore extends EventEmitter {
         if (sessionIds.length === 0) {
             return null;
         }
-        
-        const currentIndex = this.state.activeSessionId 
+
+        const currentIndex = this.state.activeSessionId
             ? sessionIds.indexOf(this.state.activeSessionId)
             : -1;
-        
+
         const nextIndex = (currentIndex + 1) % sessionIds.length;
         const nextSessionId = sessionIds[nextIndex];
-        
+
         this.setActiveSession(nextSessionId);
         return nextSessionId;
     }
@@ -228,39 +228,16 @@ export class TerminalStore extends EventEmitter {
         if (sessionIds.length === 0) {
             return null;
         }
-        
-        const currentIndex = this.state.activeSessionId 
+
+        const currentIndex = this.state.activeSessionId
             ? sessionIds.indexOf(this.state.activeSessionId)
             : 0;
-        
+
         const prevIndex = currentIndex === 0 ? sessionIds.length - 1 : currentIndex - 1;
         const prevSessionId = sessionIds[prevIndex];
-        
+
         this.setActiveSession(prevSessionId);
         return prevSessionId;
-    }
-
-    private initializeSessionState(sessionId: string): void {
-        const initialState: TerminalState = {
-            sessionId,
-            isConnected: false,
-            isConnecting: false,
-            history: [],
-            currentInput: '',
-            error: null,
-            metadata: {}
-        };
-        
-        this.state.sessions.set(sessionId, initialState);
-    }
-
-    private removeSessionState(sessionId: string): void {
-        this.state.sessions.delete(sessionId);
-        
-        if (this.state.activeSessionId === sessionId) {
-            const remainingSessions = Array.from(this.state.sessions.keys());
-            this.state.activeSessionId = remainingSessions.length > 0 ? remainingSessions[0] : null;
-        }
     }
 
     getState(): MultiTerminalState {
@@ -295,18 +272,41 @@ export class TerminalStore extends EventEmitter {
 
     shutdown(): void {
         console.log('Shutting down terminal store...');
-        
+
         const sessionIds = Array.from(this.state.sessions.keys());
         for (const sessionId of sessionIds) {
             this.cleanupSession(sessionId);
         }
-        
+
         this.state.sessions.clear();
         this.state.activeSessionId = null;
         this.state.globalHistory = [];
-        
+
         this.emit('shutdown');
         console.log('Terminal store shutdown complete');
+    }
+
+    private initializeSessionState(sessionId: string): void {
+        const initialState: TerminalState = {
+            sessionId,
+            isConnected: false,
+            isConnecting: false,
+            history: [],
+            currentInput: '',
+            error: null,
+            metadata: {}
+        };
+
+        this.state.sessions.set(sessionId, initialState);
+    }
+
+    private removeSessionState(sessionId: string): void {
+        this.state.sessions.delete(sessionId);
+
+        if (this.state.activeSessionId === sessionId) {
+            const remainingSessions = Array.from(this.state.sessions.keys());
+            this.state.activeSessionId = remainingSessions.length > 0 ? remainingSessions[0] : null;
+        }
     }
 }
 

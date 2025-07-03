@@ -12,6 +12,7 @@ The CreateTaskTool is a new MCP tool that creates detailed tasks for forge Block
 ## Features
 
 ### Comprehensive Task Creation
+
 - Creates detailed Task objects with full metadata
 - Supports all Task fields: acceptance criteria, dependencies, effort estimation, etc.
 - Validates block existence before creating tasks
@@ -76,6 +77,7 @@ The CreateTaskTool is a new MCP tool that creates detailed tasks for forge Block
 ## Usage Examples
 
 ### Basic Task Creation
+
 ```json
 {
   "block_id": "oceUDc",
@@ -85,6 +87,7 @@ The CreateTaskTool is a new MCP tool that creates detailed tasks for forge Block
 ```
 
 ### Detailed Task with All Fields
+
 ```json
 {
   "block_id": "oceUDc",
@@ -121,12 +124,15 @@ The CreateTaskTool is a new MCP tool that creates detailed tasks for forge Block
 ## Implementation Details
 
 ### New BlockConfigManager Method
+
 Added `add_task()` method to BlockConfigManager:
+
 - **Location**: `/Users/dovcaspi/develop/forge/src/block_config.rs:190-207`
 - **Function**: `pub fn add_task(&self, block_id: &str, task: Task) -> Result<String, String>`
 - **Returns**: Task ID on success, error message on failure
 
 ### Workflow
+
 1. **Parameter Validation**: Validates required fields (block_id, task_name, description)
 2. **Block Existence Check**: Verifies the target block exists
 3. **Task Creation**: Creates comprehensive Task object with all provided metadata
@@ -134,7 +140,9 @@ Added `add_task()` method to BlockConfigManager:
 5. **Context Updates**: Updates execution context with task creation details
 
 ### Output Format
+
 Returns JSON with:
+
 - Success status and message
 - Complete task details including generated task_id
 - Context update information including file modifications
@@ -142,6 +150,7 @@ Returns JSON with:
 ## Integration
 
 The tool integrates seamlessly with the existing forge MCP ecosystem:
+
 - **Registered alongside**: `list_blocks`, `create_block`, and filesystem tools
 - **Uses existing**: Block and Task models from `src/models.rs`
 - **Leverages**: BlockConfigManager for persistence
