@@ -12,6 +12,8 @@ use tracing_subscriber::{self, fmt, prelude::*, EnvFilter};
 mod block_config;
 mod block_handlers;
 mod claude_handlers;
+mod jira_handlers;
+mod jira_mapping;
 mod tools_handlers;
 mod llm_handler;
 mod log_manager;
@@ -42,6 +44,9 @@ use project_handlers::{
 };
 use tools_handlers::{
     execute_block_task_handler, ToolsAppState,
+};
+use jira_handlers::{
+    get_jira_projects_handler, get_jira_project_metadata_handler, jira_sync_handler, JiraAppState,
 };
 
 use crate::claude_handlers::claude_ws_handler;
@@ -261,6 +266,17 @@ async fn main() -> std::io::Result<()> {
         block_manager: block_manager.clone(),
     });
 
+    // Create Jira app state
+    let jira_client = crate::mcp::tools::jira::JiraClient::with_default_config()
+        .expect("Failed to create Jira client");
+    let jira_app_state = web::Data::new(JiraAppState {
+        jira_client: Arc::new(jira_client),
+        tool_registry: Arc::new(crate::mcp::tools::ToolRegistry::new()),
+        project_config: project_manager.clone(),
+        block_manager: block_manager.clone(),
+        claude_session_manager: session_manager.clone(),
+    });
+
     // Start the cleanup task for expired sessions
     session_manager.clone().start_cleanup_task();
 
@@ -274,6 +290,7 @@ async fn main() -> std::io::Result<()> {
             app_state,
             project_app_state,
             git_app_state,
+            jira_app_state,
             claude_session_manager,
         )
             .await
@@ -284,6 +301,7 @@ async fn run_http_server(
     app_state: web::Data<AppState>,
     project_app_state: web::Data<ProjectAppState>,
     git_app_state: web::Data<ToolsAppState>,
+    jira_app_state: web::Data<JiraAppState>,
     claude_session_manager: web::Data<Arc<ClaudeSessionManager>>,
 ) -> std::io::Result<()> {
     HttpServer::new(move || {
@@ -291,6 +309,7 @@ async fn run_http_server(
             .app_data(app_state.clone())
             .app_data(project_app_state.clone())
             .app_data(git_app_state.clone())
+            .app_data(jira_app_state.clone())
             .app_data(claude_session_manager.clone())
             // API routes
             .service(
@@ -353,6 +372,10 @@ async fn run_http_server(
                         "/project/professions/{profession_id}/prompts",
                         web::get().to(get_profession_prompts_handler),
                     )
+                    // Jira integration routes
+                    .route("/jira/projects", web::get().to(get_jira_projects_handler))
+                    .route("/jira/projects/{project_key}/metadata", web::get().to(get_jira_project_metadata_handler))
+                    .route("/jira/sync", web::post().to(jira_sync_handler))
                     // Log streaming routes
                     .route("/logs/stream/{task_id}", web::get().to(stream_logs))
                     .route("/logs/task-ids", web::get().to(get_task_ids))

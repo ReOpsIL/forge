@@ -11,10 +11,13 @@ import {ConfirmDialog, confirmDialog} from 'primereact/confirmdialog';
 import {Dialog} from 'primereact/dialog';
 import {Toast} from 'primereact/toast';
 import {Accordion, AccordionTab} from 'primereact/accordion';
+import {Menu} from 'primereact/menu';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import TaskDialog from './TaskDialog';
 import LogsDialog from './LogsDialog';
+import JiraConfigDialog from './JiraConfigDialog';
+import JiraSyncModal from './JiraSyncModal';
 import {useBlockTaskOrdering} from '../hooks/useTaskOrdering';
 import './BlocksView.css';
 
@@ -46,7 +49,12 @@ const BlocksView = ({refreshTrigger}) => {
     const [currentDependencyBlock, setCurrentDependencyBlock] = useState(null);
     const [showEmptyTasksDialog, setShowEmptyTasksDialog] = useState(false);
     const [currentEmptyTasksBlockId, setCurrentEmptyTasksBlockId] = useState(null);
+    const [showJiraConfigDialog, setShowJiraConfigDialog] = useState(false);
+    const [showJiraSyncModal, setShowJiraSyncModal] = useState(false);
+    const [jiraSyncProgress, setJiraSyncProgress] = useState(0);
+    const [jiraSyncStatus, setJiraSyncStatus] = useState('');
     const fileInputRef = useRef(null);
+    const taskMenuRefs = useRef({});
     const [newBlock, setNewBlock] = useState({
         block_id: '',
         name: '',
@@ -1204,6 +1212,174 @@ const BlocksView = ({refreshTrigger}) => {
         return hasInputs || hasOutputs;
     };
 
+    // Handle Jira Sync
+    const handleJiraSync = () => {
+        setShowJiraConfigDialog(true);
+    };
+
+    // Handle Jira Sync Execution
+    const handleJiraSyncExecution = async (config) => {
+        try {
+            setShowJiraConfigDialog(false);
+            setShowJiraSyncModal(true);
+            setJiraSyncProgress(0);
+            setJiraSyncStatus('Starting Jira sync...');
+
+            // Call the backend MCP tool to sync with Jira
+            const response = await fetch('/api/jira/sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to sync with Jira');
+            }
+
+            const result = await response.json();
+            
+            setJiraSyncProgress(100);
+            setJiraSyncStatus(`Sync completed! ${result.blocks_created || 0} blocks created, ${result.tasks_created || 0} tasks created.`);
+            
+            // Refresh blocks after sync
+            setTimeout(() => {
+                fetchBlocks();
+                setShowJiraSyncModal(false);
+            }, 2000);
+
+        } catch (error) {
+            console.error('Jira sync error:', error);
+            setJiraSyncStatus(`Sync failed: ${error.message}`);
+            setJiraSyncProgress(0);
+        }
+    };
+
+    // Function to create menu items for task toolbar
+    const createTaskMenuItems = (block) => {
+        const stableTasks = getStableTasksForBlock(block.block_id);
+        const hasSelectedTasks = selectedTasks[block.block_id]?.length > 0;
+        const hasExactlyOneTask = selectedTasks[block.block_id]?.length === 1;
+        
+        return [
+            {
+                label: 'Create Actions',
+                items: [
+                    {
+                        label: 'Create new task',
+                        icon: 'pi pi-plus',
+                        command: () => openCreateTaskDialog(block.block_id)
+                    },
+                    {
+                        label: 'Import tasks from markdown',
+                        icon: 'pi pi-file-import',
+                        command: () => handleFileSelect(block.block_id)
+                    }
+                ]
+            },
+            {
+                separator: true
+            },
+            {
+                label: 'Execution Actions',
+                items: [
+                    {
+                        label: 'Run Tasks',
+                        icon: 'pi pi-hammer',
+                        command: () => handleExecuteWithEmptyTasksCheck(block.block_id),
+                        disabled: areTasksRunning(block.block_id)
+                    },
+                    {
+                        label: 'Stop tasks execution',
+                        icon: 'pi pi-exclamation-triangle',
+                        command: () => stopAllTasks(block.block_id),
+                        disabled: !areTasksRunning(block.block_id)
+                    },
+                    {
+                        label: 'View dependency tree',
+                        icon: 'pi pi-sitemap',
+                        command: () => {
+                            setCurrentDependencyBlock(block.block_id);
+                            // Note: setShowDependencyTreeDialog needs to be defined
+                            console.log('Dependency tree for block:', block.block_id);
+                        }
+                    }
+                ]
+            },
+            {
+                separator: true
+            },
+            {
+                label: 'Selection Actions',
+                items: [
+                    {
+                        label: 'Select all tasks',
+                        icon: 'pi pi-check-square',
+                        command: () => {
+                            setSelectedTasks({
+                                ...selectedTasks,
+                                [block.block_id]: stableTasks.map(task => task.task_id)
+                            });
+                        }
+                    },
+                    {
+                        label: 'Unselect all tasks',
+                        icon: 'pi pi-stop',
+                        command: () => {
+                            setSelectedTasks({
+                                ...selectedTasks,
+                                [block.block_id]: []
+                            });
+                        }
+                    },
+                    {
+                        label: 'Delete selected tasks',
+                        icon: 'pi pi-trash',
+                        command: () => {
+                            const tasksToDelete = selectedTasks[block.block_id] || [];
+                            if (tasksToDelete.length > 0) {
+                                confirmDeleteTasks(block.block_id);
+                            }
+                        },
+                        disabled: !hasSelectedTasks
+                    }
+                ]
+            },
+            {
+                separator: true
+            },
+            {
+                label: 'Utility Actions',
+                items: [
+                    {
+                        label: 'Show task logs',
+                        icon: 'pi pi-book',
+                        command: () => {
+                            const selectedTaskIndices = selectedTasks[block.block_id] || [];
+                            if (selectedTaskIndices.length === 1) {
+                                showTaskLogs(block.block_id, selectedTaskIndices[0]);
+                            } else {
+                                toastRef.current.show({
+                                    severity: 'warn',
+                                    summary: 'Warning',
+                                    detail: 'Please select exactly one task to view its logs',
+                                    life: 3000
+                                });
+                            }
+                        },
+                        disabled: !hasExactlyOneTask
+                    },
+                    {
+                        label: 'Export tasks to markdown',
+                        icon: 'pi pi-file-export',
+                        command: () => exportTasksAsMarkdown(block)
+                    }
+                ]
+            }
+        ];
+    };
+
     if (loading) {
         return <div>Loading blocks...</div>;
     }
@@ -1382,6 +1558,14 @@ const BlocksView = ({refreshTrigger}) => {
                         tooltip="Manually refresh blocks data"
                     />
                     <Button
+                        label="Jira Sync"
+                        icon="pi pi-sync"
+                        className="p-button-info"
+                        onClick={handleJiraSync}
+                        disabled={loading}
+                        tooltip="Sync with Jira projects and issues"
+                    />
+                    <Button
                         label="New Block"
                         icon="pi pi-plus"
                         className="p-button-success"
@@ -1405,6 +1589,22 @@ const BlocksView = ({refreshTrigger}) => {
                 onHide={() => setShowLogsDialog(false)}
                 taskId={currentLogsTaskId}
                 blockId={currentLogsBlockId}
+            />
+
+            {/* Jira Config Dialog */}
+            <JiraConfigDialog
+                visible={showJiraConfigDialog}
+                onHide={() => setShowJiraConfigDialog(false)}
+                onSync={handleJiraSyncExecution}
+            />
+
+            {/* Jira Sync Progress Modal */}
+            <JiraSyncModal
+                visible={showJiraSyncModal}
+                onHide={() => setShowJiraSyncModal(false)}
+                progress={jiraSyncProgress}
+                status={jiraSyncStatus}
+                isComplete={jiraSyncProgress === 100 || jiraSyncStatus.includes('failed')}
             />
 
             {/* New Block Dialog */}
@@ -1550,6 +1750,12 @@ const BlocksView = ({refreshTrigger}) => {
                                         <>
                                             <div>
                                                 <span>{block.name}</span>
+                                                {Object.values(block.todo_list || {}).some(task => task.jira_synced) && (
+                                                    <i 
+                                                        className="pi pi-external-link ml-2 text-blue-500" 
+                                                        title="Block contains Jira-synced tasks"
+                                                    ></i>
+                                                )}
                                                 <span className="text-s text-gray-500">ID: {block.block_id}</span>
                                             </div>
                                             <div className="flex">
@@ -1684,130 +1890,52 @@ const BlocksView = ({refreshTrigger}) => {
 
                             <Panel header="Task List" toggleable>
                                 <div className="task-list-container">
-                                    {/* Task List Controls */}
-                                    <div className="task-list-controls mb-2">
-                                        <Button
-                                            icon="pi pi-plus"
-                                            className="p-button-sm"
-                                            onClick={() => openCreateTaskDialog(block.block_id)}
-                                            tooltip="Create new task"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
-                                        <div className="flex align-items-center">
-                                            <Button
-                                                icon="pi pi-hammer"
-                                                className="p-button-sm p-button-info"
-                                                onClick={() => handleExecuteWithEmptyTasksCheck(block.block_id)}
-                                                disabled={areTasksRunning(block.block_id)}
-                                                tooltip="Run Tasks"
-                                                tooltipOptions={{position: 'top'}}
-                                            />
+                                    {/* Task List Controls - Three Dots Menu */}
+                                    <div className="task-list-controls mb-2 flex justify-content-between align-items-center">
+                                        <div className="flex align-items-center gap-2">
                                             <div className="flex align-items-center">
                                                 <Checkbox
-                                                    inputId="resolve-dependencies"
+                                                    inputId={`resolve-dependencies-${block.block_id}`}
                                                     checked={resolveDependencies}
                                                     onChange={e => setResolveDependencies(e.checked)}
                                                     tooltip="Resolve dependency"
                                                     tooltipOptions={{position: 'top'}}
                                                 />
-                                                <label htmlFor="resolve-dependencies" className="ml-1 text-sm">Dep</label>
+                                                <label htmlFor={`resolve-dependencies-${block.block_id}`} className="ml-1 text-sm">Dep</label>
                                             </div>
                                             <div className="flex align-items-center">
                                                 <Checkbox
-                                                    inputId="force-completed"
+                                                    inputId={`force-completed-${block.block_id}`}
                                                     checked={forceCompleted}
                                                     onChange={e => setForceCompleted(e.checked)}
                                                     tooltip="Force completed"
                                                     tooltipOptions={{position: 'top'}}
                                                 />
-                                                <label htmlFor="force-completed" className="ml-1 text-sm">Force</label>
+                                                <label htmlFor={`force-completed-${block.block_id}`} className="ml-1 text-sm">Force</label>
                                             </div>
                                         </div>
-                                        <Button
-                                            icon="pi pi-sitemap"
-                                            className="p-button-sm p-button-info"
-                                            onClick={() => {
-                                                setCurrentDependencyBlock(block.block_id);
-                                                setShowDependencyTreeDialog(true);
-                                            }}
-                                            tooltip="View dependency tree"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
-                                        <Button
-                                            icon="pi pi-exclamation-triangle"
-                                            tooltip="Stop tasks execution"
-                                            className="p-button-sm p-button-warning"
-                                            onClick={() => stopAllTasks(block.block_id)}
-                                            disabled={!areTasksRunning(block.block_id)}
-                                        />
-                                        <Button
-                                            icon="pi pi-check-square"
-                                            tooltip="Select all tasks"
-                                            className="p-button-sm p-button-danger"
-                                            onClick={() => {
-                                                const stableTasks = getStableTasksForBlock(block.block_id);
-                                                setSelectedTasks({
-                                                    ...selectedTasks,
-                                                    [block.block_id]: stableTasks.map(task => task.task_id)
-                                                });
-                                            }}
-                                        />
-                                        <Button
-                                            icon="pi pi-stop"
-                                            tooltip="Unselect all tasks"
-                                            className="p-button-sm p-button-danger"
-                                            onClick={() => {
-                                                setSelectedTasks({
-                                                    ...selectedTasks,
-                                                    [block.block_id]: []
-                                                });
-                                            }}
-                                        />
-                                        <Button
-                                            icon="pi pi-trash"
-                                            tooltip="Delete task"
-                                            className="p-button-sm p-button-danger"
-                                            onClick={() => {
-                                                const tasksToDelete = selectedTasks[block.block_id] || [];
-                                                if (tasksToDelete.length > 0) {
-                                                    confirmDeleteTasks(block.block_id);
-                                                }
-                                            }}
-                                            disabled={!selectedTasks[block.block_id]?.length}
-                                        />
-                                        <Button
-                                            icon="pi pi-book"
-                                            tooltip="Show task logs"
-                                            className="p-button-sm p-button-info"
-                                            onClick={() => {
-                                                const selectedTaskIndices = selectedTasks[block.block_id] || [];
-                                                if (selectedTaskIndices.length === 1) {
-                                                    showTaskLogs(block.block_id, selectedTaskIndices[0]);
-                                                } else {
-                                                    toastRef.current.show({
-                                                        severity: 'warn',
-                                                        summary: 'Warning',
-                                                        detail: 'Please select exactly one task to view its logs',
-                                                        life: 3000
-                                                    });
-                                                }
-                                            }}
-                                            disabled={!selectedTasks[block.block_id]?.length || selectedTasks[block.block_id]?.length !== 1}
-                                        />
-                                        <Button
-                                            icon="pi pi-file-import"
-                                            className="p-button-sm p-button-help"
-                                            onClick={() => handleFileSelect(block.block_id)}
-                                            tooltip="Import tasks from markdown file"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
-                                        <Button
-                                            icon="pi pi-file-export"
-                                            className="p-button-sm p-button-help"
-                                            onClick={() => exportTasksAsMarkdown(block)}
-                                            tooltip="Export tasks to markdown file"
-                                            tooltipOptions={{position: 'top'}}
-                                        />
+                                        <div className="task-menu-container">
+                                            <Menu
+                                                model={createTaskMenuItems(block)}
+                                                popup
+                                                ref={el => {
+                                                    if (el) {
+                                                        taskMenuRefs.current[block.block_id] = el;
+                                                    }
+                                                }}
+                                            />
+                                            <Button
+                                                icon="pi pi-ellipsis-v"
+                                                className="p-button-sm p-button-text"
+                                                tooltip="Task actions menu"
+                                                tooltipOptions={{position: 'left'}}
+                                                onClick={(event) => {
+                                                    if (taskMenuRefs.current[block.block_id]) {
+                                                        taskMenuRefs.current[block.block_id].toggle(event);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* New Task Input */}
@@ -1896,6 +2024,12 @@ const BlocksView = ({refreshTrigger}) => {
                                                                                 <span className="sandclock"></span>
                                                                             )}
                                                                             <span className="task-id">[{todo.task_id}]</span> {todo.task_name || todo.description}
+                                                                            {todo.jira_synced && (
+                                                                                <i 
+                                                                                    className="pi pi-external-link ml-2 text-blue-500" 
+                                                                                    title={`Synced with Jira: ${todo.jira_issue_key || 'Unknown'}`}
+                                                                                ></i>
+                                                                            )}
                                                                         </span>
                                                                         <div className="task-actions">
                                                                             <Button
@@ -2001,6 +2135,44 @@ const BlocksView = ({refreshTrigger}) => {
                                                                 </div>
                                                             )}
 
+                                                            {(todo.jira_synced || todo.jira_issue_key) && (
+                                                                <div className="mb-3">
+                                                                    <h4 className="m-0 mb-2 text-blue-600">
+                                                                        <i className="pi pi-external-link mr-2"></i>
+                                                                        Jira Integration
+                                                                    </h4>
+                                                                    <div className="p-2 border-1 border-round border-blue-200 bg-blue-50">
+                                                                        {todo.jira_issue_key && (
+                                                                            <div className="flex align-items-center justify-content-between mb-2">
+                                                                                <span className="font-medium">Issue: {todo.jira_issue_key}</span>
+                                                                                {todo.jira_issue_url && (
+                                                                                    <Button
+                                                                                        icon="pi pi-external-link"
+                                                                                        className="p-button-sm p-button-outlined p-button-secondary"
+                                                                                        onClick={() => window.open(todo.jira_issue_url, '_blank')}
+                                                                                        tooltip="Open in Jira"
+                                                                                    />
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                        {todo.jira_status && (
+                                                                            <p className="m-0 mb-1"><strong>Status:</strong> {todo.jira_status}</p>
+                                                                        )}
+                                                                        {todo.jira_priority && (
+                                                                            <p className="m-0 mb-1"><strong>Priority:</strong> {todo.jira_priority}</p>
+                                                                        )}
+                                                                        {todo.jira_assignee && (
+                                                                            <p className="m-0 mb-1"><strong>Assignee:</strong> {todo.jira_assignee}</p>
+                                                                        )}
+                                                                        <div className="flex align-items-center gap-2 mt-2">
+                                                                            <i className={`pi ${todo.jira_synced ? 'pi-check-circle text-green-500' : 'pi-times-circle text-orange-500'}`}></i>
+                                                                            <span className={`text-sm ${todo.jira_synced ? 'text-green-700' : 'text-orange-700'}`}>
+                                                                                {todo.jira_synced ? 'Synced' : 'Sync pending'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
 
                                                         </div>
                                                     </AccordionTab>

@@ -351,6 +351,12 @@ pub fn generate_sample_config(filename: &str) -> Result<(), io::Error> {
                 output_connections,
             },
             todo_list: tasks,
+            jira_project_key: None,
+            jira_project_name: None,
+            jira_epic_key: None,
+            jira_synced: false,
+            jira_last_sync: None,
+            jira_sync_settings: crate::models::JiraSyncSettings::default(),
         };
 
         blocks.push(block);

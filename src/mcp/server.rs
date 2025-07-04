@@ -24,6 +24,9 @@ use crate::mcp::{
         blocks::{CreateBlockTool, ListBlocksTool, UpdateBlockTool}, filesystem::{
             create_directory::CreateDirectoryTool, delete::DeleteTool,
             list_directory::ListDirectoryTool, read_file::ReadFileTool, write_file::WriteFileTool,
+        }, jira::{
+            BulkSyncTasksTool, GetJiraProjectMetadataTool, ImportJiraIssuesToBlockTool,
+            SyncBlockToJiraProjectTool, UpdateJiraIssueStatusTool,
         }, tasks::{CreateTaskTool, ExecTaskTool, UpdateTaskTool}, ExecutionContext, MCPTool,
         ToolError,
         ToolRegistry,
@@ -575,6 +578,7 @@ impl MCPServer {
 
     /// Register built-in tools
     async fn register_builtin_tools(registry: &Arc<ToolRegistry>) -> MCPResult<()> {
+        // Core tools
         registry.register_tool(Box::new(ReadFileTool)).await?;
         registry.register_tool(Box::new(WriteFileTool)).await?;
         registry.register_tool(Box::new(ListDirectoryTool)).await?;
@@ -589,7 +593,14 @@ impl MCPServer {
         registry.register_tool(Box::new(ExecTaskTool)).await?;
         registry.register_tool(Box::new(UpdateTaskTool)).await?;
 
-        info!("Registered {} built-in tools", 11);
+        // Jira integration tools
+        registry.register_tool(Box::new(SyncBlockToJiraProjectTool)).await?;
+        registry.register_tool(Box::new(ImportJiraIssuesToBlockTool)).await?;
+        registry.register_tool(Box::new(UpdateJiraIssueStatusTool)).await?;
+        registry.register_tool(Box::new(GetJiraProjectMetadataTool)).await?;
+        registry.register_tool(Box::new(BulkSyncTasksTool)).await?;
+
+        info!("Registered {} built-in tools", 16);
         Ok(())
     }
 

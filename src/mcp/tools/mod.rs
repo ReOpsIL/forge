@@ -1,5 +1,6 @@
 pub mod blocks;
 pub mod filesystem;
+pub mod jira;
 /// MCP Tools module - Comprehensive tool registry and execution system
 ///
 /// This module provides the foundation for all MCP tools in Forge, including

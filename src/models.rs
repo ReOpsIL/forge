@@ -3,11 +3,50 @@ use crate::stream_capture::StreamCaptureManager;
 use portable_pty::Child;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
+use serde_json;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tracing::info;
+
+// Jira sync settings for blocks
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JiraSyncSettings {
+    pub auto_sync: bool,
+    pub sync_direction: String, // "import", "export", "bidirectional"
+    pub issue_type_mapping: HashMap<String, String>, // Task status -> Jira issue type
+    pub status_mapping: HashMap<String, String>, // Task status -> Jira status
+    pub create_epics_for_blocks: bool,
+    pub sync_assignees: bool,
+    pub sync_labels: bool,
+    pub conflict_resolution: String, // "jira_wins", "forge_wins", "manual"
+}
+
+impl Default for JiraSyncSettings {
+    fn default() -> Self {
+        let mut issue_type_mapping = HashMap::new();
+        issue_type_mapping.insert("TODO".to_string(), "Task".to_string());
+        issue_type_mapping.insert("IN_PROGRESS".to_string(), "Task".to_string());
+        issue_type_mapping.insert("COMPLETED".to_string(), "Task".to_string());
+        
+        let mut status_mapping = HashMap::new();
+        status_mapping.insert("TODO".to_string(), "To Do".to_string());
+        status_mapping.insert("IN_PROGRESS".to_string(), "In Progress".to_string());
+        status_mapping.insert("COMPLETED".to_string(), "Done".to_string());
+        
+        Self {
+            auto_sync: false,
+            sync_direction: "bidirectional".to_string(),
+            issue_type_mapping,
+            status_mapping,
+            create_epics_for_blocks: true,
+            sync_assignees: true,
+            sync_labels: true,
+            conflict_resolution: "manual".to_string(),
+        }
+    }
+}
 
 // Define the structure for a task
 
@@ -26,6 +65,24 @@ pub struct Task {
     pub log: String,
     pub commit_id: String,
     pub status: String,
+    
+    // Jira integration fields
+    #[serde(default)]
+    pub jira_issue_key: Option<String>,
+    #[serde(default)]
+    pub jira_issue_type: Option<String>,
+    #[serde(default)]
+    pub jira_status: Option<String>,
+    #[serde(default)]
+    pub jira_assignee: Option<String>,
+    #[serde(default)]
+    pub jira_labels: Vec<String>,
+    #[serde(default)]
+    pub jira_synced: bool,
+    #[serde(default)]
+    pub jira_last_sync: Option<String>, // ISO timestamp
+    #[serde(default)]
+    pub jira_sync_direction: Option<String>, // "import", "export", "bidirectional"
 }
 
 impl Task {
@@ -48,7 +105,22 @@ impl Task {
             log: String::new(),
             commit_id: "".to_string(),
             status: "".to_string(),
+            
+            // Initialize Jira fields as unlinked
+            jira_issue_key: None,
+            jira_issue_type: None,
+            jira_status: None,
+            jira_assignee: None,
+            jira_labels: Vec::new(),
+            jira_synced: false,
+            jira_last_sync: None,
+            jira_sync_direction: None,
         }
+    }
+
+    /// Converts the Task to a serde_json::Value for serialization
+    pub fn to_value(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap_or_else(|_| serde_json::Value::Null)
     }
 
     /// Converts the Task attributes into a markdown-formatted prompt for LLM execution
@@ -188,6 +260,20 @@ pub struct Block {
     pub outputs: Vec<BlockConnection>,
     pub connections: Connections,
     pub todo_list: HashMap<String, Task>,
+    
+    // Jira integration fields
+    #[serde(default)]
+    pub jira_project_key: Option<String>,
+    #[serde(default)]
+    pub jira_project_name: Option<String>,
+    #[serde(default)]
+    pub jira_epic_key: Option<String>,
+    #[serde(default)]
+    pub jira_synced: bool,
+    #[serde(default)]
+    pub jira_last_sync: Option<String>, // ISO timestamp
+    #[serde(default)]
+    pub jira_sync_settings: JiraSyncSettings,
 }
 
 impl Block {
@@ -215,6 +301,14 @@ impl Block {
                 output_connections: Vec::new(),
             },
             todo_list: HashMap::new(),
+            
+            // Initialize Jira fields as unlinked
+            jira_project_key: None,
+            jira_project_name: None,
+            jira_epic_key: None,
+            jira_synced: false,
+            jira_last_sync: None,
+            jira_sync_settings: JiraSyncSettings::default(),
         }
     }
     pub fn update_task(mut self, task: Task) {
@@ -249,6 +343,12 @@ pub fn get_blocks() -> Vec<Block> {
                 map.insert(task2.task_id.clone(), task2);
                 map
             },
+            jira_project_key: None,
+            jira_project_name: None,
+            jira_epic_key: None,
+            jira_synced: false,
+            jira_last_sync: None,
+            jira_sync_settings: JiraSyncSettings::default(),
         },
         Block {
             block_id: "def456".to_string(), // Sample block_id
@@ -275,6 +375,12 @@ pub fn get_blocks() -> Vec<Block> {
                 map.insert(task2.task_id.clone(), task2);
                 map
             },
+            jira_project_key: None,
+            jira_project_name: None,
+            jira_epic_key: None,
+            jira_synced: false,
+            jira_last_sync: None,
+            jira_sync_settings: JiraSyncSettings::default(),
         },
         Block {
             block_id: "ghi789".to_string(), // Sample block_id
@@ -297,6 +403,12 @@ pub fn get_blocks() -> Vec<Block> {
                 map.insert(task2.task_id.clone(), task2);
                 map
             },
+            jira_project_key: None,
+            jira_project_name: None,
+            jira_epic_key: None,
+            jira_synced: false,
+            jira_last_sync: None,
+            jira_sync_settings: JiraSyncSettings::default(),
         },
     ]
 }
@@ -626,6 +738,27 @@ impl ClaudeSessionManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_task_to_value() {
+        let task = Task::new("Test task for serialization".to_string());
+        
+        // Test that to_value() returns a valid JSON Value
+        let value = task.to_value();
+        assert!(value.is_object());
+        
+        // Test that the value contains expected fields
+        let obj = value.as_object().unwrap();
+        assert!(obj.contains_key("task_id"));
+        assert!(obj.contains_key("description"));
+        assert!(obj.contains_key("status"));
+        
+        // Test that description matches
+        assert_eq!(obj["description"].as_str().unwrap(), "Test task for serialization");
+        
+        // Test that task_id is a string
+        assert!(obj["task_id"].is_string());
+    }
 
     #[test]
     fn test_input_connection_id_generation() {

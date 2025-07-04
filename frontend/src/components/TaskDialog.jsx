@@ -32,7 +32,14 @@ const TaskDialog = ({visible, onHide, task, blockId, onSave}) => {
         testing_requirements: [],
         log: '',
         commit_id: '',
-        status: 'TODO'
+        status: 'TODO',
+        jira_issue_key: '',
+        jira_issue_url: '',
+        jira_status: '',
+        jira_assignee: '',
+        jira_priority: '',
+        jira_labels: [],
+        jira_synced: false
     };
 
     // State for the task form
@@ -340,6 +347,99 @@ const TaskDialog = ({visible, onHide, task, blockId, onSave}) => {
                             />
                         </div>
                     </>
+                )}
+
+                {/* Jira Integration Section */}
+                {(taskData.jira_synced || taskData.jira_issue_key) && (
+                    <div className="field">
+                        <h4 className="mb-3 text-primary">
+                            <i className="pi pi-external-link mr-2"></i>
+                            Jira Integration
+                        </h4>
+                        
+                        <div className="p-3 border-1 border-round border-primary-200 bg-primary-50">
+                            {taskData.jira_issue_key && (
+                                <div className="field">
+                                    <label htmlFor="jira_issue_key">Jira Issue Key</label>
+                                    <div className="flex align-items-center gap-2">
+                                        <InputText
+                                            id="jira_issue_key"
+                                            value={taskData.jira_issue_key}
+                                            readOnly
+                                            className="flex-1"
+                                        />
+                                        {taskData.jira_issue_url && (
+                                            <Button
+                                                icon="pi pi-external-link"
+                                                className="p-button-sm p-button-outlined"
+                                                onClick={() => window.open(taskData.jira_issue_url, '_blank')}
+                                                tooltip="Open in Jira"
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="formgrid grid">
+                                {taskData.jira_status && (
+                                    <div className="field col-6">
+                                        <label htmlFor="jira_status">Jira Status</label>
+                                        <InputText
+                                            id="jira_status"
+                                            value={taskData.jira_status}
+                                            readOnly
+                                        />
+                                    </div>
+                                )}
+
+                                {taskData.jira_priority && (
+                                    <div className="field col-6">
+                                        <label htmlFor="jira_priority">Jira Priority</label>
+                                        <InputText
+                                            id="jira_priority"
+                                            value={taskData.jira_priority}
+                                            readOnly
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {taskData.jira_assignee && (
+                                <div className="field">
+                                    <label htmlFor="jira_assignee">Jira Assignee</label>
+                                    <InputText
+                                        id="jira_assignee"
+                                        value={taskData.jira_assignee}
+                                        readOnly
+                                    />
+                                </div>
+                            )}
+
+                            {taskData.jira_labels && taskData.jira_labels.length > 0 && (
+                                <div className="field">
+                                    <label>Jira Labels</label>
+                                    <div className="flex flex-wrap gap-1">
+                                        {taskData.jira_labels.map((label, index) => (
+                                            <Chip 
+                                                key={index} 
+                                                label={label} 
+                                                className="p-chip-sm"
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="field mb-0">
+                                <div className="flex align-items-center gap-2">
+                                    <i className={`pi ${taskData.jira_synced ? 'pi-check-circle text-green-500' : 'pi-times-circle text-red-500'}`}></i>
+                                    <span className={taskData.jira_synced ? 'text-green-700' : 'text-red-700'}>
+                                        {taskData.jira_synced ? 'Synced with Jira' : 'Not synced with Jira'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </Dialog>

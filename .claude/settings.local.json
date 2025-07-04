@@ -4,11 +4,39 @@
       "Bash(cargo:*)",
       "Bash(flutter create:*)",
       "mcp__forge__create_directory",
-      "mcp__forge__write_file"
+      "mcp__forge__write_file",
+      "mcp__atlassian__getAccessibleAtlassianResources",
+      "mcp__forge__list_blocks",
+      "mcp__forge__create_block",
+      "mcp__forge__create_task",
+      "mcp__atlassian__getVisibleJiraProjects",
+      "mcp__atlassian__getConfluenceSpaces",
+      "mcp__atlassian__createJiraIssue",
+      "mcp__atlassian__addCommentToJiraIssue",
+      "mcp__atlassian__getJiraIssue",
+      "mcp__atlassian__searchJiraIssuesUsingJql",
+      "mcp__atlassian__editJiraIssue",
+      "mcp__forge__list_directory",
+      "mcp__forge__read_file",
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10s npm run dev:*)",
+      "Bash(gtimeout 10s npm run dev)",
+      "Bash(rm:*)",
+      "Bash(rustc:*)",
+      "Bash(rust-analyzer:*)",
+      "Bash(curl:*)",
+      "Bash(cp:*)",
+      "Bash(python3:*)",
+      "mcp__atlassian__getTransitionsForJiraIssue",
+      "mcp__atlassian__transitionJiraIssue",
+      "Bash(pkill:*)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "forge",
-    "git"
+    "git",
+    "atlassian"
   ]
 }
